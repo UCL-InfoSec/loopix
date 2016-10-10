@@ -250,8 +250,9 @@ def test_petlib():
 @runs_once
 def deployAll():
     execute(deployMixnode)
-    execute(deployClient)
     execute(deployProvider)
+    # HERE: Python function that reads & stores provider names to local file
+    execute(deployClient)
     execute(readFiles)
     execute(loaddir)
 
@@ -268,10 +269,12 @@ def deployMixnode():
 @roles("clients")
 @parallel
 def deployClient():
+    # HERE: read provider names from local file
     with cd("loopix"):
         run("git pull")
         N = hexlify(os.urandom(8))
         with cd('loopix'):
+            # HERE: Change setup_client to accept a provider name.
             run("python setup_client.py 9999 %s Client%s" % (str(env.host),N))
             get('publicClient.bin', 'publicClient-%s.bin'%env.host)
 
