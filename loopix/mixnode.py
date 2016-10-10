@@ -91,7 +91,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 		self.run()
 		self.turnOnReliableUDP()
-		self.saveInDatabase('example.db')
+		#self.saveInDatabase('example.db')
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"

@@ -7,6 +7,7 @@ from twisted.internet import stdio
 from twisted.protocols import basic
 import sqlite3
 import databaseConnect as dc
+import os
 
 def readAllUsersFromDB(database):
         usersList = []
@@ -46,27 +47,24 @@ class ClientEcho(basic.LineReceiver):
 
 if __name__ == "__main__":
 
-	port = int(sys.argv[1])
-	host = sys.argv[2]
-	name = sys.argv[3]
+	if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin")):
+		raise Exception("Key parameter files not found")
 
 	setup = format3.setup()
 	G, o, g, o_bytes = setup
 
-	try:
-	 	secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
-	except:
-	 	secret = o.random()
-	 	file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
+	secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 
 	try:
+		data = file("publicClient.bin", "rb").read()
+		_, name, port, host, _ = petlib.pack.decode(data)
 	 	client = Client(setup, name, port, host, privk = secret)
-	 	file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, client.pubk]))
-		
-	 	if "--mock" not in sys.argv:
-			stdio.StandardIO(client)
-			reactor.listenUDP(port, client)
-	 		reactor.run()
+	 	
+		reactor.listenUDP(port, client)
+
+		client.readInUsersPubs()
+		client.readInData("example.db")
+		reactor.run()
 
 	except Exception, e:
 	 	print str(e)
