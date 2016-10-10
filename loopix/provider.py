@@ -178,6 +178,7 @@ class Provider(MixNode):
         data = [self.name, self.port, self.host, self.pubk]
         db = sqlite3.connect(databaseName)
         c = db.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob)'''%"Providers")
         insertQuery = "INSERT INTO Providers VALUES(?, ?, ?, ?, ?)"
         c.execute(insertQuery, [None, self.name, str(self.port), self.host, sqlite3.Binary(petlib.pack.encode(self.pubk))])
         db.commit()
