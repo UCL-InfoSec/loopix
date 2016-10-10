@@ -228,7 +228,8 @@ def setup():
     sudo('yes | pip install --upgrade virtualenv')
     sudo('yes | pip install petlib')
     sudo('yes | pip install twisted')
-    sudo('yes | pip install sqlite3')
+    run("git clone https://github.com/UCL-InfoSec/loopix.git")
+
 
 @parallel
 def test_petlib():
@@ -237,16 +238,6 @@ def test_petlib():
 @roles("mixnodes")#, "clients", "providers","board")
 #@parallel
 def deploy():
-	code_dir = '/home/ubuntu/projects/loopix'
-	with settings(warn_only=True):
-		sudo('rm -rf /home/ubuntu/projects/loopix')
-		sudo('mkdir /home/ubuntu/projects/loopix')
-	with cd('/home/ubuntu/projects'):
-		sudo('pip install petlib --upgrade')
-		run("git clone https://aniampio@bitbucket.org/aniampio/repo.git")
-
-
-
-
-
-
+	with cd('loopix'):
+		run("git pull")
+		
