@@ -16,7 +16,8 @@ setup(name='loopix',
       # setup_requires=["pytest >= 2.6.4"],
       install_requires=[
             #"future >= 0.14.3",
-            #"pytest >= 2.6.4",
+            "numpy >= 1.9.1",
+            "pytest >= 2.6.4",
             "twisted >= 15.5.0",
             "msgpack-python >= 0.4.6",
             "petlib >= 0.0.34"
