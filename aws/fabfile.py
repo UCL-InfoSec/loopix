@@ -1,6 +1,8 @@
 from fabric.api import env, sudo, run, settings, cd
 from fabric.decorators import runs_once, roles, parallel
+from fabric.operations import get, put
 from fabric.tasks import execute 
+import fabric.contrib.files
 import boto3
 import sys
 import os
@@ -228,7 +230,12 @@ def setup():
     sudo('yes | pip install --upgrade virtualenv')
     sudo('yes | pip install petlib')
     sudo('yes | pip install twisted')
-    run("git clone https://github.com/UCL-InfoSec/loopix.git")
+    sudo('yes | pip install numpy')
+    if fabric.contrib.files.exists("loopix"):
+    	with cd("loopix"):
+    		run("git pull")
+    else:
+    	run("git clone https://github.com/UCL-InfoSec/loopix.git")
 
 
 @parallel
@@ -240,4 +247,9 @@ def test_petlib():
 def deploy():
 	with cd('loopix'):
 		run("git pull")
+		with cd('loopix'):
+			run("python run_client.py 9999 %s C1 --mock" % str(env.host))
+			get('publicClient.bin', 'publicClient-%s.bin'%env.host)
+
+
 		

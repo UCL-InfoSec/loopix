@@ -56,7 +56,7 @@ if __name__ == "__main__":
 	try:
 		secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 	except:
-		secret = o.random
+		secret = o.random()
 		file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
 
 	try:
@@ -66,6 +66,8 @@ if __name__ == "__main__":
 		reactor.listenUDP(port, client)
 
 		stdio.StandardIO(client)
-		reactor.run()
+		if "--mock" not in sys.argv:
+			reactor.run()
+
 	except Exception, e:
 		print str(e)
