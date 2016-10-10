@@ -214,7 +214,7 @@ def uploaddata():
 # getting file from the remote directory
 def loaddir():
 	with cd('path'):
-		get('directory_local', 'directory_remote')
+		get('directory_remote', 'directory_local')
 
 def whoami():
     run('whoami', env.hosts)
@@ -244,12 +244,27 @@ def test_petlib():
 
 @roles("mixnodes")#, "clients", "providers","board")
 #@parallel
-def deploy():
+def deployMixnode():
 	with cd('loopix'):
+		run("git pull")
+		with cd('loopix'):
+			run("python run_mixnode.py 9999 %s M1 --mock" % str(env.host))
+			get('publicMixnode.bin', 'publicMixnode-%s.bin'%env.host)
+
+@roles("clients")
+def deployClient():
+	with cd("loopix"):
 		run("git pull")
 		with cd('loopix'):
 			run("python run_client.py 9999 %s C1 --mock" % str(env.host))
 			get('publicClient.bin', 'publicClient-%s.bin'%env.host)
 
+@roles("providers")
+def deployProvide():
+	with cd("loopix"):
+		run("git pull")
+		with cd("loopix"):
+			run("python run_provider.py 9999 %s P1 --mock" % str(evn.host))
+			get('publicProvider.bin', 'publicProvider-%s.bin'%env.host)
 
 		
