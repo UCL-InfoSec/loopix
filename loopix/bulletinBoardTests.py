@@ -4,7 +4,7 @@ from mixnode import MixNode
 from bulletinBoard import BulletinBoard
 import format3
 import petlib.pack
-from generateData import createTestUserFile
+#from generateData import createTestUserFile
 from client import Client
 from provider import Provider
 import base64
