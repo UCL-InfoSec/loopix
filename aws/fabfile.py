@@ -204,6 +204,8 @@ def start_board():
     run("python run_board.py")
 
 
+
+# ---------------------------------------------SETUP-AND-DEPLOY---------------------------------------
 # putting file from the remote directory
 def uploaddir():
     #put - Upload one or more files to a remote host. put(argv, kwargs) - put files from argv to kwargs
@@ -248,9 +250,30 @@ def test_petlib():
     run('python -c "import petlib; petlib.run_tests()"')
 
 @runs_once
+def storeProvidersNames():
+    pn = []
+    for f in os.listdir('.'):
+        if f.endswith(".bin"):
+            with open(f, "rb") as infile:
+                lines = petlib.pack.decode(infile.read())
+                if lines[0] == "provider":
+                    pn.append(lines[1])
+    with open('../loopix/providersNames.bin', 'wb') as outfile:
+        outfile.write(petlib.pack.encode(pn))
+
+@runs_once
+def getProvidersNames():
+    filedir = '../loopix/providersNames.bin'
+    with open(filedir, "rb") as infile:
+        lines = petlib.pack.decode(infile.read())
+    return lines
+
+
+@runs_once
 def deployAll():
     execute(deployMixnode)
     execute(deployProvider)
+    execute(getProvidersNames)
     # HERE: Python function that reads & stores provider names to local file
     execute(deployClient)
     execute(readFiles)
