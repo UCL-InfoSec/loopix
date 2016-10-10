@@ -97,10 +97,7 @@ class Client(DatagramProtocol):
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
         log.info("[%s] > Start Protocol" % self.name)
-        self.takeProvidersData('example.db', self.providerId)
-        self.saveInDatabase('example.db')
-        self.takeMixnodesData('example.db')
-        self.turnOnMessagePulling()
+        #self.saveInDatabase('example.db')
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
@@ -635,6 +632,11 @@ class Client(DatagramProtocol):
 
     def readInUsersPubs(self):
         self.usersPubs = self.takeAllUsersFromDB('example.db')
+
+    def readInData(self, databaseName):
+        #self.takeProvidersData(databaseName, self.providerId)
+        self.takeMixnodesData('example.db')
+        self.turnOnMessagePulling()
 
     def measureSentBytes(self):
         lc = task.LoopingCall(self.sentBytes)
