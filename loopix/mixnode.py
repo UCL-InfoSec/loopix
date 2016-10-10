@@ -81,7 +81,6 @@ class MixNode(DatagramProtocol):
 		self.EXP_PARAMS_DELAY = (0.005, None)
 		self.EXP_PARAMS_LOOPS = (1, None)
 
-		self.saveInDatabase('example.db')
 
 
 	def startProtocol(self):
@@ -92,6 +91,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 		self.run()
 		self.turnOnReliableUDP()
+		self.saveInDatabase('example.db')
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
