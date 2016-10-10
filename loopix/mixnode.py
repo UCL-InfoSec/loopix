@@ -5,7 +5,7 @@ import heapq
 import hmac
 import io
 import msgpack
-import numpy
+#import numpy
 from os import urandom
 from petlib.ec import EcGroup, EcPt
 from petlib.bn import Bn

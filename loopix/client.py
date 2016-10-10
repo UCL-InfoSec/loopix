@@ -7,7 +7,7 @@ import hmac
 import math
 from mixnode import MixNode
 import msgpack
-import numpy
+#import numpy
 import os
 from petlib.cipher import Cipher
 from petlib.ec import EcPt, Bn, EcGroup
