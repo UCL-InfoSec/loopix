@@ -247,9 +247,9 @@ def test_petlib():
 def deploy():
 	with cd('loopix'):
 		run("git pull")
-		with cd('loopix'):
-			run("python run_client.py 9999 %s C1 --mock" % str(env.host))
-			get('publicClient.bin', 'publicClient-%s.bin'%env.host)
+		#with cd('loopix'):
+		#	run("python run_client.py 9999 %s C1 --mock" % str(env.host))
+		#	get('publicClient.bin', 'publicClient-%s.bin'%env.host)
 
 
 		
