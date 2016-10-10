@@ -42,7 +42,7 @@ class Provider(MixNode):
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
         self.turnOnReliableUDP()
-        self.saveInDB('example.db')
+        # self.saveInDB('example.db')
 
     def stopProtocol(self):
         print "[%s] > Stop protocol" % self.name
