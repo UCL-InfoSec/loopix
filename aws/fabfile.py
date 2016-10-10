@@ -268,7 +268,6 @@ def getProvidersNames():
         lines = petlib.pack.decode(infile.read())
     return lines
 
-
 @runs_once
 def deployAll():
     execute(deployMixnode)
@@ -296,9 +295,10 @@ def deployClient():
     with cd("loopix"):
         run("git pull")
         N = hexlify(os.urandom(8))
+        prvName = "P1"
         with cd('loopix'):
             # HERE: Change setup_client to accept a provider name.
-            run("python setup_client.py 9999 %s Client%s" % (str(env.host),N))
+            run("python setup_client.py 9999 %s Client%s %s" % (str(env.host),N, prvName))
             get('publicClient.bin', 'publicClient-%s.bin'%env.host)
 
 @roles("providers")

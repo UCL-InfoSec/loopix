@@ -57,8 +57,8 @@ if __name__ == "__main__":
 
 	try:
 		data = file("publicClient.bin", "rb").read()
-		_, name, port, host, _ = petlib.pack.decode(data)
-	 	client = Client(setup, name, port, host, privk = secret)
+		_, name, port, host, _, prvname = petlib.pack.decode(data)
+	 	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
 	 	
 		reactor.listenUDP(port, client)
 

@@ -15,6 +15,7 @@ if __name__ == "__main__":
 		port = int(sys.argv[1])
 		host = sys.argv[2]
 		name = sys.argv[3]
+		prvname = sys.argv[4]
 
 		setup = format3.setup()
 		G, o, g, o_bytes = setup
@@ -23,6 +24,6 @@ if __name__ == "__main__":
 		file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
 
 		pub = secret * g
-		file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, pub]))
+		file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, pub, prvname]))
 	else:
 		print "Files exist"
