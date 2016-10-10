@@ -285,6 +285,9 @@ def deployProvider():
             run("python setup_provider.py 9999 %s Provider%s" % (str(env.host), N))
             get('publicProvider.bin', 'publicProvider-%s.bin'%env.host)
 
+@roles("providers")
+def checkHost():
+    print env.host
 
 @runs_once
 def readFiles():
