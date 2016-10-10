@@ -47,12 +47,16 @@ if __name__ == "__main__":
 		mix = MixNode(name, port, host, setup, privk=secret)
 		print "Public key: " + hexlify(mix.pubk.export())
 		file("public.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, mix.pubk]))
-
 		reactor.listenUDP(port, mix)	
 
 		# Create a cmd line controller
-		stdio.StandardIO(MixnodeEcho(mix))
-		reactor.run()
+		# stdio.StandardIO(MixnodeEcho(mix))
+
+		if "--mock" not in sys.argv:
+			mix.readInData('example.db')
+			reactor.run()
+		else:
+			print "Mock run to extract parameters"
 
 	except Exception, e:
 		print str(e)
