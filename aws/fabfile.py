@@ -9,6 +9,7 @@ import os
 import petlib.pack
 import sys
 import sqlite3
+from binascii import hexlify
 
 
 mytags = [{"Key":"Type", "Value":"Mixnode"}]
@@ -259,8 +260,9 @@ def deployAll():
 def deployMixnode():
     with cd('loopix'):
         run("git pull")
+        N = hexlify(os.urandom(8))
         with cd('loopix'):
-            run("python run_mixnode.py 9999 %s M1 --mock" % str(env.host))
+            run("python setup_mixnode.py 9999 %s Mix%s" % (str(env.host), N))
             get('publicMixnode.bin', 'publicMixnode-%s.bin'%env.host)
 
 @roles("clients")
@@ -268,8 +270,9 @@ def deployMixnode():
 def deployClient():
     with cd("loopix"):
         run("git pull")
+        N = hexlify(os.urandom(8))
         with cd('loopix'):
-            run("python run_client.py 9999 %s C1 --mock" % str(env.host))
+            run("python setup_client.py 9999 %s Client%s" % (str(env.host),N))
             get('publicClient.bin', 'publicClient-%s.bin'%env.host)
 
 @roles("providers")
@@ -277,8 +280,9 @@ def deployClient():
 def deployProvider():
     with cd("loopix"):
         run("git pull")
+        N = hexlify(os.urandom(8))
         with cd("loopix"):
-            run("python run_provider.py 9999 %s P1 --mock" % str(env.host))
+            run("python setup_provider.py 9999 %s Provider%s" % (str(env.host), N))
             get('publicProvider.bin', 'publicProvider-%s.bin'%env.host)
 
 
