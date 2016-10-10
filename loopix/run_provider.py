@@ -27,27 +27,16 @@ class ProviderEcho(basic.LineReceiver):
 
 if __name__ == "__main__":
 
-	port = int(sys.argv[1])
-	host = sys.argv[2]
-	name = sys.argv[3]
-
 	setup = format3.setup()
 	G, o, g, o_bytes = setup
-
-	try:
-	 	secret = petlib.pack.decode(file("secretProvider.prv", "rb").read())
-	except:
-	 	secret = o.random()
-	 	file("secretProvider.prv", "wb").write(petlib.pack.encode(secret))
+	secret = petlib.pack.decode(file("secretProvider.prv", "rb").read())
+	_, name, port, host, _ = petlib.pack.decode(file("publicProvider.bin", "rb").read())
 
 	try:
 	 	provider = Provider(name, port, host, setup, privk=secret)
-	 	file("publicProvider.bin", "wb").write(petlib.pack.encode(["provider", name, port, host, provider.pubk]))
-		
-	 	if "--mock" not in sys.argv:
-			stdio.StandardIO(ProviderEcho(provider))
-			reactor.listenUDP(port, provider)
-	 		reactor.run()
+	 	# stdio.StandardIO(ProviderEcho(provider))
+		reactor.listenUDP(port, provider)
+	 	reactor.run()
 	except Exception, e:
 		print str(e)
 
