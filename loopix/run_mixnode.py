@@ -6,6 +6,7 @@ import sys
 
 import petlib.pack
 from binascii import hexlify
+import os.path
 
 class MixnodeEcho(basic.LineReceiver):
 	from os import linesep as delimiter
@@ -29,34 +30,29 @@ class MixnodeEcho(basic.LineReceiver):
 
 if __name__ == "__main__":
 
-	port = int(sys.argv[1])
-	host = sys.argv[2]
-	name = sys.argv[3]
+	if not (os.path.exists("secretMixnode.prv") and os.path.exists("publicMixnode.bin")):
+		raise Exception("Key parameter files not found")
 
 	setup = format3.setup()
 	G, o, g, o_bytes = setup
 
-	try:
-		secret = petlib.pack.decode(file("secretMixnode.prv", "rb").read())
-	except:
-		secret = o.random()
-		file("secretMixnode.prv", "wb").write(petlib.pack.encode(secret))
+	secret = petlib.pack.decode(file("secretMixnode.prv", "rb").read())
 
 	try:
+		data = file("publicMixnode.bin", "rb").read()
+		_, name, port, host, _ = petlib.pack.decode(data)
+
 		# Create the mix
 		mix = MixNode(name, port, host, setup, privk=secret)
 		print "Public key: " + hexlify(mix.pubk.export())
-		file("publicMixnode.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, mix.pubk]))
+		
 		reactor.listenUDP(port, mix)	
 
 		# Create a cmd line controller
 		# stdio.StandardIO(MixnodeEcho(mix))
 
-		if "--mock" not in sys.argv:
-			mix.readInData('example.db')
-			reactor.run()
-		else:
-			print "Mock run to extract parameters"
-
+		mix.readInData('example.db')
+		reactor.run()
+		
 	except Exception, e:
 		print str(e)
