@@ -37,16 +37,16 @@ if __name__ == "__main__":
 	G, o, g, o_bytes = setup
 
 	try:
-		secret = petlib.pack.decode(file("secret.prv", "rb").read())
+		secret = petlib.pack.decode(file("secretMixnode.prv", "rb").read())
 	except:
 		secret = o.random()
-		file("secret.prv", "wb").write(petlib.pack.encode(secret))
+		file("secretMixnode.prv", "wb").write(petlib.pack.encode(secret))
 
 	try:
 		# Create the mix
 		mix = MixNode(name, port, host, setup, privk=secret)
 		print "Public key: " + hexlify(mix.pubk.export())
-		file("public.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, mix.pubk]))
+		file("publicMixnode.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, mix.pubk]))
 		reactor.listenUDP(port, mix)	
 
 		# Create a cmd line controller
