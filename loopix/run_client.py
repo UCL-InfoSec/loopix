@@ -24,12 +24,8 @@ def readAllUsersFromDB(database):
 
 class ClientEcho(basic.LineReceiver):
 	from os import linesep as delimiter
-	def __init__(self, port, host):
-		try:
-			self.client = Client(format3.setup(), "Client%d"%(port), port, host)
-			reactor.listenUDP(self.client.port, self.client)
-		except Exception, e:
-			print str(e)
+	def __init__(self, client):
+		self.client = client
 
 	def connectionMade(self):
 		self.transport.write('>>> ')
@@ -38,7 +34,6 @@ class ClientEcho(basic.LineReceiver):
 		if line.upper() == "-R":
 			try:
 				self.client.readInUsersPubs()
-				#self.client.usersPubs = readAllUsersFromDB('example.db')
 				print self.client.usersPubs
 			except Exception, e:
 				print str(e)
@@ -50,5 +45,27 @@ class ClientEcho(basic.LineReceiver):
 
 
 if __name__ == "__main__":
-	stdio.StandardIO(ClientEcho(int(sys.argv[1]), sys.argv[2]))
-	reactor.run()
+
+	port = int(sys.argv[1])
+	host = sys.argv[2]
+	name = sys.argv[3]
+
+	setup = format3.setup()
+	G, o, g, o_bytes = setup
+
+	try:
+		secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
+	except:
+		secret = o.random
+		file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
+
+	try:
+		client = Client(setup, name, port, host, privk = secret)
+		file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, client.pubk]))
+		
+		reactor.listenUDP(port, client)
+
+		stdio.StandardIO(client)
+		reactor.run()
+	except Exception, e:
+		print str(e)

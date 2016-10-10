@@ -515,6 +515,7 @@ class MixNode(DatagramProtocol):
 		try:
 			db = sqlite3.connect(database)
 			c = db.cursor()
+			c.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob)'''%"Mixnodes")
 			insertQuery = "INSERT INTO Mixnodes VALUES (?, ?, ?, ?, ?)"
 			c.execute(insertQuery, [None, self.name, self.port, self.host, sqlite3.Binary(petlib.pack.encode(self.pubk))])
 			db.commit()
