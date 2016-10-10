@@ -6,19 +6,19 @@ def connectToDatabase(databaseName):
 
 def createUsersTable(db, tableName):
 	c = db.cursor()
-	c.execute('''CREATE TABLE %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob, provider blob)'''%tableName)
+	c.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob, provider blob)'''%tableName)
 	db.commit()
 	print "Table [%s] created succesfully." % tableName
 
 def createProvidersTable(db, tableName):
 	c = db.cursor()
-	c.execute('''CREATE TABLE %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob)'''%tableName)
+	c.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob)'''%tableName)
 	db.commit()
 	print "Table [%s] created succesfully." % tableName
 
 def createMixnodesTable(db, tableName):
 	c = db.cursor()
-	c.execute('''CREATE TABLE %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob)'''%tableName)
+	c.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob)'''%tableName)
 	db.commit()
 	print "Table [%s] created succesfully." % tableName	
 
