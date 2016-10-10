@@ -497,7 +497,13 @@ class Client(DatagramProtocol):
             print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
             for i in self.tagedHeartbeat:
                 if i[1] == msg[2:]:
-                    with open('performance/latency%s.txt' % (len(self.usersPubs)+1), 'a') as outFile:
+
+                    try:
+                        f = open('performance/latency%s.txt' % (len(self.usersPubs)+1), 'a')
+                    except:
+                        f = open('performance/latency%s.txt' % (len(self.usersPubs)+1), 'w')
+
+                    with f as outFile:
                         outFile.write('%.5f' % (float(providerTimestamp) - float(i[0]))+'\n')
                     print self.name, "Latency Saved in file"
                     self.sendTagedMessage(self.mixnet)
