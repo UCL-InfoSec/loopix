@@ -54,20 +54,19 @@ if __name__ == "__main__":
 	G, o, g, o_bytes = setup
 
 	try:
-		secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
+	 	secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 	except:
-		secret = o.random()
-		file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
+	 	secret = o.random()
+	 	file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
 
 	try:
-		client = Client(setup, name, port, host, privk = secret)
-		file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, client.pubk]))
+	 	client = Client(setup, name, port, host, privk = secret)
+	 	file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, client.pubk]))
 		
-		reactor.listenUDP(port, client)
-
-		stdio.StandardIO(client)
-		if "--mock" not in sys.argv:
-			reactor.run()
+	 	if "--mock" not in sys.argv:
+			stdio.StandardIO(client)
+			reactor.listenUDP(port, client)
+	 		reactor.run()
 
 	except Exception, e:
-		print str(e)
+	 	print str(e)
