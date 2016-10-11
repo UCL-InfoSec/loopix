@@ -91,6 +91,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 		self.run()
 		self.turnOnReliableUDP()
+		self.readInData('example.db')
 		#self.saveInDatabase('example.db')
 		
 	def stopProtocol(self):
@@ -435,6 +436,7 @@ class MixNode(DatagramProtocol):
 				log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
 			else:
 				log.info("Mixes: %s" % str(mixes))
+				print "Mixes: %s" % str(mixes)
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1
