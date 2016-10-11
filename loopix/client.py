@@ -247,7 +247,7 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
-        print "Received: ", data
+        #print "Received: ", data
 
         if data[:4] == "EMPT":
             print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
