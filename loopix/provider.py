@@ -186,3 +186,4 @@ class Provider(MixNode):
         print "[%s] > Provider public information saved in database." % self.name
         log.info("[%s] > Provider public information saved in database." % self.name)
 
+
