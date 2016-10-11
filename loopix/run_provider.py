@@ -32,24 +32,22 @@ class ProviderEcho(basic.LineReceiver):
 		self.transport.write(">>>")
 
 
-if __name__ == "__main__":
+setup = format3.setup()
+G, o, g, o_bytes = setup
+secret = petlib.pack.decode(file("secretProvider.prv", "rb").read())
+_, name, port, host, _ = petlib.pack.decode(file("publicProvider.bin", "rb").read())
 
-	setup = format3.setup()
-	G, o, g, o_bytes = setup
-	secret = petlib.pack.decode(file("secretProvider.prv", "rb").read())
-	_, name, port, host, _ = petlib.pack.decode(file("publicProvider.bin", "rb").read())
+try:
+ 	provider = Provider(name, port, host, setup, privk=secret)
+ 	# stdio.StandardIO(ProviderEcho(provider))
 
-	try:
-	 	provider = Provider(name, port, host, setup, privk=secret)
-	 	# stdio.StandardIO(ProviderEcho(provider))
+ 	udp_server = internet.UDPServer(port, provider)
 
-	 	udp_server = internet.UDPServer(port, provider)
+ 	application = service.Application("Provider")
+ 	udp_server.setServiceParent(application)
 
-	 	application = service.Application("Provider")
-	 	udp_server.setServiceParent(application)
-
-	except Exception, e:
-		print str(e)
+except Exception, e:
+	print str(e)
 
 
 
