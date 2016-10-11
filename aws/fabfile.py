@@ -263,18 +263,20 @@ def storeProvidersNames():
                 lines = petlib.pack.decode(infile.read())
                 if lines[0] == "provider":
                     pn.append(lines[1])
-    with open('providersNames.bin', 'wb') as outfile:
+    with open('providersNames.bi2', 'wb') as outfile:
         outfile.write(petlib.pack.encode(pn))
 
 @runs_once
 def getProvidersNames():
-    filedir = 'providersNames.bin'
+    filedir = 'providersNames.bi2'
     with open(filedir, "rb") as infile:
         lines = petlib.pack.decode(infile.read())
     return lines
 
 @runs_once
 def deployAll():
+    with settings(warn_only=True):
+        local("rm *.bin *.bi2 example.db")
     execute(deployMixnode)
     execute(deployProvider)
     execute(storeProvidersNames)
@@ -282,6 +284,13 @@ def deployAll():
     execute(deployClient)
     execute(readFiles)
     execute(loaddir)
+
+@roles("mixnodes", "clients", "providers","board")
+@parallel
+def cleanAll():
+    with cd('loopix'):
+        with cd('loopix'):
+            run("rm *.bin example.db *.prv log.json", warn_only=True)
 
 @roles("mixnodes")
 @parallel
@@ -334,11 +343,11 @@ def readFiles():
     dc.createProvidersTable(db, "Providers")
     dc.createMixnodesTable(db, "Mixnodes")
 
-
     for f in os.listdir('.'):
         if f.endswith(".bin"):
             with open(f, 'rb') as fileName:
                 lines = petlib.pack.decode(fileName.read())
+                print lines
                 if lines[0] == "client":
                     insertQuery = "INSERT INTO Users VALUES(?, ?, ?, ?, ?, ?)"
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3], 
@@ -353,6 +362,7 @@ def readFiles():
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3],
                         sqlite3.Binary(petlib.pack.encode(lines[4]))])
                 else:
+                    print "Found: %s" % lines[0]
                     assert False
     db.commit()
 
