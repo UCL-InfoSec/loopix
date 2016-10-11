@@ -9,6 +9,7 @@ import os
 import petlib.pack
 import sys
 import sqlite3
+import random
 from binascii import hexlify
 
 
@@ -258,12 +259,12 @@ def storeProvidersNames():
                 lines = petlib.pack.decode(infile.read())
                 if lines[0] == "provider":
                     pn.append(lines[1])
-    with open('../loopix/providersNames.bin', 'wb') as outfile:
+    with open('providersNames.bin', 'wb') as outfile:
         outfile.write(petlib.pack.encode(pn))
 
 @runs_once
 def getProvidersNames():
-    filedir = '../loopix/providersNames.bin'
+    filedir = 'providersNames.bin'
     with open(filedir, "rb") as infile:
         lines = petlib.pack.decode(infile.read())
     return lines
@@ -272,7 +273,7 @@ def getProvidersNames():
 def deployAll():
     execute(deployMixnode)
     execute(deployProvider)
-    execute(getProvidersNames)
+    execute(storeProvidersNames)
     # HERE: Python function that reads & stores provider names to local file
     execute(deployClient)
     execute(readFiles)
@@ -291,11 +292,12 @@ def deployMixnode():
 @roles("clients")
 @parallel
 def deployClient():
-    # HERE: read provider names from local file
+    # HERE: read provider names from local file    
     with cd("loopix"):
         run("git pull")
         N = hexlify(os.urandom(8))
-        prvName = "P1"
+        providers = getProvidersNames()
+        prvName = random.choice(providers)
         with cd('loopix'):
             # HERE: Change setup_client to accept a provider name.
             run("python setup_client.py 9999 %s Client%s %s" % (str(env.host),N, prvName))
