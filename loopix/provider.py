@@ -34,7 +34,7 @@ class Provider(MixNode):
         print "[%s] > Start protocol." % self.name
         log.info("[%s] > Sstart protocol." % self.name)
         
-        self.transport.write("INFO", ("127.0.0.1", 9998))
+        # self.transport.write("INFO", ("127.0.0.1", 9998))
         print "[%s] > Request for network info sent." % self.name
         log.info("[%s] > Request for network info sent." % self.name)
 
@@ -100,19 +100,22 @@ class Provider(MixNode):
                 host (str): host of the requesting client,
                 port (int): port of the requesting client.
         """
-        if port in self.storage.keys():
-            if self.storage[port]:
-                for _ in range(self.MAX_RETRIEVE):
-                    if self.storage[port]:
-                        message = self.storage[port].pop(0)
-                        self.transport.write("PMSG" + message, (host, port))
-                        print "[%s] > Message fetched for user (%s, %d)." % (self.name, host, port)
-                        log.info("[%s] > Message fetched for user (%s, %d)." % (self.name, host, port))
-            else:
-                self.transport.write("NOMSG", (host, port))
+        def send_to_ip(IPAddrs):
+            if port in self.storage.keys():
+                if self.storage[port]:
+                    for _ in range(self.MAX_RETRIEVE):
+                        if self.storage[port]:
+                            message = self.storage[port].pop(0)
+                            self.transport.write("PMSG" + message, (IPAddrs, port))
+                            print "[%s] > Message fetched for user (%s, %d)." % (self.name, host, port)
+                            log.info("[%s] > Message fetched for user (%s, %d)." % (self.name, host, port))
+                else:
+                    self.transport.write("NOMSG", (IPAddrs, port))
 
-        else:
-            self.transport.write("NOMSG", (host, port))
+            else:
+                self.transport.write("NOMSG", (IPAddrs, port))
+
+        reactor.resolve(host).addCallback(send_to_ip)
 
     def do_ROUT(self, data, (host, port), tag=None):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
