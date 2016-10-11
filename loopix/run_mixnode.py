@@ -9,6 +9,8 @@ import petlib.pack
 from binascii import hexlify
 import os.path
 
+sys.path += ["."]
+
 class MixnodeEcho(basic.LineReceiver):
 	from os import linesep as delimiter
 	def __init__(self, mix):
