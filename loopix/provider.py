@@ -32,11 +32,11 @@ class Provider(MixNode):
 
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
-        log.info("[%s] > Sstart protocol." % self.name)
+        log.info("[%s] > Start protocol." % self.name)
         
         # self.transport.write("INFO", ("127.0.0.1", 9998))
-        print "[%s] > Request for network info sent." % self.name
-        log.info("[%s] > Request for network info sent." % self.name)
+        #print "[%s] > Request for network info sent." % self.name
+        #log.info("[%s] > Request for network info sent." % self.name)
 
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)
@@ -50,6 +50,7 @@ class Provider(MixNode):
 
     def datagramReceived(self, data, (host, port)):
         print "[%s] > Received data" % self.name
+        log.info("[%s] > received data" % self.name)
         if data == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
