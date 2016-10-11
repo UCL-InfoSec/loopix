@@ -32,11 +32,11 @@ class Provider(MixNode):
 
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
-        log.info("[%s] > Sstart protocol." % self.name)
+        log.info("[%s] > Start protocol." % self.name)
         
         # self.transport.write("INFO", ("127.0.0.1", 9998))
-        print "[%s] > Request for network info sent." % self.name
-        log.info("[%s] > Request for network info sent." % self.name)
+        #print "[%s] > Request for network info sent." % self.name
+        #log.info("[%s] > Request for network info sent." % self.name)
 
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)

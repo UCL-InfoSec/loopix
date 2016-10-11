@@ -95,6 +95,7 @@ class MixNode(DatagramProtocol):
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
+		log.info("[%s] > Stop protocol" % self.name)
 
 	def run(self):
 		"""A loop function responsible for flushing the queue"""
@@ -113,6 +114,7 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Turned on heartbeats" % self.name)
 
 	def errbackHeartbeats(self, failure):
+		log.info("[%s] > Mixnode Errback during sending heartbeat:" % (self.name, failure))
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def sendRequest(self, rqs):
