@@ -8,8 +8,11 @@ import sys
 import petlib.pack
 from binascii import hexlify
 import os.path
+import os
 
-sys.path += ["."]
+current_path = os.getcwd()
+print "Current Path: %s" % current_path
+sys.path += [current_path]
 
 class MixnodeEcho(basic.LineReceiver):
 	from os import linesep as delimiter
