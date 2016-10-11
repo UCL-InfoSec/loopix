@@ -1,3 +1,5 @@
+import os
+import sys
 current_path = os.getcwd()
 print "Current Path: %s" % current_path
 sys.path += [current_path]
@@ -7,12 +9,10 @@ import format3
 from twisted.protocols import basic
 from twisted.internet import stdio, reactor
 from twisted.application import service, internet
-import sys
 
 import petlib.pack
 from binascii import hexlify
 import os.path
-import os
 
 class MixnodeEcho(basic.LineReceiver):
 	from os import linesep as delimiter
