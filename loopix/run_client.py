@@ -1,13 +1,21 @@
+import os
+import sys
+current_path = os.getcwd()
+print "Current Path: %s" % current_path
+sys.path += [current_path]
+
+
+
 from twisted.internet import reactor
 from client import Client
 import format3
-import sys
 import petlib
 from twisted.internet import stdio
 from twisted.protocols import basic
+from twisted.application import service, internet
+
 import sqlite3
 import databaseConnect as dc
-import os
 
 def readAllUsersFromDB(database):
         usersList = []
@@ -45,23 +53,30 @@ class ClientEcho(basic.LineReceiver):
 		self.transport.write('>>> ')
 
 
-if __name__ == "__main__":
 
-	if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin")):
-		raise Exception("Key parameter files not found")
+if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin")):
+	raise Exception("Key parameter files not found")
 
-	setup = format3.setup()
-	G, o, g, o_bytes = setup
+setup = format3.setup()
+G, o, g, o_bytes = setup
 
-	secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
+secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 
-	try:
-		data = file("publicClient.bin", "rb").read()
-		_, name, port, host, _, prvname = petlib.pack.decode(data)
-	 	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
-	 	
-		reactor.listenUDP(port, client)
-		reactor.run()
+try:
+	data = file("publicClient.bin", "rb").read()
+	_, name, port, host, _, prvname = petlib.pack.decode(data)
+ 	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
+ 	
+	# reactor.listenUDP(port, client)
+	# reactor.run()
 
-	except Exception, e:
-	 	print str(e)
+	udp_server = internet.UDPServer(port, client)	
+
+	# Create a cmd line controller
+	# stdio.StandardIO(MixnodeEcho(mix))
+
+	application = service.Application("Client")
+	udp_server.setServiceParent(application)
+
+except Exception, e:
+ 	print str(e)
