@@ -251,7 +251,6 @@ def start_board():
     run("python run_board.py")
 
 
-
 # ---------------------------------------------SETUP-AND-DEPLOY---------------------------------------
 # putting file from the remote directory
 def uploaddir():
