@@ -143,13 +143,13 @@ class Client(DatagramProtocol):
         def send_to_ip(IPAddrs):
             self.transport.write("PULL_MSG", (IPAddrs, self.provider.port))
             log.info("[%s] > pulled messages from the provider." % self.name)
+            print "[%s] > Pulled messages from provider %s" % (self.name, str(IPAddrs))
 
         reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
 
-        print "Pulled messages."
         lc = task.LoopingCall(self.pullMessages)
         lc.start(TIME_PULL)
         log.info("[%s] > turned on messaging." % self.name)
@@ -666,8 +666,8 @@ class Client(DatagramProtocol):
         self.usersPubs = self.takeAllUsersFromDB('example.db')
 
     def readInData(self, databaseName):
-        #self.takeProvidersData(databaseName, self.providerId)
-        self.takeMixnodesData('example.db')
+        print "[%s] > Read in data" % self.name
+        self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
         self.turnOnMessaging(self.mixnet)
 

@@ -91,6 +91,7 @@ class Provider(MixNode):
             if data in self.expectedACK:
                 self.expectedACK.remove(data)
         if data[:4] == "PING":
+            print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             self.clientList.append((host, port))
 
