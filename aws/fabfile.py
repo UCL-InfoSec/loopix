@@ -19,10 +19,13 @@ ec2 = boto3.resource('ec2')
 
 # ---------------------------------------------GET-FUNCTIONS--------------------------------------
 #get the filtered aws instances
+@runs_once
 def get_all_instances():
     #EC2 find particular instances, filtered by the once which are runnning
     instances = ec2.instances.filter(Filters=[{'Name' : 'instance-state-name', 'Values' : ['running']}])
-    return ['ubuntu@' + i.public_dns_name for i in instances]
+    inst = ['ubuntu@' + i.public_dns_name for i in instances]
+    print '\n'.join(inst)
+    return inst
 
 @runs_once
 def get_ec2_instance(ids):
@@ -62,7 +65,8 @@ env.roledefs.update({
     'providers':providers,
     'board':board
     })
-env.key_filename = '/Users/ania/Documents/LoopixKeys/Loopix.pem'
+
+env.key_filename = '../keys/Loopix.pem'
 
 # ----------------------------------------LAUNCHING-FUNCTIONS------------------------------------------
 
