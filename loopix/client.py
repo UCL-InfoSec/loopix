@@ -581,10 +581,13 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Users")
             users = c.fetchall()
             for u in users:
-                p = petlib.pack.decode(u[5])
+                print "User", u
+                p = self.takeProvidersData("example.db", u[5])
+                print "Provider:", p
                 if not self.name == u[1]:
-                    usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]),
-                                    format3.Mix(p[0], p[1], p[2], p[3])))
+                    #usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]),
+                    #                format3.Mix(p[0], p[1], p[2], p[3])))
+                    pass
             db.close()
             return usersList
         except Exception, e:
@@ -605,24 +608,28 @@ class Client(DatagramProtocol):
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
-            if providerId:
-                c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
-                fetchData = c.fetchall()
-                pData = fetchData.pop()
-                return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-            else:
-                c.execute("SELECT * FROM %s ORDER BY RANDOM() LIMIT 1" % ("Providers"))
-                providersData = c.fetchall()
-                providersList = []
-                for p in providersData:
-                    providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4]))) 
-                return random.choice(providersList)
+            #if providerId:
+            
+            c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
+            fetchData = c.fetchall()
+            pData = fetchData.pop()
+            return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
+            
+            #else:
+            #    c.execute("SELECT * FROM %s ORDER BY RANDOM() LIMIT 1" % ("Providers"))
+            #    providersData = c.fetchall()
+            #    providersList = []
+            #    for p in providersData:
+            #        providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4]))) 
+            #    return random.choice(providersList)
             #self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
             #print "Provider taken."
-            db.close()
+        
         except Exception, e:
             print str(e)
             log.error(str(e))
+        finally:
+            db.close()
 
     def takeMixnodesData(self, database):
         """ Function takes public information about all registered mixnodes
