@@ -149,7 +149,7 @@ class Client(DatagramProtocol):
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
 
-        print "Pulled messages."
+        print "[%s] > Pulled messages." % self.name
         lc = task.LoopingCall(self.pullMessages)
         lc.start(TIME_PULL)
         log.info("[%s] > turned on messaging." % self.name)
@@ -666,8 +666,8 @@ class Client(DatagramProtocol):
         self.usersPubs = self.takeAllUsersFromDB('example.db')
 
     def readInData(self, databaseName):
-        #self.takeProvidersData(databaseName, self.providerId)
-        self.takeMixnodesData('example.db')
+        print "[%s] > Read in data" % self.name
+        self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
         self.turnOnMessaging(self.mixnet)
 
