@@ -105,29 +105,32 @@ class Client(DatagramProtocol):
         print "[%s] > Stop Protocol" % self.name
         log.info("[%s] > Stop Protocol" % self.name)
 
-    def announce(self):
-        resp = "UINF" + petlib.pack.encode([self.name, self.port,
-                                            self.host, self.pubk,
-                                            self.provider])
-        self.transport.write(resp, (self.boardHost, self.boardPort))
-        print "[%s] > announced."
-        log.info("[%s] > announced to the board." % self.name)
+    # def announce(self):
+    #     resp = "UINF" + petlib.pack.encode([self.name, self.port,
+    #                                         self.host, self.pubk,
+    #                                         self.provider])
+    #     self.transport.write(resp, (self.boardHost, self.boardPort))
+    #     print "[%s] > announced."
+    #     log.info("[%s] > announced to the board." % self.name)
 
-    def pullMixnetInformation(self, providerPort, providerHost):
-        """ Asking for the mixnodes information """
-        self.transport.write("INFO", (providerHost, providerPort))
-        log.info("[%s] > pulled mixnet information." % self.name)
+    # def pullMixnetInformation(self, providerPort, providerHost):
+    #     """ Asking for the mixnodes information """
+    #     self.transport.write("INFO", (providerHost, providerPort))
+    #     log.info("[%s] > pulled mixnet information." % self.name)
 
-    def pullUserInformation(self, providerPort, providerHost):
-        """ Asking for other users public information """
-        self.transport.write("UREQ", (providerHost, providerPort))
-        log.info("[%s] > pulled users information." % self.name)
+    # def pullUserInformation(self, providerPort, providerHost):
+    #     """ Asking for other users public information """
+    #     self.transport.write("UREQ", (providerHost, providerPort))
+    #     log.info("[%s] > pulled users information." % self.name)
 
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""
 
-        self.transport.write("PULL_MSG", (self.provider.host, self.provider.port))
-        log.info("[%s] > pulled messages from the provider." % self.name)
+        def send_to_ip(IPAddrs):
+            self.transport.write("PULL_MSG", (IPAddrs, self.provider.port))
+            log.info("[%s] > pulled messages from the provider." % self.name)
+
+        reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
@@ -390,9 +393,13 @@ class Client(DatagramProtocol):
             host (str) - destination host,
             port (int) - destination port.
         """
-        self.transport.write(packet, (host, port))
-        self.bytesSent += sys.getsizeof(packet)
-        self.numMessagesSent += 1
+
+        def send_to_ip(IPAddrs):
+            self.transport.write(packet, (IPAddrs, port))
+            self.bytesSent += sys.getsizeof(packet)
+            self.numMessagesSent += 1
+
+        reactor.resolve(host).addCallback(send_to_ip)
 
     def readMessage(self, message, (host, port)):
         """ Function allows to decyrpt and read a received message.
@@ -602,13 +609,13 @@ class Client(DatagramProtocol):
                 c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
                 fetchData = c.fetchall()
                 pData = fetchData.pop()
-                return format3.Mix(str(pData[1]), pData[2], str(pData[3]), pData[4])
+                return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
             else:
                 c.execute("SELECT * FROM %s ORDER BY RANDOM() LIMIT 1" % ("Providers"))
                 providersData = c.fetchall()
                 providersList = []
                 for p in providersData:
-                    providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+                    providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4]))) 
                 return random.choice(providersList)
             #self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
             #print "Provider taken."
