@@ -179,7 +179,7 @@ def ec2getDNS(ids):
 #--------------------------------------DEPLOY-FUNCTIONS-----------------------------------------------------
 @parallel
 def gitpull():
-    with cd('home/ubuntu/projects/loopix'):
+    with cd('loopix'):
         # run, which is similar to local but runs remotely instead of locally.
         run('git pull')
 
@@ -192,7 +192,22 @@ def deploy():
 @roles("mixnodes")
 @parallel
 def start_mixnode():
-    run("python run_mixnode.py")
+    with cd("loopix/loopix"):
+        run("git pull")
+        run("twistd -y run_mixnode.py")
+        pid = run("cat twistd.pid")
+        print "Run on %s with PID %s" % (env.host, pid)
+    #instance.public_dns_name how to add this?
+
+
+@roles("mixnodes")
+@parallel
+def kill_mixnode():
+    with cd("loopix/loopix"):
+        pid = run("cat twistd.pid", warn_only=True)
+        print "Kill %s with PID %s" % (env.host, pid)
+        run("kill `cat twistd.pid`", warn_only=True)
+        
     #instance.public_dns_name how to add this?
 
 @roles("clients")
@@ -203,7 +218,30 @@ def start_client():
 @roles("providers")
 @parallel
 def start_provider():
-    run("python run_provider.py")
+    with cd("loopix/loopix"):
+        run("git pull")
+        run("twistd -y run_provider.py")
+        pid = run("cat twistd.pid")
+        print "Run on %s with PID %s" % (env.host, pid)
+
+@roles("providers")
+@parallel
+def kill_provider():
+    with cd("loopix/loopix"):
+        pid = run("cat twistd.pid", warn_only=True)
+        print "Kill %s with PID %s" % (env.host, pid)
+        run("kill `cat twistd.pid`", warn_only=True)
+        
+@runs_once
+def startAll():
+    execute(start_mixnode)
+    execute(start_provider)
+
+@runs_once
+def killAll():
+    execute(kill_mixnode)
+    execute(kill_provider)
+
 
 @roles("boards")
 @parallel
