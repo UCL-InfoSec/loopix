@@ -434,7 +434,7 @@ class MixNode(DatagramProtocol):
 				print "ERROR: ", str(e)
 				log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
 			else:
-				log.info("Mixes: ", mixes)
+				log.info("Mixes: %s" % str(mixes))
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1
