@@ -52,8 +52,8 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         print "[%s] > received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
-        if data == "PULL_MSG":
-            print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
+        if data[:8] == "PULL_MSG":
+            print "[%s] > Provider received pull messages request from (%s, %d, %s)" % (self.name, host, port, data[8:])
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
             self.do_PULL((host, port))
 
@@ -109,11 +109,11 @@ class Provider(MixNode):
         """
         def send_to_ip(IPAddrs):
             print "Storage: ", self.storage
-            if host in self.storage.keys():
-                if self.storage[host]:
+            if IPAddrs in self.storage.keys():
+                if self.storage[IPAddrs]:
                     for _ in range(self.MAX_RETRIEVE):
-                        if self.storage[host]:
-                            message = self.storage[host].pop(0)
+                        if self.storage[IPAddrs]:
+                            message = self.storage[IPAddrs].pop(0)
                             self.transport.write("PMSG" + message, (IPAddrs, port))
                             print "[%s] > Message fetched for user (%s, %d)." % (self.name, host, port)
                             log.info("[%s] > Message fetched for user (%s, %d)." % (self.name, host, port))
