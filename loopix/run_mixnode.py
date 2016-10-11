@@ -2,6 +2,7 @@ from mixnode import MixNode
 import format3
 from twisted.protocols import basic
 from twisted.internet import stdio, reactor
+from twisted.application import service, internet
 import sys
 
 import petlib.pack
@@ -28,31 +29,32 @@ class MixnodeEcho(basic.LineReceiver):
 		self.transport.write('>>> ')
 
 
-if __name__ == "__main__":
+if not (os.path.exists("secretMixnode.prv") and os.path.exists("publicMixnode.bin")):
+	raise Exception("Key parameter files not found")
 
-	if not (os.path.exists("secretMixnode.prv") and os.path.exists("publicMixnode.bin")):
-		raise Exception("Key parameter files not found")
+# Read crypto parameters
+setup = format3.setup()
+G, o, g, o_bytes = setup
+secret = petlib.pack.decode(file("secretMixnode.prv", "rb").read())
 
-	setup = format3.setup()
-	G, o, g, o_bytes = setup
+try:
+	data = file("publicMixnode.bin", "rb").read()
+	_, name, port, host, _ = petlib.pack.decode(data)
 
-	secret = petlib.pack.decode(file("secretMixnode.prv", "rb").read())
+	# Create the mix
+	mix = MixNode(name, port, host, setup, privk=secret)
+	mix.readInData('example.db')
+	print "Public key: " + hexlify(mix.pubk.export())
+	
+	udp_server = internet.UDPServer(port, mix)	
 
-	try:
-		data = file("publicMixnode.bin", "rb").read()
-		_, name, port, host, _ = petlib.pack.decode(data)
+	# Create a cmd line controller
+	# stdio.StandardIO(MixnodeEcho(mix))
 
-		# Create the mix
-		mix = MixNode(name, port, host, setup, privk=secret)
-		print "Public key: " + hexlify(mix.pubk.export())
-		
-		reactor.listenUDP(port, mix)	
+	application = service.Application("Mixnode")
+	udp_server.setServiceParent(application)
+	
+except Exception, e:
+	print str(e)
 
-		# Create a cmd line controller
-		# stdio.StandardIO(MixnodeEcho(mix))
 
-		mix.readInData('example.db')
-		reactor.run()
-		
-	except Exception, e:
-		print str(e)
