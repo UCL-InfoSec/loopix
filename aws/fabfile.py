@@ -373,6 +373,18 @@ def deployProvider():
 def checkHost():
     print env.host
 
+
+@runs_once
+def takeNamesDb():
+    database = "example.db"
+    db = sqlite3.connect(database)
+    c = db.cursor()
+    c.execute("SELECT * FROM Providers")
+    providers = c.fetchall()
+    for p in providers:
+        print p
+
+
 @runs_once
 def readFiles():
     sys.path += ["../loopix"]
