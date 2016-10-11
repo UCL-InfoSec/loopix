@@ -93,7 +93,9 @@ class Provider(MixNode):
         if data[:4] == "PING":
             print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
-            self.clientList.append((host, port))
+            if (host, port) not in self.clientList:
+                self.clientList.append((host, port))
+                print "Clients: ", self.clientList
 
     def do_PULL(self, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
