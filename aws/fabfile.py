@@ -12,9 +12,6 @@ import sqlite3
 import random
 from binascii import hexlify
 
-
-mytags = [{"Key":"Type", "Value":"Mixnode"}]
-
 ec2 = boto3.resource('ec2')
 
 # ---------------------------------------------GET-FUNCTIONS--------------------------------------
@@ -37,19 +34,21 @@ def get_ec2_instance(ids):
 def get_mixnodes():
     mix_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Mixnode"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
     nodes =  ['ubuntu@' + i.public_dns_name for i in mix_instances]
-    print nodes
+    print "Mixnodes", nodes
     return nodes
 
 @runs_once
 def get_clients():
     client_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Client"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
-    return ['ubuntu@' + i.public_dns_name for i in client_instances]
+    nodes = ['ubuntu@' + i.public_dns_name for i in client_instances]
+    print "Client", nodes
+    return nodes
 
 @runs_once
 def get_providers():
     provider_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Provider"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
     nodes = ['ubuntu@' + i.public_dns_name for i in provider_instances]
-    print nodes
+    print "Providers", nodes
     return nodes
 
 @runs_once
@@ -74,7 +73,7 @@ env.key_filename = '../keys/Loopix.pem'
 
 # ----------------------------------------LAUNCHING-FUNCTIONS------------------------------------------
 
-@runs_once
+# @runs_once
 #launching new instances
 def ec2start(num):
     instances = ec2.create_instances( 
@@ -118,9 +117,20 @@ def ec2start_taged_instance(num, tag):
         ec2tagInstance(i.id, tag) 
 
 @runs_once
+def ec2start222():
+    execute(ec2start_mixnode_instance, 2)
+    execute(ec2start_provider_instance, 2)
+    execute(ec2start_client_instance, 2)
+
+
+@runs_once
 #stoping and terminating instace
 def ec2stopAll():
-    instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    mix_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Mixnode"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
+    client_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Client"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
+    provider_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Provider"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
+
+    instances = list(mix_instances) + list(client_instances) + list(provider_instances)
     ids = [i.id for i in instances]
     try:
         ec2.instances.filter(InstanceIds=ids).stop()
@@ -136,8 +146,9 @@ def ec2stopInstance(ids):
     except Exception, e:
         print e
 
-@runs_once
+#@runs_once
 def ec2tagInstance(ids, tagname):
+    mytags = [{"Key":"Type", "Value":tagname}]
     ec2.create_tags(Resources=[ids], Tags=mytags)
     instances = ec2.instances.filter(InstanceIds=[ids])
     for instance in instances:
@@ -215,8 +226,21 @@ def kill_mixnode():
 @roles("clients")
 @parallel
 def start_client():
-    run("python run_client.py")
+    with cd("loopix/loopix"):
+        run("git pull")
+        run("twistd -y run_client.py")
+        pid = run("cat twistd.pid")
+        print "Run Client on %s with PID %s" % (env.host, pid)
 
+@roles("clients")
+@parallel
+def kill_client():
+    with cd("loopix/loopix"):
+        pid = run("cat twistd.pid", warn_only=True)
+        print "Kill %s with PID %s" % (env.host, pid)
+        run("kill `cat twistd.pid`", warn_only=True)
+
+        
 @roles("providers")
 @parallel
 def start_provider():
@@ -238,12 +262,13 @@ def kill_provider():
 def startAll():
     execute(start_mixnode)
     execute(start_provider)
+    execute(start_client)
 
 @runs_once
 def killAll():
     execute(kill_mixnode)
     execute(kill_provider)
-
+    execute(kill_client)
 
 @roles("boards")
 @parallel
