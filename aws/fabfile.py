@@ -395,7 +395,7 @@ def readFiles():
                     insertQuery = "INSERT INTO Users VALUES(?, ?, ?, ?, ?, ?)"
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3], 
                         sqlite3.Binary(petlib.pack.encode(lines[4])),
-                        None])
+                        lines[5]])
                 elif lines[0] == "mixnode":
                     insertQuery = "INSERT INTO Mixnodes VALUES(?, ?, ?, ?, ?)"
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3],
