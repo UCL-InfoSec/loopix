@@ -144,7 +144,7 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
-                print "host: ", xtoHost
+                print "host: ", xto
                 if (xtoHost, int(xtoPort)) in self.clientList:
                     self.saveInStorage(xtoHost, msg_forw)
                 else:
