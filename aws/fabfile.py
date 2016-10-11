@@ -48,7 +48,9 @@ def get_clients():
 @runs_once
 def get_providers():
     provider_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Provider"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
-    return ['ubuntu@' + i.public_dns_name for i in provider_instances]
+    nodes = ['ubuntu@' + i.public_dns_name for i in provider_instances]
+    print nodes
+    return nodes
 
 @runs_once
 def get_board():
@@ -311,6 +313,7 @@ def getProvidersNames():
     filedir = 'providersNames.bi2'
     with open(filedir, "rb") as infile:
         lines = petlib.pack.decode(infile.read())
+    print lines
     return lines
 
 @runs_once
@@ -330,7 +333,7 @@ def deployAll():
 def cleanAll():
     with cd('loopix'):
         with cd('loopix'):
-            run("rm *.bin example.db *.prv log.json", warn_only=True)
+            run("rm *.log* *.bin example.db *.prv log.json", warn_only=True)
 
 @roles("mixnodes")
 @parallel
