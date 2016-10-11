@@ -1,3 +1,7 @@
+current_path = os.getcwd()
+print "Current Path: %s" % current_path
+sys.path += [current_path]
+
 from mixnode import MixNode
 import format3
 from twisted.protocols import basic
@@ -9,10 +13,6 @@ import petlib.pack
 from binascii import hexlify
 import os.path
 import os
-
-current_path = os.getcwd()
-print "Current Path: %s" % current_path
-sys.path += [current_path]
 
 class MixnodeEcho(basic.LineReceiver):
 	from os import linesep as delimiter
