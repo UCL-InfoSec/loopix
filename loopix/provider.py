@@ -95,6 +95,7 @@ class Provider(MixNode):
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             #if (host, port) not in self.clientList:
             self.clientList.append((host, port))
+            print "Clients list: ", self.clientList
                 #print "Clients:self.clientList
 
     def do_PULL(self, (host, port)):
@@ -107,6 +108,7 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         def send_to_ip(IPAddrs):
+            print "Storage: ", self.storage
             if host in self.storage.keys():
                 if self.storage[host]:
                     for _ in range(self.MAX_RETRIEVE):
