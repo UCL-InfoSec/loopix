@@ -39,7 +39,7 @@ _, name, port, host, _ = petlib.pack.decode(file("publicProvider.bin", "rb").rea
 
 try:
  	provider = Provider(name, port, host, setup, privk=secret)
- 	provider.readInData('example.db')
+ 	#provider.readInData('example.db')
  	# stdio.StandardIO(ProviderEcho(provider))
 
  	udp_server = internet.UDPServer(port, provider)

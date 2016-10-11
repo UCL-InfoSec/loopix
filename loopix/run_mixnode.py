@@ -48,7 +48,7 @@ try:
 
 	# Create the mix
 	mix = MixNode(name, port, host, setup, privk=secret)
-	mix.readInData('example.db')
+	#mix.readInData('example.db')
 	print "Public key: " + hexlify(mix.pubk.export())
 	
 	udp_server = internet.UDPServer(port, mix)	
