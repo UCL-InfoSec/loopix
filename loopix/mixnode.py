@@ -135,7 +135,6 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Announced itself to the board." % self.name)
 
 	def datagramReceived(self, data, (host, port)):
-		print "[%s] > Received data" % self.name
 		log.info("[%s] > received data" % self.name)
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
@@ -148,15 +147,14 @@ class MixNode(DatagramProtocol):
 				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 			except Exception, e:
-				print "ERROR: ", str(e)
+				log.info("ERROR: ", str(e))
 		if data[:4] == "RINF":
-			print "> Network information received."
+			log.info("> Network information received.")
 			try:
 				self.do_RINF(data[4:])
 			except Exception, e:
-				print "ERROR: ", str(e)
+				log.info("ERROR: ", str(e))
 		if data.startswith("ACKN"):
-			print "[%s] > Acknowledgment received from (%s, %d)" % (self.name, host, port)
 			log.info("[%s] > Acknowledgment received from (%s, %d)" % (self.name, host, port))
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
@@ -219,7 +217,7 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 					log.info("[%s] > Message discarded by conditions." % self.name)
 				else:
-					print "[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, xtoHost)
+					log.info("[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, xtoHost))
 					self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
 
 	def do_RINF(self, data):
@@ -438,6 +436,7 @@ class MixNode(DatagramProtocol):
 				print "ERROR: ", str(e)
 				log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
 			else:
+				log.info("Mixes: %s" % str(mixes))
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1
@@ -546,7 +545,7 @@ class MixNode(DatagramProtocol):
 			mixnodes = c.fetchall()
 			for m in mixnodes:
 				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-			print "> Available mixnodes: ", self.mixList
+			log.info("> Available mixnodes: ", self.mixList)
 		except Exception, e:
 			log.error("[%s] > Error during reading from the database: %s" % (self.name, str(e)))
 
@@ -564,9 +563,8 @@ class MixNode(DatagramProtocol):
 			fetched = c.fetchall()
 			for p in fetched:
 				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
-			print "> Available providers: ", self.prvList
+			log.info("> Available providers: ", self.prvList)
 		except Exception, e:
-			print "Something went wrong %s" % str(e)
 			log.error("[%s] > Error during reading from the database: %s" % (self.name, str(e)))
 
 	def readInData(self, database):

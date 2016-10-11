@@ -50,6 +50,7 @@ class Provider(MixNode):
 
     def datagramReceived(self, data, (host, port)):
         print "[%s] > Received data" % self.name
+        log.info("[%s] > received data" % self.name)
         if data == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
