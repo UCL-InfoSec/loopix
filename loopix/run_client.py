@@ -61,9 +61,6 @@ if __name__ == "__main__":
 	 	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
 	 	
 		reactor.listenUDP(port, client)
-
-		client.readInUsersPubs()
-		client.readInData("example.db")
 		reactor.run()
 
 	except Exception, e:

@@ -47,8 +47,7 @@ class Client(DatagramProtocol):
 
         # Provider information
         self.providerId = providerId
-        self.provider = self.takeProvidersData("example.db", self.providerId)
-
+        
         # Setup value
         self.G, self.o, self.g, self.o_bytes = setup
         self.setup = setup
@@ -94,12 +93,27 @@ class Client(DatagramProtocol):
         self.tagForTesting = False
         self.bytesSent = 0
 
+
     def startProtocol(self):
+
+        self.provider = self.takeProvidersData("example.db", self.providerId)
+        self.readInUsersPubs()
+        self.readInData("example.db")
+        self.sendPing()
+
         print "[%s] > Start Protocol" % self.name
         log.info("[%s] > Start Protocol" % self.name)
         print "Provider: ", self.provider
 
         #self.saveInDatabase('example.db')
+
+    def sendPing(self):
+
+        def send_to_ip(IPAddr):
+            print "PING sent to %s" % IPAddr
+            self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
+
+        reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
@@ -135,6 +149,7 @@ class Client(DatagramProtocol):
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
 
+        print "Pulled messages."
         lc = task.LoopingCall(self.pullMessages)
         lc.start(TIME_PULL)
         log.info("[%s] > turned on messaging." % self.name)
@@ -148,7 +163,7 @@ class Client(DatagramProtocol):
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        self.turnOnFakeMessaging()
+        # self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -232,6 +247,8 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
+        print "Received: ", data
+
         if data[:4] == "EMPT":
             print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
         if data[:4] == "RINF":
@@ -581,13 +598,9 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Users")
             users = c.fetchall()
             for u in users:
-                print "User", u
                 p = self.takeProvidersData("example.db", u[5])
-                print "Provider:", p
                 if not self.name == u[1]:
-                    #usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]),
-                    #                format3.Mix(p[0], p[1], p[2], p[3])))
-                    pass
+                    usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
             db.close()
             return usersList
         except Exception, e:
@@ -622,7 +635,7 @@ class Client(DatagramProtocol):
             #    for p in providersData:
             #        providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4]))) 
             #    return random.choice(providersList)
-            #self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
+            # self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
             #print "Provider taken."
         
         except Exception, e:
@@ -656,6 +669,7 @@ class Client(DatagramProtocol):
         #self.takeProvidersData(databaseName, self.providerId)
         self.takeMixnodesData('example.db')
         self.turnOnMessagePulling()
+        self.turnOnMessaging(self.mixnet)
 
     def measureSentBytes(self):
         lc = task.LoopingCall(self.sentBytes)
