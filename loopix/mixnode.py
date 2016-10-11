@@ -473,12 +473,11 @@ class MixNode(DatagramProtocol):
 		"""
 		if len(mixnet) > length:
 			randomPath = random.sample(mixnet, length)
-			randomPath.insert(length, random.choice(self.prvList))
-			return randomPath
 		else:
-			mixnet = mixnet + []
-			random.shuffle(mixnet)
-			return mixnet #TO DO: better and more secure
+			randomPath = mixnet + []
+			random.shuffle(randomPath) #TO DO: better and more secure
+		randomPath.insert(length, random.choice(self.prvList))
+		return randomPath
 
 	def printMixData(self):
 		"""Function prints the keypair information of a mixnode."""
