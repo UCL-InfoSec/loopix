@@ -107,6 +107,7 @@ class Client(DatagramProtocol):
 
         #self.saveInDatabase('example.db')
 
+
     def sendPing(self):
 
         def send_to_ip(IPAddr):
@@ -247,8 +248,6 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
-        #print "Received: ", data
-
         if data[:4] == "EMPT":
             print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
         if data[:4] == "RINF":
@@ -267,6 +266,7 @@ class Client(DatagramProtocol):
                 print "[%s] > Message reading error: %s" % (self.name, str(e))
                 log.error("[%s] > Message reading error: %s" % (self.name, str(e)))
         if data == "NOMSG":
+            print "[%s] > Received NOMSG." % self.name
             log.info("[%s] > no new messages for this client." % self.name)
 
     def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
