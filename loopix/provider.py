@@ -107,11 +107,11 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         def send_to_ip(IPAddrs):
-            if port in self.storage.keys():
-                if self.storage[port]:
+            if host in self.storage.keys():
+                if self.storage[host]:
                     for _ in range(self.MAX_RETRIEVE):
-                        if self.storage[port]:
-                            message = self.storage[port].pop(0)
+                        if self.storage[host]:
+                            message = self.storage[host].pop(0)
                             self.transport.write("PMSG" + message, (IPAddrs, port))
                             print "[%s] > Message fetched for user (%s, %d)." % (self.name, host, port)
                             log.info("[%s] > Message fetched for user (%s, %d)." % (self.name, host, port))
@@ -143,7 +143,7 @@ class Provider(MixNode):
             if peeledData:
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
                 if (xtoHost, int(xtoPort)) in self.clientList:
-                    self.saveInStorage(xtoPort, msg_forw)
+                    self.saveInStorage(xtoHost, msg_forw)
                 else:
                     self.addToQueue(
                         ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort), idt), delay)
