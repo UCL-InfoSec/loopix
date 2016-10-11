@@ -476,7 +476,7 @@ class MixNode(DatagramProtocol):
 			randomPath.insert(length, random.choice(self.prvList))
 			return randomPath
 		else:
-			return mixnet
+			return random.shuffle(mixnet) #TO DO: better and more secure
 
 	def printMixData(self):
 		"""Function prints the keypair information of a mixnode."""
