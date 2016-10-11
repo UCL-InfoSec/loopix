@@ -119,7 +119,7 @@ class Provider(MixNode):
                     self.transport.write("NOMSG", (IPAddrs, port))
 
             else:
-                self.transport.write("NOMSG", (IPAddrs, port))
+                self.transport.write("NOASG", (IPAddrs, port))
 
         reactor.resolve(host).addCallback(send_to_ip)
 

@@ -269,6 +269,8 @@ class Client(DatagramProtocol):
         if data == "NOMSG":
             print "[%s] > Received NOMSG." % self.name
             log.info("[%s] > no new messages for this client." % self.name)
+        if data == "NOASG":
+            print "[%s] > Received NOASG." % self.name
 
     def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
         """ Function returns an encapsulated message,
