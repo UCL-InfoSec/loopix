@@ -36,7 +36,9 @@ def get_ec2_instance(ids):
 @runs_once
 def get_mixnodes():
     mix_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Mixnode"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
-    return ['ubuntu@' + i.public_dns_name for i in mix_instances]
+    nodes =  ['ubuntu@' + i.public_dns_name for i in mix_instances]
+    print nodes
+    return nodes
 
 @runs_once
 def get_clients():

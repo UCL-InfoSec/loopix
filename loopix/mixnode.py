@@ -121,13 +121,15 @@ class MixNode(DatagramProtocol):
 			Args:
 			rqs (str): the rqs shortcut which should be send.
 		"""
-		self.transport.write(rqs, (self.boardHost, self.boardPort))
+		IPaddrs = reactor.resolve(self.boardHost)
+		self.transport.write(rqs, (IPaddrs, self.boardPort))
 
 	def announce(self):
 		""" Mixnode annouces its presence in the network to the bulletin board.
 		"""
 		resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
-		self.transport.write(resp, (self.boardHost, self.boardPort))
+		IPaddrs = reactor.resolve(self.boardHost)
+		self.transport.write(resp, (IPaddrs, self.boardPort))
 		log.info("[%s] > Announced itself to the board." % self.name)
 
 	def datagramReceived(self, data, (host, port)):
@@ -407,7 +409,8 @@ class MixNode(DatagramProtocol):
 			host (str): host of the destination,
 			port (int): port of the destination.
 		"""
-		self.transport.write(data, (host, port))
+		IPaddrs = reactor.resolve(host)
+		self.transport.write(data, (IPaddrs, port))
 		self.bytesSent += sys.getsizeof(data)
 		if data[:4] == "ROUT":
 			self.goodbytesSent += sys.getsizeof(data)
