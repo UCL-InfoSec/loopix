@@ -136,7 +136,8 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Announced itself to the board." % self.name)
 
 	def datagramReceived(self, data, (host, port)):
-		log.info("[%s] > received data" % self.name)
+		print "[%s] > received data from %s" % (self.name, host)
+		log.info("[%s] > received data from %s" % (self.name, host))
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
