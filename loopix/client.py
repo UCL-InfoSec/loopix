@@ -47,7 +47,7 @@ class Client(DatagramProtocol):
 
         # Provider information
         self.providerId = providerId
-        self.provider = None
+        self.provider = self.takeProvidersData("example.db", self.providerId)
 
         # Setup value
         self.G, self.o, self.g, self.o_bytes = setup
@@ -97,6 +97,8 @@ class Client(DatagramProtocol):
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
         log.info("[%s] > Start Protocol" % self.name)
+        print "Provider: ", self.provider
+
         #self.saveInDatabase('example.db')
 
     def stopProtocol(self):
@@ -597,17 +599,20 @@ class Client(DatagramProtocol):
             db = sqlite3.connect(database)
             c = db.cursor()
             if providerId:
-                c.execute("SELECT * FROM %s WHERE id=%d" % ("Providers", providerId))
+                c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
+                fetchData = c.fetchall()
+                pData = fetchData.pop()
+                return format3.Mix(str(pData[1]), pData[2], str(pData[3]), pData[4])
             else:
                 c.execute("SELECT * FROM %s ORDER BY RANDOM() LIMIT 1" % ("Providers"))
-            providersData = c.fetchall()
-            providersList = []
-            for p in providersData:
-                providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+                providersData = c.fetchall()
+                providersList = []
+                for p in providersData:
+                    providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+                return random.choice(providersList)
+            #self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
+            #print "Provider taken."
             db.close()
-            self.provider = random.choice(providersList)
-            self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
-            print "Provider taken."
         except Exception, e:
             print str(e)
             log.error(str(e))
