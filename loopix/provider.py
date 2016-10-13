@@ -144,12 +144,13 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
-                print "Host to save: ", xtoHost
-                if (xtoHost, int(xtoPort)) in self.clientList:
-                    self.saveInStorage(xtoHost, msg_forw)
-                else:
-                    self.addToQueue(
-                        ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort), idt), delay)
+                def save_or_queue(IDAddrs):    
+                    if (IDAddrs, int(xtoPort)) in self.clientList:
+                        self.saveInStorage(IDAddrs, msg_forw)
+                    else:
+                        self.addToQueue(
+                            ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IDAddrs, xtoPort), idt), delay)
+                reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
