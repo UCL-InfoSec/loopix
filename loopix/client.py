@@ -95,18 +95,15 @@ class Client(DatagramProtocol):
 
 
     def startProtocol(self):
-
-        self.provider = self.takeProvidersData("example.db", self.providerId)
-        self.readInUsersPubs()
-        self.readInData("example.db")
-        self.sendPing()
-
+        
         print "[%s] > Start Protocol" % self.name
         log.info("[%s] > Start Protocol" % self.name)
+        
+        self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
-        #self.saveInDatabase('example.db')
-
+        self.readInData("example.db")
+        self.sendPing()
 
     def sendPing(self):
 
@@ -665,11 +662,12 @@ class Client(DatagramProtocol):
             print str(e)
             log.error(str(e))
 
-    def readInUsersPubs(self):
-        self.usersPubs = self.takeAllUsersFromDB('example.db')
+    def readInUsersPubs(self, databaseName):
+        self.usersPubs = self.takeAllUsersFromDB(databaseName)
 
     def readInData(self, databaseName):
         print "[%s] > Read in data" % self.name
+        self.readInUsersPubs(databaseName)
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
         self.turnOnMessaging(self.mixnet)
