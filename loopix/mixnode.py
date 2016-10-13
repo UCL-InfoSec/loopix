@@ -362,6 +362,7 @@ class MixNode(DatagramProtocol):
 		print "> Errback of mix Reliable UDP took care of ", failure
 
 	def measureBandwidth(self):
+		print "Measure bandwidth function called"
 		lc = task.LoopingCall(self.InputOutputRatio)
 		lc.start(60)
 
