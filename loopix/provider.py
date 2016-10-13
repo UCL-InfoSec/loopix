@@ -163,9 +163,9 @@ class Provider(MixNode):
         log.info("[%s] > Saved message for User %s in storage" % (self.name, key))
 
     def subscribeClient(self, host, port):
-        if (host, port) not in self.clientList:
-            self.clientList.append((host, port))
-            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList))
+        #if (host, port) not in self.clientList:
+        self.clientList.append((host, port))
+        print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList))
 
 
     def sendInfoMixnet(self, host, port):
