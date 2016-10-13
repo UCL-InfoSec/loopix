@@ -93,10 +93,7 @@ class Provider(MixNode):
         if data[:4] == "PING":
             print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
-            #if (host, port) not in self.clientList:
-            self.clientList.append((host, port))
-            print "Clients list: ", self.clientList
-                #print "Clients:self.clientList
+            self.subscribeClient(host, port)
 
     def do_PULL(self, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -108,7 +105,6 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         def send_to_ip(IPAddrs):
-            print "Storage: ", self.storage
             if host in self.storage.keys():
                 if self.storage[host]:
                     for _ in range(self.MAX_RETRIEVE):
@@ -159,13 +155,18 @@ class Provider(MixNode):
                 key (int): clients key,
                 value (str): message (encrypted) stored for the client.
         """
-        print "Key to save in storage: ", key
         if key not in self.storage.keys():
             self.storage[key] = [petlib.pack.encode((value, time.time()))]
         else:
             self.storage[key].append(petlib.pack.encode((value, time.time())))
         print "[%s] > Saved message for User %s in storage" % (self.name, key)
         log.info("[%s] > Saved message for User %s in storage" % (self.name, key))
+
+    def subscribeClient(self, host, port):
+        if (host, port) not in self.clientList:
+            self.clientList.append((host, port))
+            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList))
+
 
     def sendInfoMixnet(self, host, port):
         """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
