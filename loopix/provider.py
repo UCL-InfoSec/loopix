@@ -144,7 +144,7 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
-                print "host: ", xto
+                print "Host to save: ", xtoHost
                 if (xtoHost, int(xtoPort)) in self.clientList:
                     self.saveInStorage(xtoHost, msg_forw)
                 else:
@@ -158,6 +158,7 @@ class Provider(MixNode):
                 key (int): clients key,
                 value (str): message (encrypted) stored for the client.
         """
+        print "Key to save in storage: ", key
         if key not in self.storage.keys():
             self.storage[key] = [petlib.pack.encode((value, time.time()))]
         else:
