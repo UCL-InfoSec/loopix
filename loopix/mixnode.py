@@ -366,6 +366,7 @@ class MixNode(DatagramProtocol):
 		lc.start(60)
 
 	def InputOutputRatio(self):
+		print "IN-OUT RATIO"
 		processed = self.bytesPostProcess
 		self.bytesPostProcess = 0
 		receivedBytes = self.bytesReceived
