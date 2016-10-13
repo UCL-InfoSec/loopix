@@ -90,9 +90,9 @@ class MixNode(DatagramProtocol):
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 		self.run()
+		self.measureBandwidth()
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
-		#self.saveInDatabase('example.db')
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
@@ -124,8 +124,9 @@ class MixNode(DatagramProtocol):
 			Args:
 			rqs (str): the rqs shortcut which should be send.
 		"""
-		IPaddrs = reactor.resolve(self.boardHost)
-		self.transport.write(rqs, (IPaddrs, self.boardPort))
+		def send_to_ip(IPAddrs):
+			self.transport.write(rqs, (IPaddrs, self.boardPort))
+		reactor.resolve(self.boardHost).addCallback(send_to_ip)
 
 	def announce(self):
 		""" Mixnode annouces its presence in the network to the bulletin board.
@@ -362,7 +363,7 @@ class MixNode(DatagramProtocol):
 
 	def measureBandwidth(self):
 		lc = task.LoopingCall(self.InputOutputRatio)
-		lc.start(10)
+		lc.start(60)
 
 	def InputOutputRatio(self):
 		processed = self.bytesPostProcess
