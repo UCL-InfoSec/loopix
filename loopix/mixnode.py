@@ -364,27 +364,22 @@ class MixNode(DatagramProtocol):
 	def measureBandwidth(self):
 		print "Measure bandwidth function called"
 		lc = task.LoopingCall(self.in_out_ratio)
-		lc.start(60)
+		lc.start(10, False)
 
 	def in_out_ratio(self):
 		print "IN-OUT RATIO"
 		processed = self.bytesPostProcess
 		self.bytesPostProcess = 0
 		print "Bytes processed: ", processed
-
-	def InputOutputRatio(self):
-		print "IN-OUT RATIO"
-		processed = self.bytesPostProcess
-		self.bytesPostProcess = 0
-		receivedBytes = self.bytesReceived
-		self.bytesReceived = 0
-		with open('performance/%sbytesReceived.txt' % self.name, 'a') as outFile:
-			outFile.write(str(float(receivedBytes))+'\n')
-		with open('performance/%sbandwidth.txt' % self.name, 'a') as outFile:
-			outFile.write(str(float(processed))+'\n')
-		self.bytesSent = 0
-		self.goodbytesReceived = 0
-		self.goodbytesSent = 0
+		# receivedBytes = self.bytesReceived
+		# self.bytesReceived = 0
+		# with open('performance/%sbytesReceived.txt' % self.name, 'a') as outFile:
+		# 	outFile.write(str(float(receivedBytes))+'\n')
+		# with open('performance/%sbandwidth.txt' % self.name, 'a') as outFile:
+		# 	outFile.write(str(float(processed))+'\n')
+		# self.bytesSent = 0
+		# self.goodbytesReceived = 0
+		# self.goodbytesSent = 0
 
 	def queueSize(self):
 		size = 0
@@ -408,6 +403,7 @@ class MixNode(DatagramProtocol):
 					self.sendMessage(element[0], element[1])
 					self.expectedACK.append("ACKN"+element[2])
 					log.info("[%s] > Message send forward." % self.name)
+					print "[%s] > Message send forward." % self.name
 				heapq.heappop(self.Queue)
 				if self.Queue:
 					timeToSend, element = self.Queue[0]
