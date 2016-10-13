@@ -24,7 +24,7 @@ class Provider(MixNode):
         """ A class representing a provider. """
         MixNode.__init__(self, name, port, host, setup, privk, pubk)
 
-        self.clientList = []
+        self.clientList = {}
         self.usersPubs = []
         self.storage = {}
         self.replyBlocks = {}
@@ -93,7 +93,7 @@ class Provider(MixNode):
         if data[:4] == "PING":
             print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
-            self.subscribeClient(host, port)
+            self.subscribeClient(data[4:], host, port)
 
     def do_PULL(self, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -141,7 +141,7 @@ class Provider(MixNode):
             if peeledData:
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
                 def save_or_queue(IDAddrs):    
-                    if (IDAddrs, int(xtoPort)) in self.clientList:
+                    if (IDAddrs, int(xtoPort)) in self.clientList.values():
                         self.saveInStorage(IDAddrs, msg_forw)
                     else:
                         self.addToQueue(
@@ -162,13 +162,14 @@ class Provider(MixNode):
         print "[%s] > Saved message for User %s in storage" % (self.name, key)
         log.info("[%s] > Saved message for User %s in storage" % (self.name, key))
 
-    def subscribeClient(self, host, port):
-        if (host, port) not in self.clientList:
-            self.clientList.append((host, port))
-            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList))
+    def subscribeClient(self, name, host, port):
+        if name not in self.clientList.keys():
+            self.clientList[name] = (host, port)
+        #if (host, port) not in self.clientList:
+            #self.clientList.append((host, port))
+            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
         else:
             print "Client already subscribed"
-
 
     def sendInfoMixnet(self, host, port):
         """ Function forwards the public information about the mixnodes and users in the system to the requesting address.

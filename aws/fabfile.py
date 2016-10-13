@@ -277,17 +277,6 @@ def start_board():
 
 
 # ---------------------------------------------SETUP-AND-DEPLOY---------------------------------------
-# putting file from the remote directory
-def uploaddir():
-    #put - Upload one or more files to a remote host. put(argv, kwargs) - put files from argv to kwargs
-    #put will honor cd, so relative values in remote_path will be prepended by the current remote working directory, if applicable.
-    with cd('path'):
-        put('directory_local', 'directory_remote')
-
-def uploaddata():
-    with cd('path'):
-        get('directory_local', 'directory_remote')
-
 # getting file from the remote directory
 @roles("mixnodes", "clients", "providers")
 @parallel
