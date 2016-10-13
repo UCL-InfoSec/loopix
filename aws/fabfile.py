@@ -347,7 +347,6 @@ def deployAll():
     execute(deployMixnode)
     execute(deployProvider)
     execute(storeProvidersNames)
-    # HERE: Python function that reads & stores provider names to local file
     execute(deployClient)
     execute(readFiles)
     execute(loaddir)
