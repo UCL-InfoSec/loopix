@@ -360,15 +360,13 @@ def deployMixnode():
 @roles("clients")
 @parallel
 def deployClient():
-    # HERE: read provider names from local file    
     with cd("loopix"):
         run("git pull")
         N = hexlify(os.urandom(8))
         providers = getProvidersNames()
         prvName = random.choice(providers)
         with cd('loopix'):
-            # HERE: Change setup_client to accept a provider name.
-            run("python setup_client.py 9999 %s Client%s %s" % (str(env.host),N, prvName))
+            run("python setup_client.py 9999 %s Client%s %s" % (str(env.host), N, prvName))
             get('publicClient.bin', 'publicClient-%s.bin'%env.host)
 
 @roles("providers")
