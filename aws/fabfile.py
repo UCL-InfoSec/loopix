@@ -427,7 +427,6 @@ def readFiles():
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3],
                         sqlite3.Binary(petlib.pack.encode(lines[4]))])
                 else:
-                    print "Found: %s" % lines[0]
                     assert False
     db.commit()
 
@@ -439,10 +438,8 @@ def getPerformance():
         if f.startswith("performance"):
             with open(f, 'rb') as infile:
                 lines = infile.readlines()
-            print type(lines)
-            print len(lines)
-            #for l in lines:
-                #print petlib.pack.decode(l[:-1])
+            for l in lines:
+                print petlib.pack.decode(l[:-1])
 
 
 
