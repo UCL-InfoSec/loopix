@@ -433,6 +433,8 @@ def readFiles():
 @roles("mixnodes")
 @parallel
 def getPerformance():
+    with settings(warn_only=True):
+        local("rm -f *.bi2")
     get('loopix/loopix/performance.bi2', 'performance-%s.bi2'%env.host)
 
 def readPerformance():
