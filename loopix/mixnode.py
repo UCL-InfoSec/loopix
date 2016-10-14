@@ -365,12 +365,13 @@ class MixNode(DatagramProtocol):
 		lc.start(10, False)
 
 	def in_out_ratio(self):
+		print "in_out_ratio"
 		processed = self.bProcessed
 		self.bProcessed = 0
 		received = self.bReceived
 		self.bReceived = 0
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
-		with open('performance/%s_performance.bin', 'ab') as outfile:
+		with open('./performance/%s_performance.txt', 'ab') as outfile:
 			outfile.write(petlib.pack.encode([received, processed]))
 		# with open('performance/%sbReceived.txt' % self.name, 'a') as outFile:
 		# 	outFile.write(str(float(receivedBytes))+'\n')
