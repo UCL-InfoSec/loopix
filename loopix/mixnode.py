@@ -66,11 +66,11 @@ class MixNode(DatagramProtocol):
 
 		self.savedElements = []
 
-		self.bytesSent = 0
-		self.bytesReceived = 0
-		self.bytesPostProcess = 0
-		self.goodbytesSent = 0
-		self.goodbytesReceived = 0
+		self.bSent = 0
+		self.bReceived = 0
+		self.bProcessed = 0
+		self.gbSent = 0
+		self.gbReceived = 0
 
 		self.PATH_LENGTH = 3
 		self._MEASURING = False
@@ -142,10 +142,8 @@ class MixNode(DatagramProtocol):
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
-			self.bytesReceived += sys.getsizeof(data[4:])
+			self.bReceived += sys.getsizeof(data[4:])
 			try:
-				self.GPmessages += 1
-				self.goodbytesReceived += sys.getsizeof(data)
 				idt, msgData = petlib.pack.decode(data[4:])
 				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
@@ -367,19 +365,17 @@ class MixNode(DatagramProtocol):
 		lc.start(10, False)
 
 	def in_out_ratio(self):
-		print "IN-OUT RATIO"
-		processed = self.bytesPostProcess
-		self.bytesPostProcess = 0
-		print "Bytes processed: ", processed
-		# receivedBytes = self.bytesReceived
-		# self.bytesReceived = 0
-		# with open('performance/%sbytesReceived.txt' % self.name, 'a') as outFile:
+		processed = self.bProcessed
+		self.bProcessed = 0
+		received = self.bReceived
+		self.bReceived = 0
+		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
+		with open('performance/%s_performance.bin', 'ab') as outfile:
+			outfile.write(petlib.pack.encode([received, processed]))
+		# with open('performance/%sbReceived.txt' % self.name, 'a') as outFile:
 		# 	outFile.write(str(float(receivedBytes))+'\n')
-		# with open('performance/%sbandwidth.txt' % self.name, 'a') as outFile:
-		# 	outFile.write(str(float(processed))+'\n')
-		# self.bytesSent = 0
-		# self.goodbytesReceived = 0
-		# self.goodbytesSent = 0
+		#with open('performance/%sbandwidth.txt' % self.name, 'a') as outFile:
+		# 	outFile.write(str(float(processed))+'\n')0
 
 	def queueSize(self):
 		size = 0
@@ -419,9 +415,9 @@ class MixNode(DatagramProtocol):
 		
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.bytesSent += sys.getsizeof(data)
+			self.bSent += sys.getsizeof(data)
 			if data[:4] == "ROUT":
-				self.goodbytesSent += sys.getsizeof(data)
+				self.gbSent += sys.getsizeof(data)
 
 		# Resolve and call the send function
 		reactor.resolve(host).addCallback(send_to_ip)
@@ -495,7 +491,7 @@ class MixNode(DatagramProtocol):
 			data (str): packet data.
 		"""
 		heapq.heappush(self.Queue, (delay, data))
-		self.bytesPostProcess += sys.getsizeof(data[0][4:])
+		self.bProcessed += sys.getsizeof(data[0][4:])
 
 	def ackListener(self):
 		""" Function checks if mixnode received the acknowledgments for the sent packets. """
