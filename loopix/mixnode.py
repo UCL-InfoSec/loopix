@@ -371,8 +371,11 @@ class MixNode(DatagramProtocol):
 		received = self.bReceived
 		self.bReceived = 0
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
-		with open('./performance/%s_performance.txt', 'ab') as outfile:
-			outfile.write(petlib.pack.encode([received, processed]))
+		#try:
+		#	with open('./performance/%s_performance.txt', 'ab') as outfile:
+		#		outfile.write(petlib.pack.encode([received, processed]))
+		#except Exception, e:
+		#	print "Error: ", str(e)
 		# with open('performance/%sbReceived.txt' % self.name, 'a') as outFile:
 		# 	outFile.write(str(float(receivedBytes))+'\n')
 		#with open('performance/%sbandwidth.txt' % self.name, 'a') as outFile:
