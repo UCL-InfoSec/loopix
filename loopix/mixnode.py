@@ -372,7 +372,7 @@ class MixNode(DatagramProtocol):
 		self.bReceived = 0
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
 		try:
-			file('performance.txt', 'ab').write(petlib.pack.encode([received, processed]))
+			file('performance.txt', 'ab').write(petlib.pack.encode([received, processed]+"\n"))
 		except Exception, e:
 			print str(e)
 
