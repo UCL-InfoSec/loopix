@@ -375,15 +375,6 @@ class MixNode(DatagramProtocol):
 			file('performance.txt', 'ab').write(petlib.pack.encode([received, processed]))
 		except Exception, e:
 			print str(e)
-		#try:
-		#	with open('./performance/%s_performance.txt', 'ab') as outfile:
-		#		outfile.write(petlib.pack.encode([received, processed]))
-		#except Exception, e:
-		#	print "Error: ", str(e)
-		# with open('performance/%sbReceived.txt' % self.name, 'a') as outFile:
-		# 	outFile.write(str(float(receivedBytes))+'\n')
-		#with open('performance/%sbandwidth.txt' % self.name, 'a') as outFile:
-		# 	outFile.write(str(float(processed))+'\n')0
 
 	def queueSize(self):
 		size = 0

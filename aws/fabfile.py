@@ -431,6 +431,16 @@ def readFiles():
                     assert False
     db.commit()
 
+@roles("mixnodes")
+@parallel
+def getPerfomance():
+    get('loopix/loopix/performance.txt', 'performance-%s.bin'%env.host)
+    for f in os.listdir('.'):
+        if f.startswith("performance"):
+            with open(f, 'rb') as infile:
+                lines = infile.read()
+            print lines
+
 
 
 
