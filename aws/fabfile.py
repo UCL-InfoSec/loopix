@@ -433,13 +433,19 @@ def readFiles():
 @roles("mixnodes")
 @parallel
 def getPerformance():
-    get('loopix/loopix/performance.txt', 'performance-%s.txt'%env.host)
+    get('loopix/loopix/performance.bi2', 'performance-%s.bi2'%env.host)
+
+def readPerformance():
     for f in os.listdir('.'):
         if f.startswith("performance"):
             with open(f, 'rb') as infile:
                 lines = infile.readlines()
-            for l in lines:
-                print petlib.pack.decode(l[:-1])
+            for i, l in enumerate(lines):
+                #print "Line nr : ", str(i)
+                try:
+                    print petlib.pack.decode(l[:-1])
+                except Exception, e:
+                    print str(e)
 
 
 
