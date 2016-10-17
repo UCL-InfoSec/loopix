@@ -1,4 +1,3 @@
-from mixnode import MixNode
 import format3
 from twisted.protocols import basic
 from twisted.internet import stdio, reactor

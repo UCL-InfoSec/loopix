@@ -73,9 +73,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (1, None)
-        self.EXP_PARAMS_LOOPS = (1, None)
-        self.EXP_PARAMS_COVER = (1, None)
+        self.EXP_PARAMS_PAYLOAD = (10, None)
+        self.EXP_PARAMS_LOOPS = (10, None)
+        self.EXP_PARAMS_COVER = (10, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -267,7 +267,7 @@ class Client(DatagramProtocol):
             print "[%s] > Received NOMSG." % self.name
             log.info("[%s] > no new messages for this client." % self.name)
         if data == "NOASG":
-            print "[%s] > Received NOASG." % self.name
+            print "[%s] > Received NOASG from %s" % (self.name, host)
 
     def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
         """ Function returns an encapsulated message,
