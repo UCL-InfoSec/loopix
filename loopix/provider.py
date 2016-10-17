@@ -80,7 +80,7 @@ class Provider(MixNode):
             log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
             try:
-                self.bytesReceived += sys.getsizeof(data[4:])
+                self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
                 self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
