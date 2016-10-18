@@ -52,10 +52,10 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         print "[%s] > received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
-        if data == "PULL_MSG":
+        if data[:8] == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
-            self.do_PULL((host, port))
+            self.do_PULL(data[8:], (host, port))
 
         if data[:4] == "RINF":
             print "[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port)
@@ -95,7 +95,7 @@ class Provider(MixNode):
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             self.subscribeClient(data[4:], host, port)
 
-    def do_PULL(self, (host, port)):
+    def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
         client belogs to this provider, next takes all the messages destinated to this client and sends a fixed number of 
         messages to the client.
@@ -105,17 +105,15 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         def send_to_ip(IPAddrs):
-            print "Client list: ", self.clientList
-            print "Host : ", host
-            print "STORAGE: ", self.storage
-            if host in self.storage.keys():
-                if self.storage[host]:
+            if name in self.storage.keys():
+            #if host in self.storage.keys():
+                if self.storage[name]:
                     for _ in range(self.MAX_RETRIEVE):
-                        if self.storage[host]:
-                            message = self.storage[host].pop(0)
+                        if self.storage[name]:
+                            message = self.storage[name].pop(0)
                             self.transport.write("PMSG" + message, (IPAddrs, port))
-                            print "[%s] > Message fetched for user (%s, %d)." % (self.name, host, port)
-                            log.info("[%s] > Message fetched for user (%s, %d)." % (self.name, host, port))
+                            print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
+                            log.info("[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port))
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
 
@@ -143,12 +141,11 @@ class Provider(MixNode):
         else:
             if peeledData:
                 print peeledData
-                (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
-                def save_or_queue(IPAddrs): 
-                    print xtoHost  
-                    print (IPAddrs, int(xtoPort)) 
-                    if (IPAddrs, int(xtoPort)) in self.clientList.values():
-                        self.saveInStorage(IPAddrs, msg_forw)
+                (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
+                def save_or_queue(IPAddrs):
+                    if xtoName in self.clientList.keys():
+                    #if (IPAddrs, int(xtoPort)) in self.clientList.values():
+                        self.saveInStorage(xtoName, msg_forw)
                     else:
                         self.addToQueue(
                             ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)

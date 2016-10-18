@@ -24,12 +24,11 @@ def testParticipants():
 
     provider_s = Provider("ClientProvider", 8000, "127.0.0.1", setup)
     provider_s.transport = proto_helpers.FakeDatagramTransport()
-    provider_s.clientList.append((sender.host, sender.port))
+    provider_s.clientList[sender.name] = (sender.host, sender.port)
 
     provider_r = Provider("ReceiverProvider", 9000, "134.0.0.1", setup)
     provider_r.transport = proto_helpers.FakeDatagramTransport()
 
-    assert sender.provider == None
     sender.provider = format3.Mix(provider_s.name, provider_s.port, provider_s.host, provider_s.pubk)
     
     mix1 = MixNode("M8001", 8001, "127.0.0.1", setup)
@@ -39,8 +38,7 @@ def testParticipants():
     mix2.transport = proto_helpers.FakeDatagramTransport()
 
     receiver = Client(setup, 'B', 9999, "127.0.0.1")
-    assert receiver.provider == None
-    provider_r.clientList.append((receiver.host, receiver.port))
+    provider_r.clientList[receiver.name] = (receiver.host, receiver.port)
 
     receiver.transport = proto_helpers.FakeDatagramTransport()
     receiver.provider = format3.Mix(provider_r.name, provider_r.port, provider_r.host, provider_r.pubk)
@@ -66,28 +64,28 @@ def testInitClient(testParticipants):
     assert sender.provider.host == provider_s.host
     assert sender.provider.pubk == provider_s.pubk
 
-def test_announce(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
-    sender.announce()
-    assert sender.transport.written[0] == ("UINF" + petlib.pack.encode([sender.name, sender.port, sender.host, sender.pubk, sender.provider]), (sender.boardHost, sender.boardPort))
+# def test_announce(testParticipants):
+#     setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+#     sender.announce()
+#     assert sender.transport.written[0] == ("UINF" + petlib.pack.encode([sender.name, sender.port, sender.host, sender.pubk, sender.provider]), (sender.boardHost, sender.boardPort))
 
 
-def test_pullMixnetInfo(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
-    sender.pullMixnetInformation(provider_s.port, provider_s.host)
-    assert sender.transport.written[0] == ("INFO", (provider_s.host, provider_s.port))
+# def test_pullMixnetInfo(testParticipants):
+#     setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+#     sender.pullMixnetInformation(provider_s.port, provider_s.host)
+#     assert sender.transport.written[0] == ("INFO", (provider_s.host, provider_s.port))
 
 
-def test_pullUsersInfo(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
-    sender.pullUserInformation(provider_s.port, provider_s.host)
-    assert sender.transport.written[0] == ("UREQ", (provider_s.host, provider_s.port))
+# def test_pullUsersInfo(testParticipants):
+#     setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+#     sender.pullUserInformation(provider_s.port, provider_s.host)
+#     assert sender.transport.written[0] == ("UREQ", (provider_s.host, provider_s.port))
 
 
 def test_pullMessages(testParticipants):
     setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
     sender.pullMessages()
-    assert sender.transport.written[0] == ("PULL_MSG", (provider_s.host, provider_s.port))
+    assert sender.transport.written[1] == ("PULL_MSG"+sender.name, (provider_s.host, provider_s.port))
 
 
 def test_checkBuffer(testParticipants):
@@ -145,7 +143,7 @@ def test_sendHeartBeat(testParticipants):
     assert packet[1] == (provider_s.host, provider_s.port)
 
     provider_s.datagramReceived(packet[0], packet[1])
-    assert len(provider_s.storage[sender.port]) == 1 
+    assert len(provider_s.storage[sender.name]) == 1 
 
     provider_s.datagramReceived("PULL_MSG", (sender.host, sender.port))
     cmsg, caddr = provider_s.transport.written[-1]
@@ -193,7 +191,7 @@ def test_readMessage(testParticipants):
     mix1.datagramReceived(packet[0], packet[1])
     time2, packet2 = mix1.Queue.pop()
     provider_r.datagramReceived(packet2[0], packet2[1])
-    msg, latency = petlib.pack.decode(provider_r.storage[receiver.port].pop())
+    msg, latency = petlib.pack.decode(provider_r.storage[receiver.name].pop())
     assert receiver.readMessage(msg, (provider_r.host, provider_r.port)).startswith("MSGFORW")
 
 
@@ -279,23 +277,23 @@ def test_sampleFromExponential():
     assert type(sampleFromExponential((10.0, None))) == float
 
 
-def test_checkMsg(testParticipants):
-    import os
-    import time
-    setup, client, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
-    mixes = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)]
-    randomNoise = os.urandom(1000)
-    heartMsg = "TAG" + randomNoise
-    readyToSentPacket, addr = client.makePacket(client, mixes, client.setup, 'HT'+heartMsg, 'HB'+heartMsg)
-    client.send("ROUT" + readyToSentPacket, addr)
-    testTime = time.time()
-    client.tagedHeartbeat.append((testTime, heartMsg))
+# def test_checkMsg(testParticipants):
+#     import os
+#     import time
+#     setup, client, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+#     mixes = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)]
+#     randomNoise = os.urandom(1000)
+#     heartMsg = "TAG" + randomNoise
+#     readyToSentPacket, addr = client.makePacket(client, mixes, client.setup, 'HT'+heartMsg, 'HB'+heartMsg)
+#     client.send("ROUT" + readyToSentPacket, addr)
+#     testTime = time.time()
+#     client.tagedHeartbeat.append((testTime, heartMsg))
 
-    packet, addr = client.transport.written[0]
-    idt, msg = petlib.pack.decode(packet[4:])
-    dest1, msg1, idt1, delay1 = provider_s.mix_operate(setup, msg)
-    dest2, msg2, idt2, delay2 = mix1.mix_operate(setup, msg1)
-    dest2, msg2, idt2, delay2 = provider_s.mix_operate(setup, msg2) 
-    plaintext = client.readMessage(msg2, (provider_s.host, provider_s.port))
-    client.checkMsg(plaintext, testTime)
+#     packet, addr = client.transport.written[0]
+#     idt, msg = petlib.pack.decode(packet[4:])
+#     dest1, msg1, idt1, delay1 = provider_s.mix_operate(setup, msg)
+#     dest2, msg2, idt2, delay2 = mix1.mix_operate(setup, msg1)
+#     dest2, msg2, idt2, delay2 = provider_s.mix_operate(setup, msg2) 
+#     plaintext = client.readMessage(msg2, (provider_s.host, provider_s.port))
+#     client.checkMsg(plaintext, testTime)
 

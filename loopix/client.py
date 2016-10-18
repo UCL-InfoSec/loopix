@@ -140,7 +140,7 @@ class Client(DatagramProtocol):
 
         def send_to_ip(IPAddrs):
             self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
-            self.transport.write("PULL_MSG", (IPAddrs, self.provider.port))
+            self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
             log.info("[%s] > pulled messages from the provider." % self.name)
             print "[%s] > Pulled messages from provider %s" % (self.name, str(IPAddrs))
 

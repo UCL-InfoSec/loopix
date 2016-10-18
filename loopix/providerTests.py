@@ -29,7 +29,7 @@ def testParticipants(testProvider):
 	provider_r = Provider("ClientProvider", 7999, "134.0.0.1", setup)
 	receiver = Client(setup, "receiver@mail.com", 7001, "173.0.0.1")
 	receiver.provider = format3.Mix(provider_r.name, provider_r.port, provider_r.host, provider_r.pubk)
-	provider_r.clientList.append((receiver.host, receiver.port))
+	provider_r.clientList[receiver.name] = (receiver.host, receiver.port)
 
 	mix = MixNode("M8001", 8001, "100.0.0.1", setup)
 	mixPub = format3.Mix(mix.name, mix.port, mix.host, mix.pubk)
@@ -59,29 +59,29 @@ def testProviderStart(testProvider):
 
 def test_do_PULL(testProvider):
 	setup, provider = testProvider
-	TH_1, TP_1 = ("127.0.0.1", 7000)
-	TH_2, TP_2 = ("134.0.0.1", 7001)
-	TH_3, TP_3 = ("169.1.1.1", 7002)
+	TN_1, TH_1, TP_1 = ('N1', "127.0.0.1", 7000)
+	TN_2, TH_2, TP_2 = ('N2', "134.0.0.1", 7001)
+	TN_3, TH_3, TP_3 = ('N3', "169.1.1.1", 7002)
 	
-	provider.storage[TP_2] = []
-	provider.storage[TP_3] = []
+	provider.storage[TN_2] = []
+	provider.storage[TN_3] = []
 
-	provider.do_PULL((TH_1, TP_1))
-	assert provider.transport.written[0] == ("NOMSG", (TH_1, TP_1))
+	provider.do_PULL(TN_1, (TH_1, TP_1))
+	assert provider.transport.written[0] == ("NOASG", (TH_1, TP_1))
 
-	provider.do_PULL((TH_2, TP_2))
+	provider.do_PULL(TN_2, (TH_2, TP_2))
 	assert provider.transport.written[1] == ("NOMSG", (TH_2, TP_2))
 	
 	provider.transport = proto_helpers.FakeDatagramTransport()
 	for i in range(provider.MAX_RETRIEVE+5):
-		provider.storage[TP_3].append(petlib.pack.encode("TestMessage%d"%i))
+		provider.storage[TN_3].append(petlib.pack.encode("TestMessage%d"%i))
 	
-	old_len = len(provider.storage[TP_3])	 
-	provider.do_PULL((TH_3, TP_3))
+	old_len = len(provider.storage[TN_3])	 
+	provider.do_PULL(TN_3, (TH_3, TP_3))
 	
 	for i, msg in enumerate(provider.transport.written):
 		assert msg, (TH_3, TP_3) == "PMSG" + petlib.pack.encode("TestMessage%d"%i)
-	assert len(provider.storage[TP_3]) == old_len-provider.MAX_RETRIEVE
+	assert len(provider.storage[TN_3]) == old_len-provider.MAX_RETRIEVE
 
 def testProviderRINFRequest(testProvider):
 	setup, provider = testProvider
@@ -124,7 +124,7 @@ def test_do_ROUT(testProvider, testMessage, testParticipants):
 	provider_r.seenElements = []
 	
 	provider_r.do_ROUT(peeledMsg, (mix.host, mix.port))
-	storedMsg, _ = petlib.pack.decode(provider_r.storage[receiver.port].pop()) 
+	storedMsg, _ = petlib.pack.decode(provider_r.storage[receiver.name].pop()) 
 	
 	assert storedMsg == expectedMsg
 

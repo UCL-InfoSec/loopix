@@ -125,16 +125,17 @@ class MixNode(DatagramProtocol):
 			rqs (str): the rqs shortcut which should be send.
 		"""
 		def send_to_ip(IPAddrs):
-			self.transport.write(rqs, (IPaddrs, self.boardPort))
+			self.transport.write(rqs, (IPAddrs, self.boardPort))
 		reactor.resolve(self.boardHost).addCallback(send_to_ip)
 
 	def announce(self):
 		""" Mixnode annouces its presence in the network to the bulletin board.
 		"""
 		resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
-		IPaddrs = reactor.resolve(self.boardHost)
-		self.transport.write(resp, (IPaddrs, self.boardPort))
-		log.info("[%s] > Announced itself to the board." % self.name)
+		def send_announce(IPAddr):
+			self.transport.write(resp, (IPAddr, self.boardPort))
+			print "[%s] > Announced itself to the board." % self.name
+		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
 		print "[%s] > received data from %s" % (self.name, host)
@@ -187,8 +188,9 @@ class MixNode(DatagramProtocol):
 			log.error("[%s] > Error during ROUT %s" % (self.name, str(e)))
 		else:
 			if peeledData:
-				(xtoPort, xtoHost), forw_msg, idt, delay = peeledData
-				if (xtoPort is None or xtoHost is None) and forw_msg is None:
+				(xtoPort, xtoHost, xtoName), forw_msg, idt, delay = peeledData
+				if (xtoName is None and xtoPort is None and xtoHost is None):
+				#if (xtoPort is None or xtoHost is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
 					log.info("[%s] > Message discarded by conditions." % self.name)
 				else:
@@ -213,8 +215,8 @@ class MixNode(DatagramProtocol):
 			log.error("[%s] > Error during BOUNCE %s" % (self.name, str(e)))
 		else:
 			if peeledData:
-				(xtoPort, xtoHost), back_msg, idt, delay = peeledData
-				if (xtoPort is None or xtoHost is None) and forw_msg is None:
+				(xtoPort, xtoHost, xtoName), back_msg, idt, delay = peeledData
+				if (xtoPort is None and xtoHost is None and xtoName is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
 					log.info("[%s] > Message discarded by conditions." % self.name)
 				else:

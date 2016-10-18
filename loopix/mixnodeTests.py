@@ -133,7 +133,7 @@ def testDo_BOUNCE(testSender, testProvider, testMixes, testMessage):
  	idt, msg = petlib.pack.decode(bounce_packet[0][4:])
  	xto_bnc, msg_bnc, idt_bnc, delay_bnc = testProvider.mix_operate(setup, msg)
  	
- 	assert xto_bnc == [testSender.port, testSender.host]
+ 	assert xto_bnc == [testSender.port, testSender.host, testSender.name]
  	assert testSender.readMessage(msg_bnc, (testProvider.host, testProvider.port)) == "BOUNCE_MSG"
 
 
