@@ -167,14 +167,12 @@ class Provider(MixNode):
         log.info("[%s] > Saved message for User %s in storage" % (self.name, key))
 
     def subscribeClient(self, name, host, port):
-        def subscribe_ip(IPAddrs):
-            if name not in self.clientList.keys():
-                self.clientList[name] = (IPAddrs, port)
-                print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
-            else:
-                self.clientList[name] = (IPAddrs, port)
-                print "[%s] > Client %s already subscribed to provider" % (self.name, name)
-        reactor.resolve(host).addCallback(subscribe_ip)
+        if name not in self.clientList.keys():
+            self.clientList[name] = (host, port)
+            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
+        else:
+            self.clientList[name] = (host, port)
+            print "[%s] > Client %s already subscribed to provider" % (self.name, name)
             
 
     def sendInfoMixnet(self, host, port):
