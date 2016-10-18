@@ -105,6 +105,7 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         def send_to_ip(IPAddrs):
+            print "Client list: ", self.clientList
             print "Host : ", host
             print "STORAGE: ", self.storage
             if host in self.storage.keys():
