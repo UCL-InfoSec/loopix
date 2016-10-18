@@ -143,7 +143,8 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
-                def save_or_queue(IDAddrs):    
+                def save_or_queue(IDAddrs):   
+                    print (IDAddrs, int(xtoPort)) 
                     if (IDAddrs, int(xtoPort)) in self.clientList.values():
                         self.saveInStorage(IDAddrs, msg_forw)
                     else:
