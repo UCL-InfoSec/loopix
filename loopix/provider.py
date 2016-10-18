@@ -94,6 +94,7 @@ class Provider(MixNode):
             print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             def do_SUBSCRIBE(IPAddr):
+                print "Host, Resolved: " % (host,IPAddr)
                 self.subscribeClient(data[4:], IPAddr, port)
             reactor.resolve(host).addCallback(do_SUBSCRIBE)
 
