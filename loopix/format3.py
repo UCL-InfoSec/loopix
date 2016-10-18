@@ -135,7 +135,6 @@ def create_mixpacket_format(sender, receiver, mixes, setup, dest_message='', ret
 	# Build the backward path
 	msgback = return_message
 	for j in range(len(mixes) + 1):
-		print all_data[j]
 		mix, bs, yelem, (mixfrom, mixto), (kforw, kback) = all_data[j]
 		the_bs = bs.mod_inverse(o)
 		delay_i = (delay[j] if delay else 0)
