@@ -142,6 +142,7 @@ class Provider(MixNode):
             log.info("[%s] > error during packet processing." % self.name)
         else:
             if peeledData:
+                print peeledData
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
                 def save_or_queue(IDAddrs):   
                     print (IDAddrs, int(xtoPort)) 
