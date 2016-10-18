@@ -93,10 +93,7 @@ class Provider(MixNode):
         if data[:4] == "PING":
             print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
-            def do_SUBSCRIBE(IPAddr):
-                print "Host, Resolved: %s, %s" % (host,IPAddr)
-                self.subscribeClient(data[4:], IPAddr, port)
-            reactor.resolve(host).addCallback(do_SUBSCRIBE)
+            self.subscribeClient(data[4:], host, port)
 
     def do_PULL(self, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -147,7 +144,8 @@ class Provider(MixNode):
             if peeledData:
                 print peeledData
                 (xtoPort, xtoHost), msg_forw, idt, delay = peeledData
-                def save_or_queue(IPAddrs):   
+                def save_or_queue(IPAddrs): 
+                    print xtoHost  
                     print (IPAddrs, int(xtoPort)) 
                     if (IPAddrs, int(xtoPort)) in self.clientList.values():
                         self.saveInStorage(IPAddrs, msg_forw)
