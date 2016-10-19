@@ -11,6 +11,7 @@ import sys
 import sqlite3
 import random
 from binascii import hexlify
+import csv
 
 ec2 = boto3.resource('ec2')
 
@@ -367,7 +368,8 @@ def deployClient():
         prvName = random.choice(providers)
         with cd('loopix'):
             run("python setup_client.py 9999 %s Client%s %s" % (str(env.host), N, prvName))
-            get('publicClient.bin', 'publicClient-%s.bin'%env.host)
+            get('publicClient.bin', 'publicClient-%s.bin'%env.host)            
+
 
 @roles("providers")
 @parallel
@@ -434,23 +436,20 @@ def readFiles():
 @parallel
 def getPerformance():
     with settings(warn_only=True):
-        local("rm -f *.bi2")
-    get('loopix/loopix/performance.bi2', 'performance-%s.bi2'%env.host)
+        local("rm -f *.csv")
+    get('loopix/loopix/performance.csv', 'performance-%s.csv'%env.host)
 
 def readPerformance():
     for f in os.listdir('.'):
         if f.startswith("performance"):
-            with open(f, 'rb') as infile:
-                lines = infile.readlines()
-            for i, l in enumerate(lines):
-                #print "Line nr : ", str(i)
-                try:
-                    print petlib.pack.decode(l[:-1])
-                except Exception, e:
-                    print str(e)
-
-
-
+            print "File : %s" % f
+            try:
+                with open(f, 'rb') as infile:
+                    csvR = csv.reader(infile)
+                    for row in csvR:
+                        print row
+            except Exception, e:
+                print str(e)
 
 
         
