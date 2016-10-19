@@ -19,6 +19,7 @@ import uuid
 import sqlite3
 import supportFunctions as sf
 import sys
+import csv
 
 from twisted.logger import jsonFileLogObserver, Logger
 
@@ -380,7 +381,11 @@ class MixNode(DatagramProtocol):
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
 		print "Good bytes: %d " % goodbytes
 		try:
-			file('performance.bi2', 'ab').write(petlib.pack.encode((received, processed, goodbytes))+"\n")
+			with open('performance.cvs', 'ab') as outfile:
+				csvW = csv.writer(outfile, delimiter=','):
+				data = [received, processed, goodbytes]
+				csvW.writerows(data)
+			#file('performance.cvs', 'ab').write(petlib.pack.encode((received, processed, goodbytes))+"\n")
 		except Exception, e:
 			print str(e)
 
@@ -601,3 +606,4 @@ class MixNode(DatagramProtocol):
 		output = enc.update(inputVal)
 		output += enc.finalize()
 		return output
+
