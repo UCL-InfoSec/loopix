@@ -8,12 +8,6 @@ from twisted.protocols import basic
 from twisted.internet import stdio
 import time
 
-def getProvidersNames():
-    filedir = 'providersNames.bi2'
-    with open(filedir, "rb") as infile:
-        lines = petlib.pack.decode(infile.read())
-    return lines
-
 class ClientEcho(basic.LineReceiver):
 	from os import linesep as delimiter
 	def __init__(self, client):
@@ -38,8 +32,6 @@ class ClientEcho(basic.LineReceiver):
 
 if __name__ == "__main__":
 
-	#print getProvidersNames()
-
 	if not (os.path.exists('secretClient.prv') and os.path.exists("publicClient.bin")):
 		raise Exception("Key parameter files not found")
 
@@ -55,7 +47,6 @@ if __name__ == "__main__":
 
 		if "--mock" not in sys.argv:
 			stdio.StandardIO(ClientEcho(client))
-			#reactor.listenUDP(port, client)
 			reactor.run()
 
 	except Exception, e :
