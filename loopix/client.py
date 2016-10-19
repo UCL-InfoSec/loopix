@@ -73,9 +73,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (10, None)
-        self.EXP_PARAMS_LOOPS = (10, None)
-        self.EXP_PARAMS_COVER = (10, None)
+        self.EXP_PARAMS_PAYLOAD = (20, None)
+        self.EXP_PARAMS_LOOPS = (20, None)
+        self.EXP_PARAMS_COVER = (20, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -305,7 +305,7 @@ class Client(DatagramProtocol):
             heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
             self.heartbeatsSent.append((heartMsg, '%.5f' % time.time()))
             if self.TESTMODE:
-                readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False, 'H')
+                readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False, typeFlag='H')
             else:
                 readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False)
             return (readyToSentPacket, addr)
@@ -352,7 +352,7 @@ class Client(DatagramProtocol):
             randomMessage = sf.generateRandomNoise(NOISE_LENGTH)
             randomBounce = sf.generateRandomNoise(NOISE_LENGTH)
             if self.TESTMODE:
-                readyToSentPacket, addr = self.makePacket(randomReceiver, mixes, self.setup, randomMessage, randomBounce, True, 'D')
+                readyToSentPacket, addr = self.makePacket(randomReceiver, mixes, self.setup, randomMessage, randomBounce, True, typeFlag='D')
             else:
                 readyToSentPacket, addr = self.makePacket(randomReceiver, mixes, self.setup, randomMessage, randomBounce, True)
             return (readyToSentPacket, addr)
@@ -398,7 +398,7 @@ class Client(DatagramProtocol):
         try:
             timestamp = '%.5f' % time.time()
             if self.TESTMODE:
-                message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False, 'P')
+                message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False, typeFlag = 'P')
             else:
                 message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False)
             self.buffer.append(("ROUT" + message, addr))
@@ -518,7 +518,7 @@ class Client(DatagramProtocol):
         try:
             mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             tagedMessage = "TAG" + os.urandom(1000)
-            packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, 'P')
+            packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
             self.send("ROUT" + packet, addr)
             self.tagedHeartbeat.append((time.time(), tagedMessage))
             print "[%s] > TAGED MESSAGE SENT." % self.name

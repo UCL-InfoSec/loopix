@@ -78,8 +78,8 @@ class MixNode(DatagramProtocol):
 		self.boardPort = 9998
 		self.boardHost = "127.0.0.1"
 
-		self.EXP_PARAMS_DELAY = (10, None)
-		self.EXP_PARAMS_LOOPS = (10, None)
+		self.EXP_PARAMS_DELAY = (20, None)
+		self.EXP_PARAMS_LOOPS = (20, None)
 
 
 
@@ -462,7 +462,7 @@ class MixNode(DatagramProtocol):
 			self.heartbeatsSent.append((heartMsg, str(timestamp)))
 			current_time = time.time()
 			delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
-			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False)
+			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
 			self.savedElements.append(packet[0])
 			return packet[1:]
 		except Exception, e:
