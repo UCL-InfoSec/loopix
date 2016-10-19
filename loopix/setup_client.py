@@ -14,15 +14,15 @@ if __name__ == "__main__":
 	name = sys.argv[3]
 	prvname = sys.argv[4]
 
-	if not (os.path.exists("secretClient%s.prv"%name) or os.path.exists("publicClient%s.bin"%name)):
+	if not (os.path.exists("secretClient.prv") or os.path.exists("publicClient.bin")):
 
 		setup = format3.setup()
 		G, o, g, o_bytes = setup
 
 		secret = o.random()
-		file("secretClient%s.prv"%name, "wb").write(petlib.pack.encode(secret))
+		file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
 
 		pub = secret * g
-		file("publicClient%s.bin"%name, "wb").write(petlib.pack.encode(["client", name, port, host, pub, prvname]))
+		file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, pub, prvname]))
 	else:
 		print "Files exist"
