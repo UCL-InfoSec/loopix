@@ -297,6 +297,10 @@ class MixNode(DatagramProtocol):
 			# typeFlag - auxiliary flag which tells what type of message it is; only used for statistics; 
 			# delay - message delay
 			typeFlag = header[2]
+			if (typeFlag == 'H' or typeFlag == 'D'):
+				print 'Heartbeat or Drop'
+			else:
+				self.gbReceived += sys.getsizeof(petlib.pack.encode(message))
 			delay = header[3]
 
 			# Parse the forward message
@@ -367,14 +371,16 @@ class MixNode(DatagramProtocol):
 		lc.start(10, False)
 
 	def in_out_ratio(self):
-		print "in_out_ratio"
 		processed = self.bProcessed
 		self.bProcessed = 0
 		received = self.bReceived
 		self.bReceived = 0
+		goodbytes = self.gbReceived
+		self.gbReceived = 0
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
+		print "Good bytes: %d ", % goodbytes
 		try:
-			file('performance.bi2', 'ab').write(petlib.pack.encode((received, processed))+"\n")
+			file('performance.bi2', 'ab').write(petlib.pack.encode((received, processed, gbReceived))+"\n")
 		except Exception, e:
 			print str(e)
 
@@ -440,7 +446,6 @@ class MixNode(DatagramProtocol):
 				print "ERROR: ", str(e)
 				log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
 			else:
-				log.info("Mixes: %s" % str(mixes))
 				print "Mixes: %s" % str(mixes)
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
