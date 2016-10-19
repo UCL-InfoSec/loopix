@@ -383,7 +383,7 @@ class MixNode(DatagramProtocol):
 		try:
 			with open('performance.cvs', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				data = [received, processed, goodbytes]
+				data = [[received, processed, goodbytes]]
 				csvW.writerows(data)
 			#file('performance.cvs', 'ab').write(petlib.pack.encode((received, processed, goodbytes))+"\n")
 		except Exception, e:
