@@ -25,6 +25,8 @@ class ClientEcho(basic.LineReceiver):
 				self.client.sendTagedMessage()
 			except Exception, e :
 				print str(e)
+		elif line.upper() == "-E":
+			reactor.stop()
 		else:
 			print "Command not found"
 		self.transport.write('>>> ')
