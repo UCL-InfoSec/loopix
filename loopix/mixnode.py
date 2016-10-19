@@ -381,7 +381,7 @@ class MixNode(DatagramProtocol):
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
 		print "Good bytes: %d " % goodbytes
 		try:
-			with open('performance.cvs', 'ab') as outfile:
+			with open('performance.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[received, processed, goodbytes]]
 				csvW.writerows(data)
