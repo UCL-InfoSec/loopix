@@ -27,6 +27,7 @@ def clean_and_setup():
 if __name__ == "__main__":
 
 	clean_and_setup()
+
 	if not (os.path.exists("secretClient.prv") or os.path.exists("publicClient.bin")):
 
 		port = int(sys.argv[1])
