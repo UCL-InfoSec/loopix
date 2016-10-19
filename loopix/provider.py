@@ -56,7 +56,6 @@ class Provider(MixNode):
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
             self.do_PULL(data[8:], (host, port))
-
         if data[:4] == "RINF":
             print "[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port)
             log.info("[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port))
@@ -140,7 +139,6 @@ class Provider(MixNode):
             log.info("[%s] > error during packet processing." % self.name)
         else:
             if peeledData:
-                print peeledData
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
                 def save_or_queue(IPAddrs):
                     if xtoName in self.clientList.keys():

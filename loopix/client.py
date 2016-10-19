@@ -254,20 +254,25 @@ class Client(DatagramProtocol):
             for element in dataList:
                 self.mixnet.append(format3.Mix(element[0], element[1], element[2], element[3]))
         if data[:4] == "PMSG":
-            print "[%s] > Received message: " % self.name
-            try:
-                encMsg, timestamp = petlib.pack.decode(data[4:])
-                msg = self.readMessage(encMsg, (host, port))
-                log.info("[%s] > new message received and unpacked " % self.name)
-                self.checkMsg(msg, timestamp)
-            except Exception, e:
-                print "[%s] > Message reading error: %s" % (self.name, str(e))
-                log.error("[%s] > Message reading error: %s" % (self.name, str(e)))
+            print "[%s] > Received new message. " % self.name
+            self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
             print "[%s] > Received NOMSG." % self.name
             log.info("[%s] > no new messages for this client." % self.name)
         if data == "NOASG":
             print "[%s] > Received NOASG from %s" % (self.name, host)
+
+    def do_PMSG(self, data, host, port):
+        try:
+            encMsg, timestamp = petlib.pack.decode(data)
+            msg = self.readMessage(encMsg, (host, port))
+            print "[%s] > New message received and unpacked. " % self.name
+            
+            if msg.startswith("HTTAG"):
+                self.measureLatency(msg, timestamp)
+        except Exception, e:
+            print "[%s] > Message reading error: %s" % (self.name, str(e))
+            log.error("[%s] > Message reading error: %s" % (self.name, str(e)))        
 
     def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
         """ Function returns an encapsulated message,
@@ -474,7 +479,13 @@ class Client(DatagramProtocol):
                 mixnet (list) - list of active mixnodes,
                 length (int) - length of the path which we want to build.
         """
-        return random.sample(mixnet, length) if len(mixnet) > length else mixnet
+        #return random.sample(mixnet, length) if len(mixnet) > length else mixnet
+        if len(mixnet) > length:
+            randomPath = random.sample(mixnet, length)
+        else:
+            randomPath = mixnet
+            random.shuffle(randomPath)
+        return randomPath
 
     def encryptData(self, data):
         ciphertext, tag = self.aes.quick_gcm_enc(self.kenc, self.iv, data)
@@ -490,18 +501,6 @@ class Client(DatagramProtocol):
         else:
             return None
 
-    def sendTagedMessage(self, mixnet):
-        try:
-            mixes = self.takePathSequence(mixnet, self.PATH_LENGTH)
-            tagedMessage = "TAG"+os.urandom(1000)
-            readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, 'P')
-            self.send("ROUT" + readyToSentPacket, addr)
-            self.tagedHeartbeat.append((time.time(), tagedMessage))
-            print "TAGED MESSAGE SENT."
-        except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
-            log.error(str(e))
-
     def turnOnFakeMessaging(self):
         reactor.callLater(0.5, self.randomMessaging)
 
@@ -515,21 +514,25 @@ class Client(DatagramProtocol):
         self.sendMessage(r, mixpath, msgF, msgB)
         reactor.callLater(0.5, self.randomMessaging)
 
-    def checkMsg(self, msg, providerTimestamp):
-        if msg.startswith("HTTAG"):
-            print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
-            for i in self.tagedHeartbeat:
-                if i[1] == msg[2:]:
+    def sendTagedMessage(self):
+        try:
+            mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+            tagedMessage = "TAG" + os.urandom(1000)
+            packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, 'P')
+            self.send("ROUT" + packet, addr)
+            self.tagedHeartbeat.append((time.time(), tagedMessage))
+            print "[%s] > TAGED MESSAGE SENT." % self.name
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
 
-                    try:
-                        f = open('performance/latency%s.txt' % (len(self.usersPubs)+1), 'a')
-                    except:
-                        f = open('performance/latency%s.txt' % (len(self.usersPubs)+1), 'w')
-
-                    with f as outFile:
-                        outFile.write('%.5f' % (float(providerTimestamp) - float(i[0]))+'\n')
-                    print self.name, "Latency Saved in file"
-                    self.sendTagedMessage(self.mixnet)
+    def measureLatency(self, msg, providerTimestamp):
+        print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
+        for i in self.tagedHeartbeat:
+            if i[1] == msg[2:]:
+                latency = (float(providerTimestamp) - float(i[0]))
+                print '%.5f' % latency
+                file('latency.bi2', 'ab').write('%.5f' % latency + "\n")
+                self.sendTagedMessage()
 
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
