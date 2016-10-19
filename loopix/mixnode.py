@@ -378,7 +378,7 @@ class MixNode(DatagramProtocol):
 		goodbytes = self.gbReceived
 		self.gbReceived = 0
 		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
-		print "Good bytes: %d ", % goodbytes
+		print "Good bytes: %d " % goodbytes
 		try:
 			file('performance.bi2', 'ab').write(petlib.pack.encode((received, processed, gbReceived))+"\n")
 		except Exception, e:
