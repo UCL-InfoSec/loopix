@@ -45,10 +45,11 @@ if __name__ == "__main__":
 	try:
 		data = file("publicClient.bin", "rb").read()
 		_, name, port, host, _, prvname = petlib.pack.decode(data)
-		client = Client(setup, name, port, host, privk = secret, providerId=prvname)
-
 		if "--test" in sys.argv:
-			client.TESTMODE = True
+			client = Client(setup, name, port, host, privk = secret, providerId=prvname, testMode=True)
+		else:
+			client = Client(setup, name, port, host, privk = secret, providerId=prvname)
+
 
 		if "--mock" not in sys.argv:
 			stdio.StandardIO(ClientEcho(client))

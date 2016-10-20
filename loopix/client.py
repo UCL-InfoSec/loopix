@@ -162,7 +162,8 @@ class Client(DatagramProtocol):
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        # self.turnOnFakeMessaging()
+        if self.TESTMODE:
+            self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -266,7 +267,7 @@ class Client(DatagramProtocol):
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
-            print "[%s] > New message received and unpacked. " % self.name
+            print "[%s] > New message received and unpacked: %s " % (self.name, msg) 
             
             if msg.startswith("HTTAG"):
                 self.measureLatency(msg, timestamp)
@@ -502,17 +503,15 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        reactor.callLater(0.5, self.randomMessaging)
+        reactor.callLater(3, self.randomMessaging)
 
     def randomMessaging(self):
         r = self.selectRandomReceiver()
-        fixedMix = [x for x in self.mixnet if x.name == "MixNode8005"]
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-        mixpath.insert(random.randrange(len(mixpath)+1), fixedMix[0])
-        msgF = sf.generateRandomNoise(NOISE_LENGTH)
-        msgB = sf.generateRandomNoise(NOISE_LENGTH)
+        msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         self.sendMessage(r, mixpath, msgF, msgB)
-        reactor.callLater(0.5, self.randomMessaging)
+        reactor.callLater(3, self.randomMessaging)
 
     def sendTagedMessage(self):
         try:
