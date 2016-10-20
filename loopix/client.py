@@ -34,7 +34,7 @@ NOISE_LENGTH = 10
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testMode=True,
+    def __init__(self, setup, name, port, host, testMode=False,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
@@ -267,7 +267,8 @@ class Client(DatagramProtocol):
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
-            print "[%s] > New message received and unpacked: %s " % (self.name, msg) 
+            tmp = unicode(msg, errors='ignore')
+            print "[%s] > New message received and unpacked: %s " % (self.name, tmp) 
             
             if msg.startswith("HTTAG"):
                 self.measureLatency(msg, timestamp)
