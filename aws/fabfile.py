@@ -74,7 +74,6 @@ env.key_filename = '../keys/Loopix.pem'
 
 # ----------------------------------------LAUNCHING-FUNCTIONS------------------------------------------
 
-# @runs_once
 #launching new instances
 def ec2start(num):
     instances = ec2.create_instances( 
@@ -123,6 +122,11 @@ def ec2start222():
     execute(ec2start_provider_instance, 2)
     execute(ec2start_client_instance, 2)
 
+@runs_once
+def experiment1(mnum, pnum, cnum):
+    execute(ec2start_mixnode_instance, mnum)
+    execute(ec2start_provider_instance, pnum)
+    execute(ec2start_client_instance, cnum)
 
 @runs_once
 #stoping and terminating instace
@@ -190,16 +194,11 @@ def ec2getDNS(ids):
     return dns
 
 
-#--------------------------------------DEPLOY-FUNCTIONS-----------------------------------------------------
+#--------------------------------------DEPLOY-FUNCTIONS-----------------------------------------------------------
 @parallel
 def gitpull():
     with cd('loopix'):
-        # run, which is similar to local but runs remotely instead of locally.
         run('git pull')
-
-def deploy():
-    execute(gitpull)
-
 
 #--------------------------------------EXPERIMENTS-FUNCTIONS------------------------------------------------------
 
@@ -211,7 +210,6 @@ def start_mixnode():
         run("twistd -y run_mixnode.py")
         pid = run("cat twistd.pid")
         print "Run on %s with PID %s" % (env.host, pid)
-    #instance.public_dns_name how to add this?
 
 
 @roles("mixnodes")
@@ -221,8 +219,7 @@ def kill_mixnode():
         pid = run("cat twistd.pid", warn_only=True)
         print "Kill %s with PID %s" % (env.host, pid)
         run("kill `cat twistd.pid`", warn_only=True)
-        
-    #instance.public_dns_name how to add this?
+
 
 @roles("clients")
 @parallel
@@ -241,6 +238,26 @@ def kill_client():
         print "Kill %s with PID %s" % (env.host, pid)
         run("kill `cat twistd.pid`", warn_only=True)
 
+@roles("clients")
+@parallel
+def start_multi_client(num):
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        with cd(dirc+'/loopix/loopix'):
+            run('git pull')
+            run('twistd -y run_client.py')
+            pid = run('cat twistd.pid')
+            print "Run Client on %s with PID %s" % (env.host, pid) 
+
+@roles("clients")
+@parallel
+def kill_multi_client(num):
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        with cd(dirc+"/loopix/loopix"):
+            pid = run("cat twistd.pid", warn_only=True)
+            print "Kill %s with PID %s" % (env.host, pid)
+            run("kill `cat twistd.pid`", warn_only=True)
         
 @roles("providers")
 @parallel
@@ -271,6 +288,19 @@ def killAll():
     execute(kill_provider)
     execute(kill_client)
 
+@runs_once
+def startMultiAll(num):
+    execute(start_mixnode)
+    execute(start_provider)
+    execute(start_multi_client,num)
+
+@runs_once
+def killMultiAll(num):
+    execute(kill_mixnode)
+    execute(kill_provider)
+    execute(kill_multi_client,num)
+
+
 @roles("boards")
 @parallel
 def start_board():
@@ -279,17 +309,28 @@ def start_board():
 
 # ---------------------------------------------SETUP-AND-DEPLOY---------------------------------------
 # getting file from the remote directory
-@roles("mixnodes", "clients", "providers")
+@roles("mixnodes", "providers", "clients")
 @parallel
-def loaddir():
+def loaddirAll():
     put('example.db', 'loopix/loopix/example.db')
+
+@roles("mixnodes", "providers")
+@parallel
+def loaddirServers():
+    put('example.db', 'loopix/loopix/example.db')
+
+@roles("clients")
+@parallel
+def loaddirClients(num):
+    for i in range(int(num)):
+        put('example.db', 'client%d/loopix/loopix/example.db'%i)
 
 def whoami():
     run('whoami', env.hosts)
 
 @roles("mixnodes", "clients", "providers","board")
 @parallel
-def setup():
+def setupAll():
     sudo('apt-get -y update')
     sudo('apt-get -y dist-upgrade')
     sudo('apt-get -y install python-pip python-dev build-essential')
@@ -304,6 +345,49 @@ def setup():
             run("git pull")
     else:
         run("git clone https://github.com/UCL-InfoSec/loopix.git")
+
+
+@roles("mixnodes", "providers")
+@parallel
+def setupServers():
+    sudo('apt-get -y update')
+    sudo('apt-get -y dist-upgrade')
+    sudo('apt-get -y install python-pip python-dev build-essential')
+    sudo('apt-get -y install libssl-dev libffi-dev git-all')
+    sudo('yes | pip install --upgrade pip')
+    sudo('yes | pip install --upgrade virtualenv')
+    sudo('yes | pip install petlib')
+    sudo('yes | pip install twisted')
+    sudo('yes | pip install numpy')
+    if fabric.contrib.files.exists("loopix"):
+        with cd("loopix"):
+            run("git pull")
+    else:
+        run("git clone https://github.com/UCL-InfoSec/loopix.git")
+
+
+@roles("clients")
+@parallel
+def setupMultiClients(num):
+    sudo('apt-get -y update')
+    sudo('apt-get -y dist-upgrade')
+    sudo('apt-get -y install python-pip python-dev build-essential')
+    sudo('apt-get -y install libssl-dev libffi-dev git-all')
+    sudo('yes | pip install --upgrade pip')
+    sudo('yes | pip install --upgrade virtualenv')
+    sudo('yes | pip install petlib')
+    sudo('yes | pip install twisted')
+    sudo('yes | pip install numpy')
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        if not fabric.contrib.files.exists(dirc):
+           run("mkdir %s" % dirc)
+        with cd(dirc): 
+            if fabric.contrib.files.exists("loopix"):
+                with cd("loopix"):
+                    run("git pull")
+            else:
+                run("git clone https://github.com/UCL-InfoSec/loopix.git")
 
 
 @parallel
@@ -341,6 +425,18 @@ def deployAll():
     execute(readFiles)
     execute(loaddir)
 
+@runs_once
+def deployMulti(num):
+    with settings(warn_only=True):
+        local("rm *.bin *.bi2 example.db")
+    execute(deployMixnode)
+    execute(deployProvider)
+    execute(storeProvidersNames)
+    execute(deployMultiClient,num)
+    execute(readFiles)
+    execute(loaddirServers)
+    execute(loaddirClients,num)
+
 @roles("mixnodes", "clients", "providers","board")
 @parallel
 def cleanAll():
@@ -368,7 +464,26 @@ def deployClient():
         prvName = random.choice(providers)
         with cd('loopix'):
             run("python setup_client.py 9999 %s Client%s %s" % (str(env.host), N, prvName))
-            get('publicClient.bin', 'publicClient-%s.bin'%env.host)            
+            get('publicClient.bin', 'publicClient-%s.bin'%env.host)
+
+
+@roles("clients")
+@parallel
+def deployMultiClient(num):
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        #run('rm -rf %s' % dirc)
+        #run("mkdir %s" % dirc)
+        with cd(dirc):
+            with cd('loopix'):
+                run("git pull")
+            with cd('loopix/loopix'):
+                N = hexlify(os.urandom(8))
+                providers = getProvidersNames()
+                prvName = random.choice(providers)
+                port = int(9999 - i)
+                run("python setup_client.py %d %s Client%s %s" % (port, str(env.host), N, prvName))
+                get('publicClient.bin', 'publicClient-%d-%s.bin'%(port, env.host))     
 
 
 @roles("providers")
