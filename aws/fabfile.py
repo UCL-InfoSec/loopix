@@ -258,6 +258,7 @@ def kill_multi_client(num):
             pid = run("cat twistd.pid", warn_only=True)
             print "Kill %s with PID %s" % (env.host, pid)
             run("kill `cat twistd.pid`", warn_only=True)
+            run("rm -f *.csv")
         
 @roles("providers")
 @parallel
@@ -275,26 +276,31 @@ def kill_provider():
         pid = run("cat twistd.pid", warn_only=True)
         print "Kill %s with PID %s" % (env.host, pid)
         run("kill `cat twistd.pid`", warn_only=True)
+        run("rm -f *.csv")
         
 @runs_once
+@parallel
 def startAll():
     execute(start_mixnode)
     execute(start_provider)
     execute(start_client)
 
 @runs_once
+@parallel
 def killAll():
     execute(kill_mixnode)
     execute(kill_provider)
     execute(kill_client)
 
 @runs_once
+@parallel
 def startMultiAll(num):
     execute(start_mixnode)
     execute(start_provider)
     execute(start_multi_client,num)
 
 @runs_once
+@parallel
 def killMultiAll(num):
     execute(kill_mixnode)
     execute(kill_provider)
@@ -472,14 +478,13 @@ def deployClient():
 def deployMultiClient(num):
     for i in range(int(num)):
         dirc = 'client%s' % i
-        #run('rm -rf %s' % dirc)
-        #run("mkdir %s" % dirc)
         with cd(dirc):
             with cd('loopix'):
                 run("git pull")
             with cd('loopix/loopix'):
                 N = hexlify(os.urandom(8))
                 providers = getProvidersNames()
+                print providers
                 prvName = random.choice(providers)
                 port = int(9999 - i)
                 run("python setup_client.py %d %s Client%s %s" % (port, str(env.host), N, prvName))
