@@ -31,6 +31,7 @@ class ClientEcho(basic.LineReceiver):
 			reactor.stop()
 		elif line.upper() == "-M":
 			friends = random.sample(self.client.usersPubs, 3)
+			print "Friends group: ", friends
 			self.targetSending(friends)
 		else:
 			print "Command not found"
@@ -44,7 +45,7 @@ class ClientEcho(basic.LineReceiver):
 			msgF = "RANDOMTARGET" + sf.generateRandomNoise(1000)
 			msgB = "RANDOMTARGET" + sf.generateRandomNoise(1000)
 			self.client.sendMessage(recipient, path, msgF, msgB)
-			reactor.callLater(5, self.targetSending, group)
+			reactor.callLater(120, self.targetSending, group)
 		except Exception, e:
 			print str(e)
 
