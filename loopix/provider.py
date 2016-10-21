@@ -84,8 +84,8 @@ class Provider(MixNode):
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
             log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
-            if (host, port) not in self.clientList:
-                self.numMsgReceived += 1
+            #if (host, port) not in self.clientList:
+            self.numMsgReceived += 1
             try:
                 self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
