@@ -56,6 +56,7 @@ class Provider(MixNode):
         log.info("[%s] > Stop protocol" % self.name)
 
     def datagramReceived(self, data, (host, port)):
+        self.numMsgReceived += 1
         print "[%s] > received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
         if data[:8] == "PULL_MSG":
@@ -85,7 +86,7 @@ class Provider(MixNode):
             log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
             #if (host, port) not in self.clientList:
-            self.numMsgReceived += 1
+            # self.numMsgReceived += 1
             try:
                 self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
