@@ -166,8 +166,8 @@ class Client(DatagramProtocol):
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        if self.TESTMODE:
-            self.turnOnFakeMessaging()
+        #if self.TESTMODE:
+        self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -509,7 +509,7 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        reactor.callLater(3, self.randomMessaging)
+        reactor.callLater(5, self.randomMessaging)
 
     def randomMessaging(self):
         r = self.selectRandomReceiver()
@@ -683,7 +683,7 @@ class Client(DatagramProtocol):
     def measureSentBytes(self):
         print "---MEASURING SENT MESSAGES----"
         lc = task.LoopingCall(self.sentBytes)
-        lc.start(60)
+        lc.start(120)
 
     def sentBytes(self):
         numSent = self.numMessagesSent

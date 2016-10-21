@@ -216,7 +216,7 @@ class Provider(MixNode):
 
     def measureMsgReceived(self):
         lc = task.LoopingCall(self.saveNumbers)
-        lc.start(60)
+        lc.start(120)
 
     def saveNumbers(self):
         print "----MEASURING MESSAGES RECEIVED--------"
