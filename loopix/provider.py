@@ -47,6 +47,7 @@ class Provider(MixNode):
         self.d.addErrback(self.errbackHeartbeats)
         self.turnOnReliableUDP()
         self.readInData('example.db')
+        self.measureMsgReceived()
         #self.saveInDB('example.db')
 
     def stopProtocol(self):
@@ -217,6 +218,7 @@ class Provider(MixNode):
         lc.start(60)
 
     def saveNumbers(self):
+        print "----MEASURING MESSAGES RECEIVED--------"
         msgsR = self.numMsgReceived
         self.numMsgReceived = 0
         with open('messagesReceived.csv', 'ab') as outfile:

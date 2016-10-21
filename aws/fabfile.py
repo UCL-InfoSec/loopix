@@ -575,9 +575,29 @@ def getMessagesSent(num):
         dirc = 'client%d'%i
         get(dirc+'/loopix/loopix/messagesSent.csv', 'messagesSent_client%d.csv'%i)
 
+@roles("providers")
+@parallel
+def getMessagesReceived():
+    with setting(warn_only=True):
+        local("rm -f *.csv")
+    get('/loopix/loopix/messagesReceived.csv', 'messagesReceived-%s.csv'%env.host)
+
 def readMessagesSent():
     for f in os.listdir('.'):
         if f.startswith('messagesSent'):
+            print "File: ", f
+            try:
+                with open(f, 'rb') as infile:
+                    csvR = csv.reader(infile)
+                    for row in csvR:
+                        print row
+            except Exception, e:
+                print str(e)
+
+def readMessagesReceived():
+    for f in os.listdir('.'):
+        if f.startswith('messagesReceived'):
+            print "File: ", f
             try:
                 with open(f, 'rb') as infile:
                     csvR = csv.reader(infile)
