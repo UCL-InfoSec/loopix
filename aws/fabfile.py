@@ -578,9 +578,9 @@ def getMessagesSent(num):
 @roles("providers")
 @parallel
 def getMessagesReceived():
-    with setting(warn_only=True):
+    with settings(warn_only=True):
         local("rm -f *.csv")
-    get('/loopix/loopix/messagesReceived.csv', 'messagesReceived-%s.csv'%env.host)
+    get('loopix/loopix/messagesReceived.csv', 'messagesReceived-%s.csv'%env.host)
 
 def readMessagesSent():
     for f in os.listdir('.'):

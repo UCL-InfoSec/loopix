@@ -1,5 +1,6 @@
 import petlib.pack
 import csv
+import os
 
 def readInFile(filename):
 	try:
@@ -30,7 +31,19 @@ def readCSV():
 		for row in csvR:
 			print row
 
+def test():
+	for f in os.listdir('../loopix'):
+		if f.startswith('messagesSent'):
+			try:
+				with open(f, 'rb') as infile:
+					csvR = csv.reader(infile)
+					for row in csvR:
+						print row
+			except Exception, e:
+				print str(e)
+
 if __name__ == "__main__":
 	print getProvidersNames()
-	writeCSV()
-	readCSV()
+	#writeCSV()
+	#readCSV()
+	test()

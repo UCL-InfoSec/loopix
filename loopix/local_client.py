@@ -7,6 +7,8 @@ from twisted.internet import reactor
 from twisted.protocols import basic
 from twisted.internet import stdio
 import time
+import supportFunctions as sf
+import random
 
 class ClientEcho(basic.LineReceiver):
 	from os import linesep as delimiter
@@ -27,9 +29,24 @@ class ClientEcho(basic.LineReceiver):
 				print str(e)
 		elif line.upper() == "-E":
 			reactor.stop()
+		elif line.upper() == "-M":
+			friends = random.sample(self.client.usersPubs, 3)
+			self.targetSending(friends)
 		else:
 			print "Command not found"
 		self.transport.write('>>> ')
+
+	def targetSending(self, group):
+		recipient = random.choice(group)
+		print ">> SENDING TO SELECTED CLIENT ", recipient
+		try:
+			path = self.client.takePathSequence(self.client.mixnet, self.client.PATH_LENGTH)
+			msgF = "RANDOMTARGET" + sf.generateRandomNoise(1000)
+			msgB = "RANDOMTARGET" + sf.generateRandomNoise(1000)
+			self.client.sendMessage(recipient, path, msgF, msgB)
+			reactor.callLater(5, self.targetSending, group)
+		except Exception, e:
+			print str(e)
 
 
 if __name__ == "__main__":
@@ -46,9 +63,9 @@ if __name__ == "__main__":
 		data = file("publicClient.bin", "rb").read()
 		_, name, port, host, _, prvname = petlib.pack.decode(data)
 		if "--test" in sys.argv:
-			client = Client(setup, name, port, host, privk = secret, providerId=prvname, testMode=True)
+			client = Client(setup, name, port, host, privk = secret, providerId=prvname, testMode=False)
 		else:
-			client = Client(setup, name, port, host, privk = secret, providerId=prvname)
+			client = Client(setup, name, port, host, privk = secret, providerId=prvname, testMode=True)
 
 
 		if "--mock" not in sys.argv:

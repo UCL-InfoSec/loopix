@@ -30,12 +30,12 @@ import csv
 
 
 TIME_PULL = 1
-NOISE_LENGTH = 10
+NOISE_LENGTH = 1000
 
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testMode=False,
+    def __init__(self, setup, name, port, host, testMode=True,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
@@ -166,8 +166,8 @@ class Client(DatagramProtocol):
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        #if self.TESTMODE:
-        self.turnOnFakeMessaging()
+        if self.TESTMODE:
+            self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -509,15 +509,17 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        reactor.callLater(5, self.randomMessaging)
+        friendsGroup = random.sample(self.usersPubs, 3)
+        reactor.callLater(5, self.randomMessaging, friendsGroup)
 
-    def randomMessaging(self):
-        r = self.selectRandomReceiver()
+    def randomMessaging(self, group):
+        print "--RANDOM MESSAGING"
+        r = random.choice(group)
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         self.sendMessage(r, mixpath, msgF, msgB)
-        reactor.callLater(3, self.randomMessaging)
+        reactor.callLater(5, self.randomMessaging, group)
 
     def sendTagedMessage(self):
         try:
