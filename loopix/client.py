@@ -26,6 +26,7 @@ import sys
 import uuid
 import io
 from twisted.logger import jsonFileLogObserver, Logger
+import csv
 
 
 TIME_PULL = 1
@@ -104,6 +105,9 @@ class Client(DatagramProtocol):
 
         self.readInData("example.db")
         self.sendPing()
+
+        if TESTMODE:
+            self.measureSentBytes()
 
     def sendPing(self):
 
@@ -206,6 +210,7 @@ class Client(DatagramProtocol):
             if len(self.buffer) > 0:
                 message, addr = self.buffer.pop(0)
                 self.send(message, addr)
+                print "[%s] > Message sent from buffer." % self.name
             else:
                 self.sendDropMessage(mixList)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
@@ -677,9 +682,13 @@ class Client(DatagramProtocol):
 
     def measureSentBytes(self):
         lc = task.LoopingCall(self.sentBytes)
-        lc.start(10)
+        lc.start(60)
 
     def sentBytes(self):
-        with open('performance/sentBytes.txt', 'a') as f:
-            f.write(str(self.numMessagesSent) + '\n')
+        numSent = self.numMessagesSent
         self.numMessagesSent = 0
+
+        with open('messagesSent.csv', 'ab') as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[numMessagesSent]]
+                csvW.writerows(data)

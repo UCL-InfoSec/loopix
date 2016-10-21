@@ -14,6 +14,8 @@ import databaseConnect as dc
 import sys
 import sqlite3
 import io
+import csv
+
 
 from twisted.logger import jsonFileLogObserver, Logger
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
@@ -29,6 +31,8 @@ class Provider(MixNode):
         self.storage = {}
         self.replyBlocks = {}
         self.MAX_RETRIEVE = 10000
+
+        self.numMsgReceived = 0
 
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
@@ -78,6 +82,8 @@ class Provider(MixNode):
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
             log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
+            if (host, port) not in self.clientList:
+                self.numMsgReceived += 1
             try:
                 self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
@@ -204,5 +210,20 @@ class Provider(MixNode):
         db.close()
         print "[%s] > Provider public information saved in database." % self.name
         log.info("[%s] > Provider public information saved in database." % self.name)
+
+
+    def measureMsgReceived(self):
+        lc = task.LoopingCall(self.saveNumbers)
+        lc.start(60)
+
+    def saveNumbers(self):
+        msgsR = self.numMsgReceived
+        self.numMsgReceived = 0
+        with open('messagesReceived.csv', 'ab') as outfile:
+            csvW = csv.writer(outfile, delimiter=',')
+            data = [[msgsR]]
+            csvW.writerows(data)
+
+
 
 
