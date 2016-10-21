@@ -1,4 +1,5 @@
-from twisted.internet.protocol import DatagramProtocol, task
+from twisted.internet.protocol import DatagramProtocol
+from twisted.internet import reactor, protocol, task, defer, threads
 import petlib.pack
 from petlib.ec import EcGroup, EcPt
 from petlib.bn import Bn
