@@ -681,14 +681,15 @@ class Client(DatagramProtocol):
         self.turnOnMessaging(self.mixnet)
 
     def measureSentBytes(self):
+        print "---MEASURING SENT MESSAGES----"
         lc = task.LoopingCall(self.sentBytes)
         lc.start(60)
 
     def sentBytes(self):
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
-
+        print "[%s] > Number of messages sent: %d" % numSent
         with open('messagesSent.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[numMessagesSent]]
+                data = [[numSent]]
                 csvW.writerows(data)
