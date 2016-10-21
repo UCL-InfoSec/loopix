@@ -688,7 +688,7 @@ class Client(DatagramProtocol):
     def sentBytes(self):
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
-        print "[%s] > Number of messages sent: %d" % numSent
+        print "[%s] > Number of messages sent: %d" % (self.name, numSent)
         with open('messagesSent.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
                 data = [[numSent]]

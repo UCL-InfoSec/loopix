@@ -75,10 +75,10 @@ env.key_filename = '../keys/Loopix.pem'
 # ----------------------------------------LAUNCHING-FUNCTIONS------------------------------------------
 
 #launching new instances
-def ec2start(num):
+def ec2start(num, typ='t2.micro'):
     instances = ec2.create_instances( 
         ImageId='ami-ed82e39e', 
-        InstanceType='t2.micro',
+        InstanceType=typ,
         SecurityGroupIds= [ 'sg-42444b26' ],
         KeyName="Loopix",
         MinCount=int(num), 
@@ -94,7 +94,7 @@ def ec2start_mixnode_instance(num):
 
 @runs_once
 def ec2start_client_instance(num):
-    clients = ec2start(num)
+    clients = ec2start(num, typ='t2.large')
     for i in clients:
         ec2tagInstance(i.id, "Client")
 
@@ -566,5 +566,50 @@ def readPerformance():
             except Exception, e:
                 print str(e)
 
+@roles("clients")
+@parallel
+def getMessagesSent(num):
+    with settings(warn_only=True):
+        local("rm -f *.csv")
+    for i in range(int(num)):
+        dirc = 'client%d'%i
+        get(dirc+'/loopix/loopix/messagesSent.csv', 'messagesSent_client%d.csv'%i)
 
+def readMessagesSent():
+    for f in os.listdir('.'):
+        if f.startswith('messagesSent'):
+            try:
+                with open(f, 'rb') as infile:
+                    csvR = csv.reader(infile)
+                    for row in csvR:
+                        print row
+            except Exception, e:
+                print str(e)
+
+@roles("clients")
+@parallel
+def takeClientsData(num):
+    for i in range(int(num)):
+        with cd('client%d/loopix/loopix'%i):
+            get('publicClient.bin', 'publicClient-%d-%s.bin'%((9999-i),env.host))
+
+@roles("mixnodes")
+@parallel
+def takeMixnodesData():
+    with cd('loopix/loopix'):
+        get('publicMixnode.bin', 'publicMixnode-%s.bin'%env.host)
+
+@roles("providers")
+@parallel
+def takeProvidersData():
+    with cd('loopix/loopix'):
+        get('publicProvider.bin', 'publicProvider-%s.bin'%env.host)
+    execute(storeProvidersNames)
+
+@runs_once
+def takeData(num):
+    execute(takeClientsData, num)
+    execute(takeMixnodesData)
+    execute(takeProvidersData)
+    execute(readFiles)
         
