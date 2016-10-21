@@ -106,8 +106,8 @@ class Client(DatagramProtocol):
         self.readInData("example.db")
         self.sendPing()
 
-        if self.TESTMODE:
-            self.measureSentBytes()
+        #if self.TESTMODE:
+        self.measureSentBytes()
 
     def sendPing(self):
 
