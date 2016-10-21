@@ -74,9 +74,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (20, None)
-        self.EXP_PARAMS_LOOPS = (20, None)
-        self.EXP_PARAMS_COVER = (20, None)
+        self.EXP_PARAMS_PAYLOAD = (10, None)
+        self.EXP_PARAMS_LOOPS = (10, None)
+        self.EXP_PARAMS_COVER = (10, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -688,8 +688,9 @@ class Client(DatagramProtocol):
     def sentBytes(self):
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
-        print "[%s] > Number of messages sent: %d" % (self.name, numSent)
+        print "[%s] > NUMBER OF MESSAGES SENT: %d" % (self.name, numSent)
         with open('messagesSent.csv', 'ab') as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                data = [[numSent]]
-                csvW.writerows(data)
+            print "Saving in the file"
+            csvW = csv.writer(outfile, delimiter=',')
+            data = [[numSent]]
+            csvW.writerows(data)
