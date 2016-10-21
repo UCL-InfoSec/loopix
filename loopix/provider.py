@@ -221,6 +221,7 @@ class Provider(MixNode):
     def saveNumbers(self):
         print "----MEASURING MESSAGES RECEIVED--------"
         msgsR = self.numMsgReceived
+        print "RECEIVED: ", msgsR
         self.numMsgReceived = 0
         with open('messagesReceived.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
