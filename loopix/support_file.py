@@ -42,8 +42,22 @@ def test():
 			except Exception, e:
 				print str(e)
 
+
+def readFiles():
+
+    import databaseConnect as dc
+    databaseName = "example.db"
+    db = dc.connectToDatabase(databaseName)
+    c = db.cursor()
+    c.execute("SELECT * FROM Users")
+    allData = c.fetchall()
+    for i in allData:
+    	print i[5]
+    db.commit()				
+
 if __name__ == "__main__":
 	print getProvidersNames()
 	#writeCSV()
 	#readCSV()
-	test()
+	readFiles()
+	

@@ -77,7 +77,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_PAYLOAD = (10, None)
         self.EXP_PARAMS_LOOPS = (10, None)
         self.EXP_PARAMS_COVER = (10, None)
-        self.EXP_PARAMS_DELAY = (0.005, None)
+        self.EXP_PARAMS_DELAY = (0.5, None)
         self.TESTMODE = testMode
 
         self.boardHost = "127.0.0.1"
@@ -272,8 +272,8 @@ class Client(DatagramProtocol):
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
-            tmp = unicode(msg, errors='ignore')
-            print "[%s] > New message received and unpacked: %s " % (self.name, tmp) 
+            
+            print "[%s] > New message received and unpacked: " % self.name
             
             if msg.startswith("HTTAG"):
                 self.measureLatency(msg, timestamp)
@@ -509,7 +509,7 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        friendsGroup = random.sample(self.usersPubs, 3)
+        friendsGroup = random.sample(self.usersPubs, 5)
         print "Friends group: ", friendsGroup
         reactor.callLater(5, self.randomMessaging, friendsGroup)
 
@@ -686,7 +686,7 @@ class Client(DatagramProtocol):
     def measureSentBytes(self):
         print "---MEASURING SENT MESSAGES----"
         lc = task.LoopingCall(self.sentBytes)
-        lc.start(120)
+        lc.start(180)
 
     def sentBytes(self):
         numSent = self.numMessagesSent

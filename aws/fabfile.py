@@ -450,6 +450,20 @@ def cleanAll():
         with cd('loopix'):
             run("rm *.log* *.bin example.db *.prv log.json", warn_only=True)
 
+@roles("mixnodes", "providers")
+@parallel
+def cleanServers():
+    with cd('loopix'):
+        with cd('loopix'):
+            run("rm *.log* *.bin example.db *.prv log.json", warn_only=True)
+
+@roles("clients")
+@parallel
+def cleanClients(num):
+    for i in range(int(num)):
+        with cd('client%d/loopix/loopix'%i):
+            run("rm *.log* *.bin example.db *.prv log.json", warn_only=True)
+
 @roles("mixnodes")
 @parallel
 def deployMixnode():

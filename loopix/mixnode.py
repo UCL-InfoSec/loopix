@@ -79,7 +79,7 @@ class MixNode(DatagramProtocol):
 		self.boardPort = 9998
 		self.boardHost = "127.0.0.1"
 
-		self.EXP_PARAMS_DELAY = (20, None)
+		self.EXP_PARAMS_DELAY = (5, None)
 		self.EXP_PARAMS_LOOPS = (20, None)
 
 
