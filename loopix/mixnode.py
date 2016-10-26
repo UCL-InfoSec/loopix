@@ -153,6 +153,7 @@ class MixNode(DatagramProtocol):
 		self.receivedQueue.put((data, (host, port)))
 
 	def do_PROCESS(self, (data, (host, port))):
+		self.receivedQueue.get().addCallback(self.do_PROCESS)
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
@@ -175,7 +176,6 @@ class MixNode(DatagramProtocol):
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
 
-		self.receivedQueue.get().addCallback(self.do_PROCESS)
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request

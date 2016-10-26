@@ -70,6 +70,7 @@ class Provider(MixNode):
         self.receivedQueue.put((data, (host, port)))
 
     def do_PROCESS(self, (data, (host, port))):
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
 
         if data[:8] == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
@@ -116,7 +117,6 @@ class Provider(MixNode):
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             self.subscribeClient(data[4:], host, port)
 
-        self.receivedQueue.get().addCallback(self.do_PROCESS)
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
