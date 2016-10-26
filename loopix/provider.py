@@ -244,6 +244,10 @@ class Provider(MixNode):
             csvW = csv.writer(outfile, delimiter=',')
             data = [[msgsR]]
             csvW.writerows(data)
+        with open('deferredQueueSize.csv', 'ab') as outfile:
+            csvW = csv.writer(outfile, delimiter=',')
+            data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+            csvW.writerows(data)
 
 
 
