@@ -15,6 +15,7 @@ import random
 import time
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, defer, task
+from twisted.internet.defer import DeferredQueue
 import uuid
 import sqlite3
 import supportFunctions as sf
@@ -79,10 +80,10 @@ class MixNode(DatagramProtocol):
 		self.boardPort = 9998
 		self.boardHost = "127.0.0.1"
 
-		self.EXP_PARAMS_DELAY = (5, None)
+		self.EXP_PARAMS_DELAY = (0.5, None)
 		self.EXP_PARAMS_LOOPS = (20, None)
 
-
+		self.receivedQueue = DeferredQueue()
 
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
@@ -90,14 +91,21 @@ class MixNode(DatagramProtocol):
 		# self.announce()
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
+
+		self.turnOnProcessing()
 		self.run()
-		self.measureBandwidth()
+		
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
+
+		self.measureBandwidth()
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
 		log.info("[%s] > Stop protocol" % self.name)
+
+	def turnOnProcessing(self):
+		self.receivedQueue.get().addCallback(self.do_PROCESS)
 
 	def run(self):
 		"""A loop function responsible for flushing the queue"""
@@ -141,6 +149,11 @@ class MixNode(DatagramProtocol):
 	def datagramReceived(self, data, (host, port)):
 		print "[%s] > received data from %s" % (self.name, host)
 		log.info("[%s] > received data from %s" % (self.name, host))
+
+		self.receivedQueue.get().addCallback(self.do_PROCESS)
+
+	def do_PROCESS(self, (data, (host, port))):
+
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
@@ -161,6 +174,8 @@ class MixNode(DatagramProtocol):
 			log.info("[%s] > Acknowledgment received from (%s, %d)" % (self.name, host, port))
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
+
+		self.receivedQueue.get().addCallback(self.do_PROCESS)
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
