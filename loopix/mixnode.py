@@ -402,7 +402,7 @@ class MixNode(DatagramProtocol):
 				csvW.writerows(data)
 			with open('deferredQueueSize.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending), len(self.Queue)]]
 				csvW.writerows(data)
 		except Exception, e:
 			print str(e)
