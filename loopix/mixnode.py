@@ -445,7 +445,10 @@ class MixNode(DatagramProtocol):
 			host (str): host of the destination,
 			port (int): port of the destination.
 		"""
-		
+		print "SENDING MESSAGE"
+		print "Data", data
+		print "host", host
+		print "port", port
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
 			self.bSent += sys.getsizeof(data)
