@@ -400,7 +400,10 @@ class MixNode(DatagramProtocol):
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[received, processed, goodbytes]]
 				csvW.writerows(data)
-			#file('performance.cvs', 'ab').write(petlib.pack.encode((received, processed, goodbytes))+"\n")
+			with open('deferredQueueSize.csv', 'ab') as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+				csvW.writerows(data)
 		except Exception, e:
 			print str(e)
 

@@ -109,7 +109,7 @@ class Client(DatagramProtocol):
         self.sendPing()
 
         self.turnOnProcessing()
-        
+
         #if self.TESTMODE:
         self.measureSentMessages()
 

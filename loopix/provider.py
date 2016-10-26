@@ -240,14 +240,17 @@ class Provider(MixNode):
         msgsR = self.numMsgReceived
         print "RECEIVED: ", msgsR
         self.numMsgReceived = 0
-        with open('messagesReceived.csv', 'ab') as outfile:
-            csvW = csv.writer(outfile, delimiter=',')
-            data = [[msgsR]]
-            csvW.writerows(data)
-        with open('deferredQueueSize.csv', 'ab') as outfile:
-            csvW = csv.writer(outfile, delimiter=',')
-            data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
-            csvW.writerows(data)
+        try:
+            with open('messagesReceived.csv', 'ab') as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[msgsR]]
+                csvW.writerows(data)
+            with open('deferredQueueSize.csv', 'ab') as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+                csvW.writerows(data)
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
 
 
 
