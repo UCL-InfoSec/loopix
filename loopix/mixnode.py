@@ -93,7 +93,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 
 		self.turnOnProcessing()
-		self.run()
+		#self.run()
 		
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
@@ -214,6 +214,8 @@ class MixNode(DatagramProtocol):
 					log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
 					packet = petlib.pack.encode((idt, forw_msg))
 					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
+					reactor.callLater(delay, self.sendMessage, ("ROUT" + packet, (xtoHost, xtoPort), idt))
+					self.expectedACK.append("ACKN"+idt)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
@@ -402,7 +404,7 @@ class MixNode(DatagramProtocol):
 				csvW.writerows(data)
 			with open('deferredQueueSize.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending), len(self.Queue)]]
+				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
 				csvW.writerows(data)
 		except Exception, e:
 			print str(e)
@@ -421,6 +423,7 @@ class MixNode(DatagramProtocol):
 
 		if self.Queue:
 			timeToSend, element = self.Queue[0]
+			#element contains: packet, destination address, idt
 			while self.Queue and timeToSend - sf.epoch() < 0:
 				if timeToSend - sf.epoch() < MAX_DELAY_TIME:
 					print "Time elapsed - message droped"
@@ -519,6 +522,7 @@ class MixNode(DatagramProtocol):
 			Args:
 			data (str): packet data.
 		"""
+		#data contains (packet, (host, poty), idt)
 		heapq.heappush(self.Queue, (delay, data))
 		self.bProcessed += sys.getsizeof(data[0][4:])
 

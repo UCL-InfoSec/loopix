@@ -33,6 +33,7 @@ class Provider(MixNode):
         self.storage = {}
         self.replyBlocks = {}
         self.MAX_RETRIEVE = 100
+        self.Queue = []
 
         self.numMsgReceived = 0
 
@@ -248,7 +249,7 @@ class Provider(MixNode):
                 csvW.writerows(data)
             with open('deferredQueueSize.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending), len(self.Queue)]]
+                data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
                 csvW.writerows(data)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
