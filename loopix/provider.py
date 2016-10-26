@@ -16,6 +16,7 @@ import sys
 import sqlite3
 import io
 import csv
+from twisted.internet.defer import DeferredQueue
 
 
 from twisted.logger import jsonFileLogObserver, Logger
@@ -35,6 +36,8 @@ class Provider(MixNode):
 
         self.numMsgReceived = 0
 
+        self.receivedQueue = DeferredQueue()
+
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
         log.info("[%s] > Start protocol." % self.name)
@@ -43,11 +46,15 @@ class Provider(MixNode):
         #print "[%s] > Request for network info sent." % self.name
         #log.info("[%s] > Request for network info sent." % self.name)
 
+        self.turnOnProcessing()
+
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
+
         self.turnOnReliableUDP()
         self.readInData('example.db')
+
         self.measureMsgReceived()
         #self.saveInDB('example.db')
 
@@ -59,6 +66,11 @@ class Provider(MixNode):
 
         print "[%s] > received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
+
+        self.receivedQueue.put((data, (host, port)))
+
+    def do_PROCESS(self, (data, (host, port))):
+
         if data[:8] == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
@@ -85,6 +97,7 @@ class Provider(MixNode):
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
             log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
+
             if (host, port) not in self.clientList:
                 self.numMsgReceived += 1
             try:
@@ -102,6 +115,8 @@ class Provider(MixNode):
             print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
             log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             self.subscribeClient(data[4:], host, port)
+
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -129,6 +144,7 @@ class Provider(MixNode):
                 self.transport.write("NOASG", (IPAddrs, port))
 
         reactor.resolve(host).addCallback(send_to_ip)
+
 
     def do_ROUT(self, data, (host, port), tag=None):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
