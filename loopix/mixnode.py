@@ -150,7 +150,7 @@ class MixNode(DatagramProtocol):
 		print "[%s] > received data from %s" % (self.name, host)
 		log.info("[%s] > received data from %s" % (self.name, host))
 
-		self.receivedQueue.get().addCallback(self.do_PROCESS)
+		self.receivedQueue.put((data, (host, port)))
 
 	def do_PROCESS(self, (data, (host, port))):
 
