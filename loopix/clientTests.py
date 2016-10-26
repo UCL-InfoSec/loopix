@@ -130,22 +130,22 @@ def test_sendHeartBeat(testParticipants):
 
     assert sender.transport.written[0][1] == (sender.provider.host, sender.provider.port)
 
-    provider_s.datagramReceived(sender.transport.written[0][0], sender.transport.written[0][1])
+    provider_s.do_PROCESS((sender.transport.written[0][0], sender.transport.written[0][1]))
     sendtime, packet = provider_s.Queue.pop()
     assert packet[1] == (mix2.host, mix2.port)
 
-    mix2.datagramReceived(packet[0], packet[1])
+    mix2.do_PROCESS((packet[0], packet[1]))
     sendtime, packet = mix2.Queue.pop()
     assert packet[1] == (mix1.host, mix1.port)
 
-    mix1.datagramReceived(packet[0], packet[1])
+    mix1.do_PROCESS((packet[0], packet[1]))
     sendtime, packet = mix1.Queue.pop()
     assert packet[1] == (provider_s.host, provider_s.port)
 
-    provider_s.datagramReceived(packet[0], packet[1])
+    provider_s.do_PROCESS((packet[0], packet[1]))
     assert len(provider_s.storage[sender.name]) == 1 
 
-    provider_s.datagramReceived("PULL_MSG", (sender.host, sender.port))
+    provider_s.do_PROCESS(("PULL_MSG", (sender.host, sender.port)))
     cmsg, caddr = provider_s.transport.written[-1]
     assert caddr == (sender.host, sender.port)
 
@@ -186,11 +186,11 @@ def test_readMessage(testParticipants):
         receiver.host, receiver.pubk, receiver.provider), [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)],
     "MSGFORW", "MSGBACK")
     msg, addr = sender.buffer.pop()
-    provider_s.datagramReceived(msg, addr)
+    provider_s.do_PROCESS((msg, addr))
     time, packet = provider_s.Queue.pop()
-    mix1.datagramReceived(packet[0], packet[1])
+    mix1.do_PROCESS((packet[0], packet[1]))
     time2, packet2 = mix1.Queue.pop()
-    provider_r.datagramReceived(packet2[0], packet2[1])
+    provider_r.do_PROCESS((packet2[0], packet2[1]))
     msg, latency = petlib.pack.decode(provider_r.storage[receiver.name].pop())
     assert receiver.readMessage(msg, (provider_r.host, provider_r.port)).startswith("MSGFORW")
 

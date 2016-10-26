@@ -87,7 +87,7 @@ def testProviderRINFRequest(testProvider):
 	setup, provider = testProvider
 	testMix = MixNode("M8001", 8001, "127.0.0.1", setup)
 	mixInfo = format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk)
-	provider.datagramReceived("RINF"+petlib.pack.encode([mixInfo]), ("127.0.0.1", 9000))
+	provider.do_PROCESS(("RINF"+petlib.pack.encode([mixInfo]), ("127.0.0.1", 9000)))
 	assert format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk) in provider.mixList
 
 def testProviderUPUBRequest(testProvider):
@@ -95,7 +95,7 @@ def testProviderUPUBRequest(testProvider):
 	client = Client(setup, "test@mail.com", 7000, "127.0.0.1")
 	client.provider = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
 	reqrsp = "UPUB" + petlib.pack.encode([[client.name, client.port, client.host, client.pubk, client.provider]])
-	provider.datagramReceived(reqrsp, ("127.0.0.1", 9999))
+	provider.do_PROCESS((reqrsp, ("127.0.0.1", 9999)))
 	assert format3.User(client.name, client.port, client.host, client.pubk, 
 		[client.provider.name, client.provider.port,
 		client.provider.host, client.provider.pubk]) in provider.usersPubs 
@@ -167,6 +167,6 @@ def testProviderACKNBack(testProvider):
 	_fakeACK_2 = "ACKN67194594"
 	provider.expectedACK.append(_fakeACK)
 	provider.expectedACK.append(_fakeACK_2)
-	provider.datagramReceived(_fakeACK, ("127.0.0.1", 9999))
+	provider.do_PROCESS((_fakeACK, ("127.0.0.1", 9999)))
 	assert _fakeACK not in provider.expectedACK
 	assert _fakeACK_2 in provider.expectedACK
