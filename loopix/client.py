@@ -18,6 +18,7 @@ import resource
 import time
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, protocol, task, defer, threads
+from twisted.internet.defer import DeferredQueue
 from types import *
 import sqlite3
 import string
@@ -94,6 +95,7 @@ class Client(DatagramProtocol):
         self.tagForTesting = False
         self.bytesSent = 0
 
+        self.receivedQueue = DeferredQueue()
 
     def startProtocol(self):
         
@@ -106,8 +108,13 @@ class Client(DatagramProtocol):
         self.readInData("example.db")
         self.sendPing()
 
+        self.turnOnProcessing()
+        
         #if self.TESTMODE:
-        self.measureSentBytes()
+        self.measureSentMessages()
+
+    def turnOnProcessing(self):
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
 
     def sendPing(self):
 
@@ -252,6 +259,11 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
+        self.receivedQueue.put((data, (host, port)))
+
+
+    def do_PROCESS(self, (data, (host, port))):
+
         if data[:4] == "EMPT":
             print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
         if data[:4] == "RINF":
@@ -267,6 +279,8 @@ class Client(DatagramProtocol):
             log.info("[%s] > no new messages for this client." % self.name)
         if data == "NOASG":
             print "[%s] > Received NOASG from %s" % (self.name, host)
+
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
 
     def do_PMSG(self, data, host, port):
         try:
@@ -511,7 +525,7 @@ class Client(DatagramProtocol):
     def turnOnFakeMessaging(self):
         friendsGroup = random.sample(self.usersPubs, 5)
         print "Friends group: ", friendsGroup
-        reactor.callLater(5, self.randomMessaging, friendsGroup)
+        reactor.callLater(15, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
         print "--RANDOM MESSAGING"
@@ -520,7 +534,7 @@ class Client(DatagramProtocol):
         msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         self.sendMessage(r, mixpath, msgF, msgB)
-        reactor.callLater(5, self.randomMessaging, group)
+        reactor.callLater(15, self.randomMessaging, group)
 
     def sendTagedMessage(self):
         try:
@@ -683,12 +697,12 @@ class Client(DatagramProtocol):
         self.turnOnMessagePulling()
         self.turnOnMessaging(self.mixnet)
 
-    def measureSentBytes(self):
+    def measureSentMessages(self):
         print "---MEASURING SENT MESSAGES----"
-        lc = task.LoopingCall(self.sentBytes)
+        lc = task.LoopingCall(self.sentMessages)
         lc.start(180)
 
-    def sentBytes(self):
+    def sentMessages(self):
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
         print "[%s] > NUMBER OF MESSAGES SENT: %d" % (self.name, numSent)
