@@ -83,7 +83,6 @@ class Provider(MixNode):
 
     def do_PROCESS(self, (data, (host, port))):
         self.receivedQueue.get().addCallback(self.do_PROCESS)
-        print len(self.receivedQueue.waiting), len(self.receivedQueue.pending)
 
         if data[:8] == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
@@ -144,7 +143,6 @@ class Provider(MixNode):
         """
         def send_to_ip(IPAddrs):
             if name in self.storage.keys():
-            #if host in self.storage.keys():
                 if self.storage[name]:
                     for _ in range(self.MAX_RETRIEVE):
                         if self.storage[name]:
@@ -171,6 +169,8 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
+        print "LEN: ", len(reactor.getDelayedCalls())
+        print reactor.getDelayedCalls()
         print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
         log.info("[%s] > Received ROUT message from %s, %d " % (self.name, host, port))
         try:
@@ -182,19 +182,14 @@ class Provider(MixNode):
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
                 def save_or_queue(IPAddrs):
                     if xtoName in self.clientList.keys():
-                    #if (IPAddrs, int(xtoPort)) in self.clientList.values():
                         self.saveInStorage(xtoName, msg_forw)
                     else:
                         #self.addToQueue(
                         #    ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
                         try:
-                            print delay
-                            print sf.epoch()
                             dtmp = delay - sf.epoch()
                             if dtmp > 0:
                                 reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                                print "LEN: ", len(reactor.getDelayedCalls())
-                                print reactor.getDelayedCalls()
                             else:
                                 self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             self.expectedACK.append("ACKN"+idt)
@@ -261,7 +256,7 @@ class Provider(MixNode):
 
     def measureMsgReceived(self):
         lc = task.LoopingCall(self.saveNumbers)
-        lc.start(30)
+        lc.start(60)
 
     def saveNumbers(self):
         print "----MEASURING MESSAGES RECEIVED--------"

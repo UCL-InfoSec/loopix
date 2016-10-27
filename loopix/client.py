@@ -75,9 +75,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (1, None)
-        self.EXP_PARAMS_LOOPS = (1, None)
-        self.EXP_PARAMS_COVER = (1, None)
+        self.EXP_PARAMS_PAYLOAD = (0.5, None)
+        self.EXP_PARAMS_LOOPS = (0.5, None)
+        self.EXP_PARAMS_COVER = (0.5, None)
         self.EXP_PARAMS_DELAY = (0.5, None)
         self.TESTMODE = testMode
 
@@ -443,8 +443,6 @@ class Client(DatagramProtocol):
             self.transport.write(packet, (IPAddrs, port))
             self.bytesSent += sys.getsizeof(packet)
             self.numMessagesSent += 1
-            # for i in range(1000):
-            #     self.transport.write("ACKN67676767", (IPAddrs, port))
 
         reactor.resolve(host).addCallback(send_to_ip)
 
