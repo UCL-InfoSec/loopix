@@ -218,10 +218,10 @@ class MixNode(DatagramProtocol):
 						print delay
 						print sf.epoch()
 						dtmp = delay - sf.epoch()
-							if dtmp > 0:
-								reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
-							else:
-								self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+						if dtmp > 0:
+							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+						else:
+							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
 						self.expectedACK.append("ACKN"+idt)
 					except Exception, e:
 						print "ERROR: ", str(e)
