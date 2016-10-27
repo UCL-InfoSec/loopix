@@ -75,9 +75,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (10, None)
-        self.EXP_PARAMS_LOOPS = (10, None)
-        self.EXP_PARAMS_COVER = (10, None)
+        self.EXP_PARAMS_PAYLOAD = (1, None)
+        self.EXP_PARAMS_LOOPS = (1, None)
+        self.EXP_PARAMS_COVER = (1, None)
         self.EXP_PARAMS_DELAY = (0.5, None)
         self.TESTMODE = testMode
 
@@ -213,6 +213,8 @@ class Client(DatagramProtocol):
                 Args:
                 mixList (list): a list of active mixnodes in the network.
         """
+        print "LEN: ", len(reactor.getDelayedCalls())
+        print reactor.getDelayedCalls()
         try:
             if len(self.buffer) > 0:
                 message, addr = self.buffer.pop(0)
@@ -441,6 +443,8 @@ class Client(DatagramProtocol):
             self.transport.write(packet, (IPAddrs, port))
             self.bytesSent += sys.getsizeof(packet)
             self.numMessagesSent += 1
+            # for i in range(1000):
+            #     self.transport.write("ACKN67676767", (IPAddrs, port))
 
         reactor.resolve(host).addCallback(send_to_ip)
 
@@ -530,6 +534,7 @@ class Client(DatagramProtocol):
     def randomMessaging(self, group):
         print "--RANDOM MESSAGING"
         r = random.choice(group)
+        #r = random.choice(self.usersPubs)
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
@@ -700,7 +705,7 @@ class Client(DatagramProtocol):
     def measureSentMessages(self):
         print "---MEASURING SENT MESSAGES----"
         lc = task.LoopingCall(self.sentMessages)
-        lc.start(180)
+        lc.start(120)
 
     def sentMessages(self):
         numSent = self.numMessagesSent
