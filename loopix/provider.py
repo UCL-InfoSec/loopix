@@ -193,6 +193,8 @@ class Provider(MixNode):
                             dtmp = delay - sf.epoch()
                             if dtmp > 0:
                                 reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                                print "LEN: ", len(reactor.getDelayedCalls())
+                                print reactor.getDelayedCalls()
                             else:
                                 self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             self.expectedACK.append("ACKN"+idt)
