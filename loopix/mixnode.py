@@ -469,7 +469,7 @@ class MixNode(DatagramProtocol):
 			self.nMsgSent += 1
 			if data[:4] == "ROUT":
 				self.gbSent += sys.getsizeof(data)
-			print "SENDING MESSAGE"
+			print "[%s] > SENDING MESSAGE " % self.name
 
 		# Resolve and call the send function
 		reactor.resolve(host).addCallback(send_to_ip)
@@ -491,7 +491,6 @@ class MixNode(DatagramProtocol):
 				print "ERROR: ", str(e)
 				log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
 			else:
-				print "Mixes: %s" % str(mixes)
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1

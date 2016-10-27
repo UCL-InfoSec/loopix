@@ -113,7 +113,8 @@ class Provider(MixNode):
             if (host, port) not in self.clientList.values():
                 self.numMsgReceived += 1
             else:
-                self.numMsgClients += 1
+                #self.numMsgClients += 1
+                pass
             try:
                 self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
