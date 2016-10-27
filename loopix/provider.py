@@ -172,8 +172,19 @@ class Provider(MixNode):
                     #if (IPAddrs, int(xtoPort)) in self.clientList.values():
                         self.saveInStorage(xtoName, msg_forw)
                     else:
-                        self.addToQueue(
-                            ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
+                        #self.addToQueue(
+                        #    ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
+                        try:
+                            print delay
+                            print sf.epoch()
+                            dtmp = delay - sf.epoch()
+                            if dtmp > 0:
+                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+                            else:
+                                self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+                            self.expectedACK.append("ACKN"+idt)
+                        except Exception, e:
+                            print "ERROR: ", str(e)
                 reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
