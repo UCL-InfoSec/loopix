@@ -47,6 +47,7 @@ class Provider(MixNode):
         self.receivedQueue = DeferredQueue()
 
         self.nMsgSent = 0
+        self.testReceived = 0
 
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
@@ -74,7 +75,7 @@ class Provider(MixNode):
         log.info("[%s] > Stop protocol" % self.name)
 
     def datagramReceived(self, data, (host, port)):
-
+        self.testReceived += 1
         print "[%s] > received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
 
@@ -265,14 +266,16 @@ class Provider(MixNode):
         msgsR = self.numMsgReceived
         msgsClients = self.numMsgClients
         msgsSent = self.nMsgSent
+        testR = self.testReceived
         print "RECEIVED: ", msgsR
         self.numMsgReceived = 0
         self.numMsgClients = 0
         self.nMsgSent = 0
+        self.testReceived = 0
         try:
             with open('messagesReceivedSend.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[msgsR, msgsSent]]
+                data = [[testR, msgsR, msgsSent]]
                 csvW.writerows(data)
             with open('messagesFromClients.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
