@@ -17,6 +17,7 @@ import sqlite3
 import io
 import csv
 from twisted.internet.defer import DeferredQueue
+import supportFunctions as sf
 
 
 from twisted.logger import jsonFileLogObserver, Logger
