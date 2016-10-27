@@ -164,7 +164,7 @@ class MixNode(DatagramProtocol):
 				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 			except Exception, e:
-				log.info("ERROR: ", str(e))
+				print "ERROR: ", str(e)
 		if data[:4] == "RINF":
 			log.info("> Network information received.")
 			try:
@@ -214,8 +214,11 @@ class MixNode(DatagramProtocol):
 					log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
 					packet = petlib.pack.encode((idt, forw_msg))
 					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
-					reactor.callLater((time.time()-delay), self.sendMessage, ("ROUT" + packet, (xtoHost, xtoPort)))
-					self.expectedACK.append("ACKN"+idt)
+					try:
+						reactor.callLater((time.time()-delay), self.sendMessage, ("ROUT" + packet, (xtoHost, xtoPort)))
+						self.expectedACK.append("ACKN"+idt)
+					except Exception, e:
+						print "ERROR: ", str(e)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
@@ -586,7 +589,7 @@ class MixNode(DatagramProtocol):
 			mixnodes = c.fetchall()
 			for m in mixnodes:
 				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-			log.info("> Available mixnodes: ", self.mixList)
+			print "> Available mixnodes: ", self.mixList
 		except Exception, e:
 			log.error("[%s] > Error during reading from the database: %s" % (self.name, str(e)))
 
@@ -604,7 +607,7 @@ class MixNode(DatagramProtocol):
 			fetched = c.fetchall()
 			for p in fetched:
 				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
-			log.info("> Available providers: ", self.prvList)
+			print "> Available providers: ", self.prvList
 		except Exception, e:
 			log.error("[%s] > Error during reading from the database: %s" % (self.name, str(e)))
 
