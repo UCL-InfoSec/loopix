@@ -84,6 +84,8 @@ class Provider(MixNode):
     def do_PROCESS(self, (data, (host, port))):
         self.receivedQueue.get().addCallback(self.do_PROCESS)
 
+        if data[:4] == "ROUT" and (host, port) in self.clientList.values():
+            self.numMsgClients += 1
         if data[:8] == "PULL_MSG":
             print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
