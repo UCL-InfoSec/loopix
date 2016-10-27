@@ -215,7 +215,7 @@ class MixNode(DatagramProtocol):
 					packet = petlib.pack.encode((idt, forw_msg))
 					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
 					try:
-						reactor.callLater((time.time()-delay), self.sendMessage, ("ROUT" + packet, (xtoHost, xtoPort)))
+						reactor.callLater((delay-time.time()), self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 						self.expectedACK.append("ACKN"+idt)
 					except Exception, e:
 						print "ERROR: ", str(e)
