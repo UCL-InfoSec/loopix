@@ -523,7 +523,7 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        friendsGroup = random.sample(self.usersPubs, 5)
+        friendsGroup = random.sample(self.usersPubs, 3)
         print "Friends group: ", friendsGroup
         reactor.callLater(15, self.randomMessaging, friendsGroup)
 
