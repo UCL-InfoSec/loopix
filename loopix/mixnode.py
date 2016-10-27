@@ -214,7 +214,7 @@ class MixNode(DatagramProtocol):
 					log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
 					packet = petlib.pack.encode((idt, forw_msg))
 					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
-					reactor.callLater((time.time()-delay), self.sendMessage, ("ROUT" + packet, (xtoHost, xtoPort), idt))
+					reactor.callLater((time.time()-delay), self.sendMessage, ("ROUT" + packet, (xtoHost, xtoPort)))
 					self.expectedACK.append("ACKN"+idt)
 
 	def do_BOUNCE(self, data):
