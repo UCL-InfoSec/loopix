@@ -49,7 +49,7 @@ class Provider(MixNode):
 
         self.turnOnProcessing()
 
-        self.run()
+        #self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
