@@ -180,9 +180,9 @@ class Provider(MixNode):
                             print sf.epoch()
                             dtmp = delay - sf.epoch()
                             if dtmp > 0:
-                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             else:
-                                self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+                                self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             self.expectedACK.append("ACKN"+idt)
                         except Exception, e:
                             print "ERROR: ", str(e)
