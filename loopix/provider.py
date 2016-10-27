@@ -49,7 +49,7 @@ class Provider(MixNode):
 
         self.turnOnProcessing()
 
-        self.run()
+        #self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
@@ -249,7 +249,7 @@ class Provider(MixNode):
                 csvW.writerows(data)
             with open('deferredQueueSize.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+                data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending), len(self.Queue)]]
                 csvW.writerows(data)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))

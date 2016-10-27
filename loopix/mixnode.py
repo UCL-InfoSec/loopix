@@ -93,7 +93,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 
 		self.turnOnProcessing()
-		self.run()
+		#self.run()
 		
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
@@ -213,18 +213,18 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost)
 					log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
 					packet = petlib.pack.encode((idt, forw_msg))
-					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
-					# try:
-					# 	print delay
-					# 	print sf.epoch()
-					# 	dtmp = delay - sf.epoch()
-					# 	if dtmp > 0:
-					# 		reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
-					# 	else:
-					# 		self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
-					# 	self.expectedACK.append("ACKN"+idt)
-					# except Exception, e:
-					# 	print "ERROR: ", str(e)
+					#self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
+					try:
+						print delay
+						print sf.epoch()
+						dtmp = delay - sf.epoch()
+						if dtmp > 0:
+							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+						else:
+							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+						self.expectedACK.append("ACKN"+idt)
+					except Exception, e:
+						print "ERROR: ", str(e)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
