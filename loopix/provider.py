@@ -110,7 +110,6 @@ class Provider(MixNode):
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
             log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
-
             if (host, port) not in self.clientList.values():
                 self.numMsgReceived += 1
             else:
@@ -272,7 +271,7 @@ class Provider(MixNode):
         try:
             with open('messagesReceivedSend.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[testR, msgsR, msgsSent]]
+                data = [[testR, msgsR, msgsSent, msgsClients]]
                 csvW.writerows(data)
             with open('messagesFromClients.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
