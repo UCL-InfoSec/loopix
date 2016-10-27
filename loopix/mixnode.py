@@ -85,7 +85,7 @@ class MixNode(DatagramProtocol):
 
 		self.receivedQueue = DeferredQueue()
 
-		self.nMsgSent
+		self.nMsgSent = 0
 
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
