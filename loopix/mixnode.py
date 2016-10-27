@@ -85,6 +85,8 @@ class MixNode(DatagramProtocol):
 
 		self.receivedQueue = DeferredQueue()
 
+		self.nMsgSent
+
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
 		log.info("[%s] > Start protocol" % self.name)
@@ -172,6 +174,7 @@ class MixNode(DatagramProtocol):
 			except Exception, e:
 				log.info("ERROR: ", str(e))
 		if data.startswith("ACKN"):
+			self.bReceived += sys.getsizeof(data)
 			log.info("[%s] > Acknowledgment received from (%s, %d)" % (self.name, host, port))
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
@@ -396,7 +399,7 @@ class MixNode(DatagramProtocol):
 	def measureBandwidth(self):
 		print "Measure bandwidth function called"
 		lc = task.LoopingCall(self.in_out_ratio)
-		lc.start(180, False)
+		lc.start(120, False)
 
 	def in_out_ratio(self):
 		processed = self.bProcessed
@@ -463,6 +466,7 @@ class MixNode(DatagramProtocol):
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
 			self.bSent += sys.getsizeof(data)
+			self.nMsgSent += 1
 			if data[:4] == "ROUT":
 				self.gbSent += sys.getsizeof(data)
 			print "SENDING MESSAGE"

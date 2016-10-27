@@ -37,6 +37,7 @@ class Provider(MixNode):
         self.Queue = []
 
         self.numMsgReceived = 0
+        self.numMsgClients = 0
         self.bSent = 0
         self.bReceived = 0
         self.bProcessed = 0
@@ -44,6 +45,8 @@ class Provider(MixNode):
         self.gbReceived = 0
 
         self.receivedQueue = DeferredQueue()
+
+        self.nMsgSent
 
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
@@ -111,7 +114,7 @@ class Provider(MixNode):
             if (host, port) not in self.clientList.values():
                 self.numMsgReceived += 1
             else:
-                print "Not counting"
+                self.numMsgClients += 1
             try:
                 self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
@@ -255,21 +258,33 @@ class Provider(MixNode):
 
     def measureMsgReceived(self):
         lc = task.LoopingCall(self.saveNumbers)
-        lc.start(180)
+        lc.start(120)
 
     def saveNumbers(self):
         print "----MEASURING MESSAGES RECEIVED--------"
         msgsR = self.numMsgReceived
+        msgsClients = self.numMsgClients
+        msgsSent = self.nMsgSent
         print "RECEIVED: ", msgsR
         self.numMsgReceived = 0
+        self.numMsgClients = 0
+        self.nMsgSent = 0
         try:
             with open('messagesReceived.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
                 data = [[msgsR]]
                 csvW.writerows(data)
+            with open('messagesFromClients.csv', 'ab') as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[msgsClients]]
+                csvW.writerows(data)
             with open('deferredQueueSize.csv', 'ab') as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
                 data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending), len(self.Queue)]]
+                csvW.writerows(data)
+            with open('messagesSentProvider.csv', 'ab') as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[msgsSent]]
                 csvW.writerows(data)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
