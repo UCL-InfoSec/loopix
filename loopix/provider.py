@@ -37,6 +37,11 @@ class Provider(MixNode):
         self.Queue = []
 
         self.numMsgReceived = 0
+        self.bSent = 0
+        self.bReceived = 0
+        self.bProcessed = 0
+        self.gbSent = 0
+        self.gbReceived = 0
 
         self.receivedQueue = DeferredQueue()
 
@@ -58,6 +63,7 @@ class Provider(MixNode):
         self.readInData('example.db')
 
         self.measureMsgReceived()
+        self.measureBandwidth()
         #self.saveInDB('example.db')
 
     def stopProtocol(self):
@@ -247,7 +253,7 @@ class Provider(MixNode):
 
     def measureMsgReceived(self):
         lc = task.LoopingCall(self.saveNumbers)
-        lc.start(300)
+        lc.start(180)
 
     def saveNumbers(self):
         print "----MEASURING MESSAGES RECEIVED--------"

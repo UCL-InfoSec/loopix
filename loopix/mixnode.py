@@ -222,6 +222,7 @@ class MixNode(DatagramProtocol):
 							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 						else:
 							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+						self.bProcessed += sys.getsizeof(packet)
 						self.expectedACK.append("ACKN"+idt)
 					except Exception, e:
 						print "ERROR: ", str(e)
@@ -395,7 +396,7 @@ class MixNode(DatagramProtocol):
 	def measureBandwidth(self):
 		print "Measure bandwidth function called"
 		lc = task.LoopingCall(self.in_out_ratio)
-		lc.start(10, False)
+		lc.start(180, False)
 
 	def in_out_ratio(self):
 		processed = self.bProcessed
@@ -414,6 +415,10 @@ class MixNode(DatagramProtocol):
 			with open('deferredQueueSize.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+				csvW.writerows(data)
+			with open('mixnodeSent.csv', 'ab') as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				data = [[self.gbSent]]
 				csvW.writerows(data)
 		except Exception, e:
 			print str(e)
