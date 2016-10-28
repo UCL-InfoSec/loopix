@@ -83,7 +83,7 @@ class Provider(MixNode):
 
         self.testQueueSize += 1
         #self.receivedQueue.put((data, (host, port)))
-        reactor.callLater(0.0, self.receivedQueue.put, data, (host, port))
+        reactor.callLater(0.0, self.receivedQueue.put, (data, (host, port)))
         print "Queue size put: ", self.testQueueSize
 
 
