@@ -49,6 +49,8 @@ class Provider(MixNode):
         self.nMsgSent = 0
         self.testReceived = 0
 
+        self.testQueueSize = 0
+
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
         log.info("[%s] > Start protocol." % self.name)
@@ -79,10 +81,15 @@ class Provider(MixNode):
         print "[%s] > received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
 
+        self.testQueueSize += 1
         self.receivedQueue.put((data, (host, port)))
+        print "Queue size put: ", self.testQueueSize
+
 
     def do_PROCESS(self, (data, (host, port))):
+        self.testQueueSize -= 1
         self.receivedQueue.get().addCallback(self.do_PROCESS)
+        print "Queue size get : ", self.testQueueSize
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
