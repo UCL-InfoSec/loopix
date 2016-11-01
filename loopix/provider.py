@@ -61,7 +61,7 @@ class Provider(MixNode):
 
         self.turnOnProcessing()
 
-        #self.run()
+        self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
@@ -82,15 +82,12 @@ class Provider(MixNode):
         log.info("[%s] > received data" % self.name)
 
         self.testQueueSize += 1
-        #self.receivedQueue.put((data, (host, port)))
-        reactor.callLater(0.0, self.receivedQueue.put, (data, (host, port)))
-        print "Queue size put: ", self.testQueueSize
+        self.receivedQueue.put((data, (host, port)))
 
 
     def do_PROCESS(self, (data, (host, port))):
-        self.testQueueSize -= 1
         self.receivedQueue.get().addCallback(self.do_PROCESS)
-        print "Queue size get : ", self.testQueueSize
+
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
