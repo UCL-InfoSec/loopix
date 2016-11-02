@@ -1,6 +1,7 @@
 import petlib.pack
 import csv
 import os
+from collections import Counter
 
 def readInFile(filename):
 	try:
@@ -51,8 +52,10 @@ def readFiles():
     c = db.cursor()
     c.execute("SELECT * FROM Users")
     allData = c.fetchall()
+    daat = []
     for i in allData:
-    	print i[5]
+    	daat.append(str(i[5]))
+    print Counter(daat)
     db.commit()				
 
 if __name__ == "__main__":

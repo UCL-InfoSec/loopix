@@ -18,7 +18,7 @@ import resource
 import time
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, protocol, task, defer, threads
-from twisted.internet.defer import DeferredQueue
+from twisted.internet.defer import DeferredQueue, DeferredLock
 from types import *
 import sqlite3
 import string
@@ -32,6 +32,9 @@ from twisted.internet.interfaces import IPullProducer
 from zope.interface import implementer
 from processQueue import ProcessQueue
 
+
+import copy
+
 # import fcntl
 
 # def make_blocking(fd):
@@ -40,14 +43,14 @@ from processQueue import ProcessQueue
 #         fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
-TIME_PULL = 1
+TIME_PULL = 3
 NOISE_LENGTH = 1000
 
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testMode=True,
+    def __init__(self, setup, name, port, host, testMode=False,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
@@ -86,10 +89,10 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (0.5, None)
-        self.EXP_PARAMS_LOOPS = (0.5, None)
-        self.EXP_PARAMS_COVER = (0.5, None)
-        self.EXP_PARAMS_DELAY = (0.5, None)
+        self.EXP_PARAMS_PAYLOAD = (1, None)
+        self.EXP_PARAMS_LOOPS = (0.1, None)
+        self.EXP_PARAMS_COVER = (1, None)
+        self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
         self.boardHost = "127.0.0.1"
@@ -108,8 +111,10 @@ class Client(DatagramProtocol):
 
         self.receivedQueue = DeferredQueue()
 
-        #TESTING VERSION
+        # ======================
+        # TESTING VERSION
         self.processQueue = ProcessQueue()
+        # ======================
 
     def startProtocol(self):
         
@@ -122,20 +127,21 @@ class Client(DatagramProtocol):
         self.readInData("example.db")
         self.sendPing()
 
-        self.turnOnProcessing()
+        reactor.callLater(5.0, self.turnOnProcessing)
+
 
         #if self.TESTMODE:
         self.measureSentMessages()
 
 
     def turnOnProcessing(self):
-        #self.receivedQueue.get().addCallback(self.do_PROCESS)
+        # self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
         
         # ======================
         # TEST MODE
-        self.processQueue.get().addCallback(self.do_PROCESS)
+        self.processQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
         # ======================
-
+        pass
 
     def sendPing(self):
 
@@ -280,20 +286,21 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
-        self.receivedQueue.put((data, (host, port)))
+        # self.receivedQueue.put((data, (host, port)))
 
         #======================
         # TEST VESRION
         obj = (data, (host, port))
         try:
-            self.processQueue.put(obj)
+            for i in range(50):
+                self.processQueue.put(obj)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
-        # #======================
+        # # #======================
 
-    def do_PROCESS(self, obj):
+    def do_PROCESS_IN_THREAD(self, obj):
         data, (host, port) = obj 
-        #self.receivedQueue.get().addCallback(self.do_PROCESS)
+        # self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
 
         #======================
         # make_blocking(sys.stdin.fileno())
@@ -302,10 +309,11 @@ class Client(DatagramProtocol):
 
         # TEST VERSION
         try:
-            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+            print "Call from thread"
+            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS_IN_THREAD)
         except Exception, e:
             print "[%s] > ERROR: ", str(e)
-        # ======================
+        # # ======================
 
         if data[:4] == "EMPT":
             print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
@@ -326,16 +334,18 @@ class Client(DatagramProtocol):
 
     def do_PMSG(self, data, host, port):
 
+        print "[%s] > Unpacking new message: " % self.name
+
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
             
-            print "[%s] > New message received and unpacked. " % self.name
-            
-            if msg.startswith("HTTAG"):
-                self.measureLatency(msg, timestamp)
+            #print "[%s] > New message unpacked: " % self.name
+            #if msg.startswith("HTTAG"):
+            #    self.measureLatency(msg, timestamp)
         except Exception, e:
-            print "[%s] > Message reading error: %s" % (self.name, str(e))        
+            print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
+            pass
 
     def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
         """ Function returns an encapsulated message,
@@ -395,9 +405,9 @@ class Client(DatagramProtocol):
                     readyPacket, addr = heartbeatData
                     self.send("ROUT" + readyPacket, addr)
                     self.numHeartbeatsSent += 1
-                    #print "[%s] > Heartbeat sent." % self.name
+                    print "[%s] > Heartbeat sent." % self.name
                 else:
-                    print "[%s] > Heartbeat could not be send."
+                    print "[%s] > Heartbeat could not be send." % self.name
             except Exception, e:
                 print "[%s] > Send heartbeat ERROR: %s" % (self.name, str(e))
 
@@ -436,7 +446,7 @@ class Client(DatagramProtocol):
                 readyPacket, addr = dropData
                 self.send("ROUT" + readyPacket, addr)
                 self.numDropMsgSent += 1
-                #print "[%s] > Drop message sent " % self.name
+                print "[%s] > Drop message sent " % self.name
             else:
                 print "[%s] > Drop message could not be send." % self.name
         except ValueError, e:
@@ -565,6 +575,7 @@ class Client(DatagramProtocol):
 
     def randomMessaging(self, group):
         print "--RANDOM MESSAGING"
+
         r = random.choice(group)
         #r = random.choice(self.usersPubs)
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)

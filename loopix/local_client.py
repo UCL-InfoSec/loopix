@@ -30,22 +30,28 @@ class ClientEcho(basic.LineReceiver):
 		elif line.upper() == "-E":
 			reactor.stop()
 		elif line.upper() == "-M":
-			friends = random.sample(self.client.usersPubs, 3)
-			print "Friends group: ", friends
-			self.targetSending(friends)
+			try:
+				friends = random.sample(self.client.usersPubs, 3)
+				print "Friends group: ", friends
+				recipient = random.choice(friends)
+			except Exception, e:
+				print str(e)
+			print recipient.provider.name
+			#self.targetSending(friends)
+			self.targetSending(recipient)
 		else:
 			print "Command not found"
 		self.transport.write('>>> ')
 
-	def targetSending(self, group):
-		recipient = random.choice(group)
+	def targetSending(self, recipient):
+		#recipient = random.choice(group)
 		print ">> SENDING TO SELECTED CLIENT ", recipient
 		try:
 			path = self.client.takePathSequence(self.client.mixnet, self.client.PATH_LENGTH)
 			msgF = "RANDOMTARGET" + sf.generateRandomNoise(1000)
 			msgB = "RANDOMTARGET" + sf.generateRandomNoise(1000)
 			self.client.sendMessage(recipient, path, msgF, msgB)
-			reactor.callLater(120, self.targetSending, group)
+			reactor.callLater(10, self.targetSending, recipient)
 		except Exception, e:
 			print str(e)
 
