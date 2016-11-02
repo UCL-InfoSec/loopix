@@ -50,7 +50,7 @@ log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testMode=False,
+    def __init__(self, setup, name, port, host, testMode=True,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
@@ -292,8 +292,7 @@ class Client(DatagramProtocol):
         # TEST VESRION
         obj = (data, (host, port))
         try:
-            for i in range(50):
-                self.processQueue.put(obj)
+            self.processQueue.put(obj)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
         # # #======================
@@ -571,18 +570,20 @@ class Client(DatagramProtocol):
     def turnOnFakeMessaging(self):
         friendsGroup = random.sample(self.usersPubs, 3)
         print "Friends group: ", friendsGroup
-        reactor.callLater(15, self.randomMessaging, friendsGroup)
+        reactor.callLater(1, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
         print "--RANDOM MESSAGING"
+        
+        self.sendHeartBeat(self.mixnet, time.time())
 
-        r = random.choice(group)
-        #r = random.choice(self.usersPubs)
-        mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-        msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        self.sendMessage(r, mixpath, msgF, msgB)
-        reactor.callLater(15, self.randomMessaging, group)
+        # r = random.choice(group)
+        # #r = random.choice(self.usersPubs)
+        # mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+        # msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        # msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        # self.sendMessage(r, mixpath, msgF, msgB)
+        reactor.callLater(1, self.randomMessaging, group)
 
     def sendTagedMessage(self):
         try:
