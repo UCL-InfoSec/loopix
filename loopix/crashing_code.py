@@ -27,6 +27,7 @@ def readMessage(client, message, (host, port)):
 	forward = message[1]
 	backward = message[2]
 	element = EcPt.from_binary(elem, client.G)
+
 	if elem in client.sentElements:
 		print "[%s] > Decrypted bounce:" % client.name
 		return forward
@@ -102,12 +103,15 @@ if __name__ == "__main__":
 		back = os.urandom(1000)
 
 		print "---Adding to queue----"
-		packet, addr = client.makePacket(client, [], setup, dest, back, False, None)
+		try:
+			packet, addr = client.makePacket(client, [], setup, dest, back, False, None)
 		
-		dest, msg, idt, delay = provider.mix_operate(setup, petlib.pack.decode(packet)[1])
-		dest2, msg2, idt2, delay2 = provider.mix_operate(setup, msg)
-		processQueue.put((client, msg2, addr))
-		print len(processQueue.queue)
+			dest, msg, idt, delay = provider.mix_operate(setup, petlib.pack.decode(packet)[1])
+			dest2, msg2, idt2, delay2 = provider.mix_operate(setup, msg)
+			processQueue.put((client, msg2, addr))
+			print len(processQueue.queue)
+		except Exception, e:
+			print "ERROR: ", str(e)
 
 	add_to_queue()
 	def process_queue(x):

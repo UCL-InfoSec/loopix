@@ -362,6 +362,7 @@ class Client(DatagramProtocol):
         path = [self.provider] + mixnet + [receiver.provider]
         current_time = time.time()
         delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
+#        delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
         package = format3.create_mixpacket_format(self, receiver, path, setup, dest_message, return_message, delay, dropFlag, typeFlag)
         self.sentElements.append(package[0])
         return (petlib.pack.encode((str(uuid.uuid1()), package[1:])), (self.provider.host, self.provider.port))
