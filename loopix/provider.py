@@ -64,7 +64,7 @@ class Provider(MixNode):
         #print "[%s] > Request for network info sent." % self.name
         #log.info("[%s] > Request for network info sent." % self.name)
 
-        reactor.callLater(60.0, self.turnOnProcessing())
+        reactor.callLater(60.0, self.turnOnProcessing)
 
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)
