@@ -89,12 +89,11 @@ class Provider(MixNode):
         self.testQueueSize += 1
         #self.receivedQueue.put((data, (host, port)))
 
-        # ===================TEST-MULTI-THREAD-VERSION=====================
+        obj = (data, (host, port))
         try:
-            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+            self.processQueue.put(obj)
         except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
-        # =================================================================
+            print "[%s] > ERROR: %s " % (self.name, str(e))
 
 
     def do_PROCESS(self, (data, (host, port))):
