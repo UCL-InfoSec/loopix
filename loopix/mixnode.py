@@ -99,13 +99,13 @@ class MixNode(DatagramProtocol):
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 
-		self.turnOnProcessing()
+		reactor.callLater(5.0, self.turnOnProcessing)
 		self.run()
 		
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
 
-		self.measureBandwidth()
+		# self.measureBandwidth()
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
@@ -421,8 +421,8 @@ class MixNode(DatagramProtocol):
 		self.bReceived = 0
 		goodbytes = self.gbReceived
 		self.gbReceived = 0
-		print "Bytes received: %d, Bytes processed: %d" % (received, processed)
-		print "Good bytes: %d " % goodbytes
+		# print "Bytes received: %d, Bytes processed: %d" % (received, processed)
+		# print "Good bytes: %d " % goodbytes
 		try:
 			with open('performance.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')

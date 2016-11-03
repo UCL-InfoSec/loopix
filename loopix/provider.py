@@ -64,7 +64,7 @@ class Provider(MixNode):
         #print "[%s] > Request for network info sent." % self.name
         #log.info("[%s] > Request for network info sent." % self.name)
 
-        self.turnOnProcessing()
+        reactor.callLater(5.0, self.turnOnProcessing)
 
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)
@@ -175,6 +175,7 @@ class Provider(MixNode):
                             log.info("[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port))
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
+                    print "Nothing to pool"
 
             else:
                 self.transport.write("NOASG", (IPAddrs, port))
@@ -192,8 +193,6 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
-        print "LEN: ", len(reactor.getDelayedCalls())
-        print reactor.getDelayedCalls()
         print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
         log.info("[%s] > Received ROUT message from %s, %d " % (self.name, host, port))
         try:
