@@ -165,7 +165,7 @@ class MixNode(DatagramProtocol):
 
 	def do_PROCESS(self, (data, (host, port))):
 		# self.receivedQueue.get().addCallback(self.do_PROCESS)
-
+		print "[%s] > Calling do_PROCESS " % self.name
 		# TEST VERSION
 		try:
 			reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
@@ -451,6 +451,7 @@ class MixNode(DatagramProtocol):
 		If the delay with which the message was suppose to be send exceeded
 		MAX_DELAY_TIME, the message is dropped."""
 
+		print "[%s] Flushing queue" % self.name
 		if self.Queue:
 			timeToSend, element = self.Queue[0]
 			#element contains: packet, destination address, idt

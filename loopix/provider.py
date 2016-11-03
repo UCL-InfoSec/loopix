@@ -83,7 +83,7 @@ class Provider(MixNode):
 
     def datagramReceived(self, data, (host, port)):
         self.testReceived += 1
-        print "[%s] > received data from %s" % (self.name, host)
+        print "[%s] > Received data from %s" % (self.name, host)
         log.info("[%s] > received data" % self.name)
 
         self.testQueueSize += 1
@@ -98,6 +98,7 @@ class Provider(MixNode):
 
     def do_PROCESS(self, (data, (host, port))):
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
+        print "[%s] > Called do_PROCESS" % self.name
 
         try:
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)

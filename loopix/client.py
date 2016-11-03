@@ -286,7 +286,7 @@ class Client(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         # self.receivedQueue.put((data, (host, port)))
-
+        print "[%s] > Received new packet" % self.name
         #======================
         # TEST VESRION
         obj = (data, (host, port))
