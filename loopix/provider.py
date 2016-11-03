@@ -173,7 +173,9 @@ class Provider(MixNode):
                 host (str): host of the requesting client,
                 port (int): port of the requesting client.
         """
+        print "Inside PULL function"
         def send_to_ip(IPAddrs):
+            print "Inside send_to_ip"
             if name in self.storage.keys():
                 if self.storage[name]:
                     for _ in range(self.MAX_RETRIEVE):
@@ -188,8 +190,10 @@ class Provider(MixNode):
 
             else:
                 self.transport.write("NOASG", (IPAddrs, port))
+                print "Another NOASG"
 
         reactor.resolve(host).addCallback(send_to_ip)
+        print "Finished do_PULL"
 
 
     def do_ROUT(self, data, (host, port), tag=None):
