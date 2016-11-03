@@ -89,7 +89,7 @@ class MixNode(DatagramProtocol):
 		self.nMsgSent = 0
 
 		# ==============
-		self.processQueue = ProcessQueue()
+		# self.processQueue = ProcessQueue()
 		# ==============
 
 	def startProtocol(self):
@@ -112,10 +112,10 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Stop protocol" % self.name)
 
 	def turnOnProcessing(self):
-		# self.receivedQueue.get().addCallback(self.do_PROCESS)
+		self.receivedQueue.get().addCallback(self.do_PROCESS)
 
 		# ======================
-		self.processQueue.get().addCallback(self.do_PROCESS)
+		# self.processQueue.get().addCallback(self.do_PROCESS)
 		# ======================
 
 	def run(self):
@@ -161,16 +161,17 @@ class MixNode(DatagramProtocol):
 		print "[%s] > Received data from %s" % (self.name, host)
 		# log.info("[%s] > received data from %s" % (self.name, host))
 
-		self.processQueue.put((data, (host, port)))
+		self.receivedQueue.put((data, (host, port)))
+		#self.processQueue.put((data, (host, port)))
 
 	def do_PROCESS(self, (data, (host, port))):
-		# self.receivedQueue.get().addCallback(self.do_PROCESS)
+		self.receivedQueue.get().addCallback(self.do_PROCESS)
 		print "[%s] > Calling do_PROCESS " % self.name
 		# TEST VERSION
-		try:
-			reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
-		except Exception, e:
-			print "[%s] > ERROR: %s" % (self.name, str(e))
+		# try:
+		# 	reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+		# except Exception, e:
+		# 	print "[%s] > ERROR: %s" % (self.name, str(e))
 		# ======================
 
 		if data[:4] == "MINF":

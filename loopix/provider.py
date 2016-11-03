@@ -64,7 +64,7 @@ class Provider(MixNode):
         #print "[%s] > Request for network info sent." % self.name
         #log.info("[%s] > Request for network info sent." % self.name)
 
-        reactor.callLater(5.0, self.turnOnProcessing)
+        self.turnOnProcessing()
 
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)
@@ -87,23 +87,23 @@ class Provider(MixNode):
         # log.info("[%s] > received data" % self.name)
 
         self.testQueueSize += 1
-        #self.receivedQueue.put((data, (host, port)))
+        self.receivedQueue.put((data, (host, port)))
 
-        obj = (data, (host, port))
-        try:
-            self.processQueue.put(obj)
-        except Exception, e:
-            print "[%s] > ERROR: %s " % (self.name, str(e))
+        # obj = (data, (host, port))
+        # try:
+        #     self.processQueue.put(obj)
+        # except Exception, e:
+        #     print "[%s] > ERROR: %s " % (self.name, str(e))
 
 
     def do_PROCESS(self, (data, (host, port))):
-        #self.receivedQueue.get().addCallback(self.do_PROCESS)
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
         print "[%s] > Called do_PROCESS" % self.name
 
-        try:
-            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
-        except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+        # try:
+        #     reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+        # except Exception, e:
+        #     print "[%s] > ERROR: %s" % (self.name, str(e))
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
