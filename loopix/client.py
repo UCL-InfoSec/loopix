@@ -127,7 +127,7 @@ class Client(DatagramProtocol):
         self.readInData("example.db")
         self.sendPing()
 
-        reactor.callLater(5.0, self.turnOnProcessing)
+        self.turnOnProcessing()
 
 
         #if self.TESTMODE:
@@ -135,11 +135,11 @@ class Client(DatagramProtocol):
 
 
     def turnOnProcessing(self):
-        # self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
+        self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
         
         # ======================
         # TEST MODE
-        self.processQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
+        # self.processQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
         # ======================
 
     def sendPing(self):
@@ -286,20 +286,20 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
-        # self.receivedQueue.put((data, (host, port)))
+        self.receivedQueue.put((data, (host, port)))
         print "[%s] > Received new packet" % self.name
         #======================
         # TEST VESRION
-        obj = (data, (host, port))
-        try:
-            self.processQueue.put(obj)
-        except Exception, e:
-            print "[%s] > ERROR: %s " % (self.name, str(e))
+        # obj = (data, (host, port))
+        # try:
+        #     self.processQueue.put(obj)
+        # except Exception, e:
+        #     print "[%s] > ERROR: %s " % (self.name, str(e))
         # # #======================
 
     def do_PROCESS_IN_THREAD(self, obj):
         data, (host, port) = obj 
-        # self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
+        self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
 
         #======================
         # make_blocking(sys.stdin.fileno())
@@ -307,11 +307,11 @@ class Client(DatagramProtocol):
         # make_blocking(sys.stderr.fileno())
 
         # TEST VERSION
-        try:
-            print "Call from thread"
-            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS_IN_THREAD)
-        except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+        # try:
+        #     print "Call from thread"
+        #     reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS_IN_THREAD)
+        # except Exception, e:
+        #     print "[%s] > ERROR: %s" % (self.name, str(e))
         # # ======================
 
         if data[:4] == "EMPT":
