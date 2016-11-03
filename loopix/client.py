@@ -199,8 +199,8 @@ class Client(DatagramProtocol):
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        if self.TESTMODE:
-            self.turnOnFakeMessaging()
+        #if self.TESTMODE:
+        #    self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -573,15 +573,13 @@ class Client(DatagramProtocol):
 
     def randomMessaging(self, group):
         print "--RANDOM MESSAGING"
-        
-        self.sendHeartBeat(self.mixnet, time.time())
 
-        # r = random.choice(group)
+        r = random.choice(group)
         # #r = random.choice(self.usersPubs)
-        # mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-        # msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        # msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        # self.sendMessage(r, mixpath, msgF, msgB)
+        mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+        msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        self.sendMessage(r, mixpath, msgF, msgB)
         reactor.callLater(1, self.randomMessaging, group)
 
     def sendTagedMessage(self):
