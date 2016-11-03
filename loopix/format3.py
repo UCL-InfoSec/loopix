@@ -381,4 +381,3 @@ def test_createPacket():
 	pt = receiver.readMessage(message3, ("127.0.0.1",9000))
 	assert pt == "Hello"
 
-

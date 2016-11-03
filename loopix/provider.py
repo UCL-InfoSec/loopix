@@ -18,6 +18,7 @@ import io
 import csv
 from twisted.internet.defer import DeferredQueue
 import supportFunctions as sf
+from processQueue import ProcessQueue
 
 
 from twisted.logger import jsonFileLogObserver, Logger
@@ -51,6 +52,10 @@ class Provider(MixNode):
 
         self.testQueueSize = 0
 
+        # ==============
+        self.processQueue = ProcessQueue()
+        # ==============
+
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
         log.info("[%s] > Start protocol." % self.name)
@@ -82,12 +87,23 @@ class Provider(MixNode):
         log.info("[%s] > received data" % self.name)
 
         self.testQueueSize += 1
-        self.receivedQueue.put((data, (host, port)))
+        #self.receivedQueue.put((data, (host, port)))
+
+        # ===================TEST-MULTI-THREAD-VERSION=====================
+        try:
+            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
+        # =================================================================
 
 
     def do_PROCESS(self, (data, (host, port))):
-        self.receivedQueue.get().addCallback(self.do_PROCESS)
+        #self.receivedQueue.get().addCallback(self.do_PROCESS)
 
+        try:
+            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
@@ -191,17 +207,17 @@ class Provider(MixNode):
                     if xtoName in self.clientList.keys():
                         self.saveInStorage(xtoName, msg_forw)
                     else:
-                        #self.addToQueue(
-                        #    ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
-                        try:
-                            dtmp = delay - sf.epoch()
-                            if dtmp > 0:
-                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                            else:
-                                self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                            self.expectedACK.append("ACKN"+idt)
-                        except Exception, e:
-                            print "ERROR: ", str(e)
+                        self.addToQueue(
+                            ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
+                #         try:
+                #             dtmp = delay - sf.epoch()
+                #             if dtmp > 0:
+                #                 reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                #             else:
+                #                 self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                #             self.expectedACK.append("ACKN"+idt)
+                #         except Exception, e:
+                #             print "ERROR: ", str(e)
                 reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):

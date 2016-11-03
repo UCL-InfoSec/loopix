@@ -21,6 +21,7 @@ import sqlite3
 import supportFunctions as sf
 import sys
 import csv
+from processQueue import ProcessQueue
 
 from twisted.logger import jsonFileLogObserver, Logger
 
@@ -87,6 +88,10 @@ class MixNode(DatagramProtocol):
 
 		self.nMsgSent = 0
 
+		# ==============
+		self.processQueue = ProcessQueue()
+		# ==============
+
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
 		log.info("[%s] > Start protocol" % self.name)
@@ -95,7 +100,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 
 		self.turnOnProcessing()
-		#self.run()
+		self.run()
 		
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
@@ -107,7 +112,11 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Stop protocol" % self.name)
 
 	def turnOnProcessing(self):
-		self.receivedQueue.get().addCallback(self.do_PROCESS)
+		# self.receivedQueue.get().addCallback(self.do_PROCESS)
+
+		# ======================
+		self.processQueue.get().addCallback(self.do_PROCESS)
+		# ======================
 
 	def run(self):
 		"""A loop function responsible for flushing the queue"""
@@ -155,7 +164,14 @@ class MixNode(DatagramProtocol):
 		self.receivedQueue.put((data, (host, port)))
 
 	def do_PROCESS(self, (data, (host, port))):
-		self.receivedQueue.get().addCallback(self.do_PROCESS)
+		# self.receivedQueue.get().addCallback(self.do_PROCESS)
+
+		# TEST VERSION
+		try:
+			reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+		except Exception, e:
+			print "[%s] > ERROR: %s" % (self.name, str(e))
+		# ======================
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
@@ -175,7 +191,6 @@ class MixNode(DatagramProtocol):
 				log.info("ERROR: ", str(e))
 		if data.startswith("ACKN"):
 			self.bReceived += sys.getsizeof(data)
-			log.info("[%s] > Acknowledgment received from (%s, %d)" % (self.name, host, port))
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
 
@@ -204,31 +219,29 @@ class MixNode(DatagramProtocol):
 			peeledData = self.mix_operate(self.setup, data)
 		except Exception, e:
 			print "ERROR: ", str(e)
-			log.error("[%s] > Error during ROUT %s" % (self.name, str(e)))
 		else:
 			if peeledData:
 				(xtoPort, xtoHost, xtoName), forw_msg, idt, delay = peeledData
 				if (xtoName is None and xtoPort is None and xtoHost is None):
 				#if (xtoPort is None or xtoHost is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
-					log.info("[%s] > Message discarded by conditions." % self.name)
 				else:
 					print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost)
 					log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
 					packet = petlib.pack.encode((idt, forw_msg))
-					#self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
-					try:
-						print delay
-						print sf.epoch()
-						dtmp = delay - sf.epoch()
-						if dtmp > 0:
-							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
-						else:
-							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
-						self.bProcessed += sys.getsizeof(packet)
-						self.expectedACK.append("ACKN"+idt)
-					except Exception, e:
-						print "ERROR: ", str(e)
+					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
+					# try:
+					# 	print delay
+					# 	print sf.epoch()
+					# 	dtmp = delay - sf.epoch()
+					# 	if dtmp > 0:
+					# 		reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+					# 	else:
+					# 		self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+					# 	self.bProcessed += sys.getsizeof(packet)
+					# 	self.expectedACK.append("ACKN"+idt)
+					# except Exception, e:
+					# 	print "ERROR: ", str(e)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for

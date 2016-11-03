@@ -141,7 +141,6 @@ class Client(DatagramProtocol):
         # TEST MODE
         self.processQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
         # ======================
-        pass
 
     def sendPing(self):
 
@@ -311,7 +310,7 @@ class Client(DatagramProtocol):
             print "Call from thread"
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS_IN_THREAD)
         except Exception, e:
-            print "[%s] > ERROR: ", str(e)
+            print "[%s] > ERROR: %s" % (self.name, str(e))
         # # ======================
 
         if data[:4] == "EMPT":
@@ -324,11 +323,9 @@ class Client(DatagramProtocol):
         if data[:4] == "PMSG":
             self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
-            #print "[%s] > Received NOMSG." % self.name
-            pass
+            print "[%s] > Received NOMSG." % self.name
         if data == "NOASG":
-            #print "[%s] > Received NOASG from %s" % (self.name, host)
-            pass
+            print "[%s] > Received NOASG from %s" % (self.name, host)
 
 
     def do_PMSG(self, data, host, port):
