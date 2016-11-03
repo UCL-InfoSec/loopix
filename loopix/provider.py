@@ -98,7 +98,7 @@ class Provider(MixNode):
 
         obj = (data, (host, port))
         try:
-            self.processQueue.put((data, (host, port)))
+            self.processQueue.put(obj)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
@@ -174,6 +174,10 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         print "Inside PULL function"
+        print name
+        print host
+        print port
+        print self.storage.keys()
         def send_to_ip(IPAddrs):
             print "Inside send_to_ip"
             if name in self.storage.keys():

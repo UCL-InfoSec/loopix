@@ -125,9 +125,9 @@ class Client(DatagramProtocol):
         print "Provider: ", self.provider
 
         self.readInData("example.db")
-        self.sendPing()
+        reactor.callLater(30.0, self.sendPing)
 
-        self.turnOnProcessing()
+        reactor.callLater(60.0, self.turnOnProcessing)
 
 
         #if self.TESTMODE:
