@@ -84,7 +84,7 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         self.testReceived += 1
         print "[%s] > Received data from %s" % (self.name, host)
-        log.info("[%s] > received data" % self.name)
+        # log.info("[%s] > received data" % self.name)
 
         self.testQueueSize += 1
         #self.receivedQueue.put((data, (host, port)))

@@ -82,7 +82,7 @@ class MixNode(DatagramProtocol):
 		self.boardHost = "127.0.0.1"
 
 		self.EXP_PARAMS_DELAY = (0.5, None)
-		self.EXP_PARAMS_LOOPS = (20, None)
+		self.EXP_PARAMS_LOOPS = (10, None)
 
 		self.receivedQueue = DeferredQueue()
 
@@ -158,10 +158,10 @@ class MixNode(DatagramProtocol):
 		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
-		print "[%s] > received data from %s" % (self.name, host)
-		log.info("[%s] > received data from %s" % (self.name, host))
+		print "[%s] > Received data from %s" % (self.name, host)
+		# log.info("[%s] > received data from %s" % (self.name, host))
 
-		self.receivedQueue.put((data, (host, port)))
+		self.processQueue.put((data, (host, port)))
 
 	def do_PROCESS(self, (data, (host, port))):
 		# self.receivedQueue.get().addCallback(self.do_PROCESS)

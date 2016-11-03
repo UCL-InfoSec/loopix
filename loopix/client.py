@@ -90,7 +90,7 @@ class Client(DatagramProtocol):
 
         self.PATH_LENGTH = 3
         self.EXP_PARAMS_PAYLOAD = (1, None)
-        self.EXP_PARAMS_LOOPS = (0.1, None)
+        self.EXP_PARAMS_LOOPS = (1, None)
         self.EXP_PARAMS_COVER = (1, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
@@ -175,6 +175,7 @@ class Client(DatagramProtocol):
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""
 
+        print "Pulling form the provider"
         def send_to_ip(IPAddrs):
             self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
             self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
