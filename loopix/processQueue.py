@@ -21,7 +21,7 @@ class ProcessQueue():
 		d = defer.Deferred()
 		self.consumers += [d]
 
-		reactor.callLater(1, self._process)
+		reactor.callLater(5, self._process)
 		return d
 
 	def _process(self):
