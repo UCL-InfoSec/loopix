@@ -92,7 +92,7 @@ class MixNode(DatagramProtocol):
 
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
-		log.info("[%s] > Start protocol" % self.name)
+		# log.info("[%s] > Start protocol" % self.name)
 		# self.announce()
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
@@ -111,7 +111,6 @@ class MixNode(DatagramProtocol):
 
 	def turnOnProcessing(self):
 		#self.receivedQueue.get().addCallback(self.do_PROCESS)
-
 		self.processQueue.get().addCallback(self.do_PROCESS)
 
 	def run(self):
@@ -131,7 +130,7 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Turned on heartbeats" % self.name)
 
 	def errbackHeartbeats(self, failure):
-		log.info("[%s] > Mixnode Errback during sending heartbeat:" % (self.name, failure))
+		# log.info("[%s] > Mixnode Errback during sending heartbeat:" % (self.name, failure))
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def sendRequest(self, rqs):
@@ -156,7 +155,6 @@ class MixNode(DatagramProtocol):
 	def datagramReceived(self, data, (host, port)):
 		print "[%s] > Received data from %s" % (self.name, host)
 		# log.info("[%s] > received data from %s" % (self.name, host))
-
 		#self.receivedQueue.put((data, (host, port)))
 		try:
 			self.processQueue.put((data, (host, port)))
@@ -204,7 +202,6 @@ class MixNode(DatagramProtocol):
 			(host, port): a tuple of string and int representing the address of the sender of the rqs.
 		"""
 
-		print "> do INFORMATION"
 		resp = "RINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
 		self.sendMessage(resp, (host, port))
 
@@ -228,7 +225,7 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost)
-					log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
+					# log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
 					packet = petlib.pack.encode((idt, forw_msg))
 					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
 					# try:
@@ -263,9 +260,9 @@ class MixNode(DatagramProtocol):
 				(xtoPort, xtoHost, xtoName), back_msg, idt, delay = peeledData
 				if (xtoPort is None and xtoHost is None and xtoName is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
-					log.info("[%s] > Message discarded by conditions." % self.name)
+					# log.info("[%s] > Message discarded by conditions." % self.name)
 				else:
-					log.info("[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, xtoHost))
+					# log.info("[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, xtoHost))
 					self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
 
 	def do_RINF(self, data):
@@ -336,22 +333,21 @@ class MixNode(DatagramProtocol):
 			dropMessage = header[1]
 			if dropMessage == '1':
 				print "[%s] > Drop message. This message is droped now." % self.name
-				log.info("[%s] > Drop message. This message is droped now." % self.name)
+				# log.info("[%s] > Drop message. This message is droped now." % self.name)
 				return None
 
 			# typeFlag - auxiliary flag which tells what type of message it is; only used for statistics; 
 			# delay - message delay
 			typeFlag = header[2]
-			if (typeFlag == 'H' or typeFlag == 'D'):
-				print 'Heartbeat or Drop'
-			else:
-				self.gbReceived += sys.getsizeof(petlib.pack.encode(message))
+			#if (typeFlag == 'H' or typeFlag == 'D'):
+			#	print 'Heartbeat or Drop'
+			#else:
+			#	self.gbReceived += sys.getsizeof(petlib.pack.encode(message))
 			delay = header[3]
 
 			# Parse the forward message
 			xcode = header[0]
 			if not (xcode == "0" or xcode == "1"):
-				log.error("[%s] > WRONG ROUTING CODE." % self.name)
 				raise Exception("> Wrong routing code")
 
 			idt = str(uuid.uuid1())
@@ -457,13 +453,12 @@ class MixNode(DatagramProtocol):
 			#element contains: packet, destination address, idt
 			while self.Queue and timeToSend - sf.epoch() < 0:
 				if timeToSend - sf.epoch() < MAX_DELAY_TIME:
-					print "Time elapsed - message droped"
-					log.info("[%s] > Mixnode: Message dropped because timestamp MAX_DELAY_TIME to send it elapsed." % self.name)
+					print "[%s] > Time elapsed - message droped" % self.name
+					# log.info("[%s] > Mixnode: Message dropped because timestamp MAX_DELAY_TIME to send it elapsed." % self.name)
 				else:
 					self.sendMessage(element[0], element[1])
 					self.expectedACK.append("ACKN"+element[2])
-					log.info("[%s] > Message send forward." % self.name)
-					print "[%s] > Message send forward." % self.name
+					# log.info("[%s] > Message send forward." % self.name)
 				heapq.heappop(self.Queue)
 				if self.Queue:
 					timeToSend, element = self.Queue[0]
@@ -502,13 +497,13 @@ class MixNode(DatagramProtocol):
 				mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
 			except ValueError, e:
 				print "ERROR: ", str(e)
-				log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
+				# log.error("[%s] > Hearbeat sending error: %s" % (self.name, str(e)))
 			else:
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1
 				print "[%s] > Sending heartbeat." % self.name
-				log.info("[%s] > Heartbeat sent." % self.name)
+				# log.info("[%s] > Heartbeat sent." % self.name)
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
@@ -566,8 +561,8 @@ class MixNode(DatagramProtocol):
 				try:
 					self.do_BOUNCE(self.bounceInformation[ack])
 				except Exception, e:
-					print "ERROR: ", str(e)
-					log.error("[%s] > Error during ACK checking: %s" % (self.name, str(e)))
+					print "ERROR during ACK checking: ", str(e)
+					# log.error("[%s] > Error during ACK checking: %s" % (self.name, str(e)))
 			else:
 				print "> For this ACK there is no bounce message."
 
@@ -614,7 +609,7 @@ class MixNode(DatagramProtocol):
 			mixnodes = c.fetchall()
 			for m in mixnodes:
 				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-			print "> Available mixnodes: ", self.mixList
+			# print "> Available mixnodes: ", self.mixList
 		except Exception, e:
 			log.error("[%s] > Error during reading from the database: %s" % (self.name, str(e)))
 
@@ -632,7 +627,7 @@ class MixNode(DatagramProtocol):
 			fetched = c.fetchall()
 			for p in fetched:
 				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
-			print "> Available providers: ", self.prvList
+			# print "> Available providers: ", self.prvList
 		except Exception, e:
 			log.error("[%s] > Error during reading from the database: %s" % (self.name, str(e)))
 
