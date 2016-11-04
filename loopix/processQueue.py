@@ -30,7 +30,7 @@ class ProcessQueue():
 		try:
 			if self.queue == []:
 				print "Seems the queue is empty"
-				reactor.callLater(0.0, self.get)
+				self.get()
 			else:
 				while self.consumers != [] and self.queue != []:
 					d = self.consumers.pop(0)
