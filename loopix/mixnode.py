@@ -99,7 +99,7 @@ class MixNode(DatagramProtocol):
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 
-		reactor.callLater(5.0, self.turnOnProcessing)
+		# reactor.callLater(5.0, self.turnOnProcessing)
 		self.run()
 		
 		self.turnOnReliableUDP()
@@ -483,7 +483,6 @@ class MixNode(DatagramProtocol):
 			self.nMsgSent += 1
 			if data[:4] == "ROUT":
 				self.gbSent += sys.getsizeof(data)
-			print "[%s] > SENDING MESSAGE " % self.name
 
 		# Resolve and call the send function
 		reactor.resolve(host).addCallback(send_to_ip)

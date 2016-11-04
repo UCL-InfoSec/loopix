@@ -14,6 +14,7 @@ class ProcessQueue():
 
 	def put(self, obj):
 		self.queue.append(obj)
+		print "Putting to the queue."
 		#print "Current size PUT: ", len(self.queue)
 
 	def get(self):

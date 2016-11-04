@@ -90,16 +90,12 @@ class Provider(MixNode):
         # ======================
 
     def datagramReceived(self, data, (host, port)):
-        # self.testReceived += 1
-        # print "[%s] > Received data from %s" % (self.name, host)
-        # log.info("[%s] > received data" % self.name)
-
-        #self.testQueueSize += 1
         #self.receivedQueue.put((data, (host, port)))
 
         obj = (data, (host, port))
         try:
             self.processQueue.put(obj)
+            print "Current queue size: ", len(self.processQueue.queue)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
@@ -115,7 +111,7 @@ class Provider(MixNode):
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
-        self.processMessage(obj)
+        # self.processMessage(obj)
 
     def processMessage(self, obj):
         print "Processing Message"
@@ -266,7 +262,7 @@ class Provider(MixNode):
         else:
             self.clientList[name] = (host, port)
             print "[%s] > Client %s already subscribed to provider" % (self.name, name)
-            
+        print "Current client list ", self.clientList
 
     def sendInfoMixnet(self, host, port):
         """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
