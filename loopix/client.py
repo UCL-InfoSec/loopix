@@ -113,7 +113,7 @@ class Client(DatagramProtocol):
 
         # ======================
         # TESTING VERSION
-        self.processQueue = ProcessQueue()
+        # self.processQueue = ProcessQueue()
         # ======================
 
     def startProtocol(self):
