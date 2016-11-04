@@ -85,12 +85,12 @@ class Provider(MixNode):
 
     def datagramReceived(self, data, (host, port)):
         #self.receivedQueue.put((data, (host, port)))
+        self.numMsgReceived += 1
         obj = (data, (host, port))
         try:
             self.processQueue.put(obj)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
-        self.numMsgReceived += 1
         print "Queue size: ", len(self.processQueue.queue)
 
 
