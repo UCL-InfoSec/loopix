@@ -89,9 +89,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (10, None)
-        self.EXP_PARAMS_LOOPS = (10, None)
-        self.EXP_PARAMS_COVER = (10, None)
+        self.EXP_PARAMS_PAYLOAD = (1, None)
+        self.EXP_PARAMS_LOOPS = (1, None)
+        self.EXP_PARAMS_COVER = (1, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -109,12 +109,9 @@ class Client(DatagramProtocol):
         self.tagForTesting = False
         self.bytesSent = 0
 
-        self.receivedQueue = DeferredQueue()
+        # self.receivedQueue = DeferredQueue()
 
-        # ======================
-        # TESTING VERSION
-        # self.processQueue = ProcessQueue()
-        # ======================
+        self.processQueue = ProcessQueue()
 
     def startProtocol(self):
         
@@ -124,25 +121,17 @@ class Client(DatagramProtocol):
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
-
         self.sendPing()
-
         reactor.callLater(50.0, self.readInData, "example.db")
-
         reactor.callLater(60.0, self.turnOnProcessing)
-
 
         #if self.TESTMODE:
         self.measureSentMessages()
 
 
     def turnOnProcessing(self):
-        self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
-        
-        # ======================
-        # TEST MODE
-        # self.processQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
-        # ======================
+        # self.receivedQueue.get().addCallback(self.do_PROCESS)
+        self.processQueue.get().addCallback(self.do_PROCESS)
 
     def sendPing(self):
 
@@ -288,33 +277,25 @@ class Client(DatagramProtocol):
             log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
-        self.receivedQueue.put((data, (host, port)))
+        # self.receivedQueue.put((data, (host, port)))
         print "[%s] > Received new packet" % self.name
-        #======================
-        # TEST VESRION
-        # obj = (data, (host, port))
-        # try:
-        #     self.processQueue.put(obj)
-        # except Exception, e:
-        #     print "[%s] > ERROR: %s " % (self.name, str(e))
-        # # #======================
+        obj = (data, (host, port))
+        try:
+            self.processQueue.put(obj)
+        except Exception, e:
+            print "[%s] > ERROR: %s " % (self.name, str(e))
 
-    def do_PROCESS_IN_THREAD(self, obj):
+    def do_PROCESS(self, obj):
         data, (host, port) = obj 
-        self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
+        #self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
 
-        #======================
-        # make_blocking(sys.stdin.fileno())
-        # make_blocking(sys.stdout.fileno())
-        # make_blocking(sys.stderr.fileno())
+        try:
+            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
 
-        # TEST VERSION
-        # try:
-        #     print "Call from thread"
-        #     reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS_IN_THREAD)
-        # except Exception, e:
-        #     print "[%s] > ERROR: %s" % (self.name, str(e))
-        # # ======================
+    def processMessage(self, obj):
+        data, (host, port) = obj
 
         if data[:4] == "EMPT":
             print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
