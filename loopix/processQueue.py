@@ -32,7 +32,7 @@ class ProcessQueue():
 				d = self.consumers.pop(0)
 				obj = self.queue.pop(0)
 				dt = threads.deferToThread(self._process_in_thread, d, obj)
-			if self.consumers == [] and self.queue == []:
+			if self.queue == []:
 				reactor.callLater(0.0, self.get)
 		except Exception, e:
 			print str(e)
