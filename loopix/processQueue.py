@@ -30,10 +30,11 @@ class ProcessQueue():
 		try:
 			if self.queue == []:
 				print "Seems the queue is empty"
-				print len(self.queue)
 				self.get()
 			else:
+				print "Else condition"
 				while self.consumers != [] and self.queue != []:
+					print "Inside while"
 					d = self.consumers.pop(0)
 					obj = self.queue.pop(0)
 					dt = threads.deferToThread(self._process_in_thread, d, obj)
