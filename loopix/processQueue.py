@@ -48,7 +48,7 @@ class ProcessQueue():
 		#print "---- Called process in thread in ProcessQueue ------"
 		inserted_time, message = obj
 		start_time = time.time()
-		d.callback(obj)
+		d.callback(message)
 		end_time = time.time()
 
 		self.timings = 0.5*self.timings + 0.5 * (start_time - inserted_time)
