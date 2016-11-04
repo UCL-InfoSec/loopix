@@ -127,7 +127,7 @@ class Client(DatagramProtocol):
 
         self.sendPing()
 
-        reactor.callLater(50.0, self.readInData("example.db"))
+        reactor.callLater(50.0, self.readInData, "example.db")
 
         reactor.callLater(60.0, self.turnOnProcessing)
 
