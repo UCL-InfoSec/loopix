@@ -28,12 +28,13 @@ class ProcessQueue():
 	def _process(self):
 		print "--- Called _process in ProcessQueue file"
 		try:
-			while self.consumers != [] and self.queue != []:
-				d = self.consumers.pop(0)
-				obj = self.queue.pop(0)
-				dt = threads.deferToThread(self._process_in_thread, d, obj)
 			if self.queue == []:
 				reactor.callLater(0.0, self.get)
+			else:
+				while self.consumers != [] and self.queue != []:
+					d = self.consumers.pop(0)
+					obj = self.queue.pop(0)
+					dt = threads.deferToThread(self._process_in_thread, d, obj)
 		except Exception, e:
 			print str(e)
 
