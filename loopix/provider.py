@@ -88,7 +88,6 @@ class Provider(MixNode):
         obj = (data, (host, port))
         try:
             self.processQueue.put(obj)
-            print "Current queue size: ", len(self.processQueue.queue)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
@@ -102,7 +101,7 @@ class Provider(MixNode):
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
-        #self.processMessage(obj)
+        self.processMessage(obj)
 
     def processMessage(self, obj):
         print "[%s] > Processing Message" % self.name

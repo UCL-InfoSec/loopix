@@ -14,12 +14,10 @@ class ProcessQueue():
 
 	def put(self, obj):
 		self.queue.append(obj)
-		print "Putting to the queue."
-		
+
 		self._process()
 
 	def get(self):
-		print "Process Queue: Called get"
 		d = defer.Deferred()
 		self.consumers += [d]
 
@@ -27,7 +25,7 @@ class ProcessQueue():
 		return d
 
 	def _process(self):
-		print "--- Called _process in ProcessQueue file"
+		#print "--- Called _process in ProcessQueue file"
 		try:
 			while self.consumers != [] and self.queue != []:
 				d = self.consumers.pop(0)
@@ -37,7 +35,7 @@ class ProcessQueue():
 			print str(e)
 
 	def _process_in_thread(self, d, obj):
-		print "---- Called process in thread in ProcessQueue ------"
+		#print "---- Called process in thread in ProcessQueue ------"
 		d.callback(obj)
 	
 
