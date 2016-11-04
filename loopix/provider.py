@@ -90,6 +90,8 @@ class Provider(MixNode):
             self.processQueue.put(obj)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
+        self.numMsgReceived += 1
+        print "Queue size: ", len(self.processQueue.queue)
 
 
     def do_PROCESS(self, obj):
@@ -135,11 +137,11 @@ class Provider(MixNode):
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
             # log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
-            if (host, port) not in self.clientList.values():
-                self.numMsgReceived += 1
-            else:
-                #self.numMsgClients += 1
-                pass
+            # if (host, port) not in self.clientList.values():
+            #     self.numMsgReceived += 1
+            # else:
+            #     #self.numMsgClients += 1
+            #     pass
             try:
                 self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
