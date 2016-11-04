@@ -52,9 +52,7 @@ class Provider(MixNode):
 
         self.testQueueSize = 0
 
-        # ==============
         self.processQueue = ProcessQueue()
-        # ==============
 
     def startProtocol(self):
         print "[%s] > Start protocol." % self.name
@@ -64,7 +62,7 @@ class Provider(MixNode):
         #print "[%s] > Request for network info sent." % self.name
         #log.info("[%s] > Request for network info sent." % self.name)
 
-        reactor.callLater(60.0, self.turnOnProcessing)
+        reactor.callLater(30.0, self.turnOnProcessing)
 
         self.run()
         self.d.addCallback(self.turnOnHeartbeats)
@@ -83,15 +81,10 @@ class Provider(MixNode):
 
     def turnOnProcessing(self):
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
-
-        # ======================
-        print "First get called"
         self.processQueue.get().addCallback(self.do_PROCESS)
-        # ======================
 
     def datagramReceived(self, data, (host, port)):
         #self.receivedQueue.put((data, (host, port)))
-
         obj = (data, (host, port))
         try:
             self.processQueue.put(obj)
@@ -102,20 +95,17 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         data, (host, port) = obj
-        print "Called do_PROCESS in provider with message: ", data[:4]
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
 
         try:
-            print "Called another GET: "
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
-        self.processMessage(obj)
+        #self.processMessage(obj)
 
     def processMessage(self, obj):
-        print "Processing Message"
-
+        print "[%s] > Processing Message" % self.name
         data, (host, port) = obj
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
