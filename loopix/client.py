@@ -43,7 +43,7 @@ import copy
 #         fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
-TIME_PULL = 60
+TIME_PULL = 300
 NOISE_LENGTH = 1000
 
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
@@ -122,8 +122,8 @@ class Client(DatagramProtocol):
         print "Provider: ", self.provider
 
         self.sendPing()
-        reactor.callLater(50.0, self.readInData, "example.db")
-        reactor.callLater(60.0, self.turnOnProcessing)
+        reactor.callLater(10.0, self.readInData, "example.db")
+        reactor.callLater(20.0, self.turnOnProcessing)
 
         #if self.TESTMODE:
         self.measureSentMessages()
@@ -168,7 +168,7 @@ class Client(DatagramProtocol):
 
         print "Pulling form the provider"
         def send_to_ip(IPAddrs):
-            self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
+            # self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
             self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
             # print "[%s] > Pulled messages from provider %s" % (self.name, str(IPAddrs))
 

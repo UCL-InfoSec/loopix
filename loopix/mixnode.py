@@ -100,7 +100,7 @@ class MixNode(DatagramProtocol):
 		reactor.callLater(30.0, self.turnOnProcessing)
 		self.run()
 		
-		self.turnOnReliableUDP()
+		# self.turnOnReliableUDP()
 		self.readInData('example.db')
 
 		# self.measureBandwidth()
@@ -178,7 +178,7 @@ class MixNode(DatagramProtocol):
 			self.bReceived += sys.getsizeof(data[4:])
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				self.sendMessage("ACKN"+idt, (host, port))
+				# self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 			except Exception, e:
 				print "ERROR: ", str(e)
