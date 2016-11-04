@@ -17,7 +17,7 @@ class ProcessQueue():
 		#print "Current size PUT: ", len(self.queue)
 
 	def get(self):
-		print "--- Called GET"
+		print "Process Queue: Called get"
 		d = defer.Deferred()
 		self.consumers += [d]
 
@@ -27,16 +27,17 @@ class ProcessQueue():
 	def _process(self):
 		print "--- Called _process in ProcessQueue file"
 		try:
-			self._lock.acquire()
+			#self._lock.acquire()
 			while self.consumers != [] and self.queue != []:
 				d = self.consumers.pop(0)
 				obj = self.queue.pop(0)
 				dt = threads.deferToThread(self._process_in_thread, d, obj)
-			self._lock.release()
+			#self._lock.release()
 		except Exception, e:
 			print str(e)
 
 	def _process_in_thread(self, d, obj):
+		print "---- Called process in thread in ProcessQueue ------"
 		d.callback(obj)
 	
 

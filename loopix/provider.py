@@ -85,6 +85,7 @@ class Provider(MixNode):
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
 
         # ======================
+        print "First get called"
         self.processQueue.get().addCallback(self.do_PROCESS)
         # ======================
 
@@ -105,7 +106,7 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         data, (host, port) = obj
-        print "Received data in do_PROCESS: ", data[:4]
+        print "Called do_PROCESS in provider with message: ", data[:4]
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
 
         try:
@@ -114,6 +115,12 @@ class Provider(MixNode):
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
+        self.processMessage(obj)
+
+    def processMessage(self, obj):
+        print "Processing Message"
+
+        data, (host, port) = obj
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
@@ -178,7 +185,8 @@ class Provider(MixNode):
         print name
         print host
         print port
-        print self.storage
+        print self.clientList
+        print self.storage.keys()
         def send_to_ip(IPAddrs):
             print "Inside send_to_ip"
             if name in self.storage.keys():
