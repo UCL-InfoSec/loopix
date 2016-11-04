@@ -84,13 +84,11 @@ class MixNode(DatagramProtocol):
 		self.EXP_PARAMS_DELAY = (0.5, None)
 		self.EXP_PARAMS_LOOPS = (10, None)
 
-		self.receivedQueue = DeferredQueue()
+		# self.receivedQueue = DeferredQueue()
 
 		self.nMsgSent = 0
 
-		# ==============
-		# self.processQueue = ProcessQueue()
-		# ==============
+		self.processQueue = ProcessQueue()
 
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
@@ -99,7 +97,7 @@ class MixNode(DatagramProtocol):
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 
-		# reactor.callLater(5.0, self.turnOnProcessing)
+		reactor.callLater(30.0, self.turnOnProcessing)
 		self.run()
 		
 		self.turnOnReliableUDP()
@@ -112,11 +110,9 @@ class MixNode(DatagramProtocol):
 		log.info("[%s] > Stop protocol" % self.name)
 
 	def turnOnProcessing(self):
-		self.receivedQueue.get().addCallback(self.do_PROCESS)
+		#self.receivedQueue.get().addCallback(self.do_PROCESS)
 
-		# ======================
-		# self.processQueue.get().addCallback(self.do_PROCESS)
-		# ======================
+		self.processQueue.get().addCallback(self.do_PROCESS)
 
 	def run(self):
 		"""A loop function responsible for flushing the queue"""
@@ -161,18 +157,22 @@ class MixNode(DatagramProtocol):
 		print "[%s] > Received data from %s" % (self.name, host)
 		# log.info("[%s] > received data from %s" % (self.name, host))
 
-		self.receivedQueue.put((data, (host, port)))
-		#self.processQueue.put((data, (host, port)))
+		#self.receivedQueue.put((data, (host, port)))
+		try:
+			self.processQueue.put((data, (host, port)))
+		except Exception, e:
+			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
-		self.receivedQueue.get().addCallback(self.do_PROCESS)
-		print "[%s] > Calling do_PROCESS " % self.name
-		# TEST VERSION
-		# try:
-		# 	reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
-		# except Exception, e:
-		# 	print "[%s] > ERROR: %s" % (self.name, str(e))
-		# ======================
+		#self.receivedQueue.get().addCallback(self.do_PROCESS)
+		try:
+			reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+		except Exception, e:
+			print "[%s] > ERROR: %s" % (self.name, str(e))
+
+		self.processMessage(data, (host, port))
+
+	def processMessage(self, data, (host, port)):
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
