@@ -43,7 +43,7 @@ import copy
 #         fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
-TIME_PULL = 1
+TIME_PULL = 60
 NOISE_LENGTH = 1000
 
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
