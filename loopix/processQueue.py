@@ -29,6 +29,7 @@ class ProcessQueue():
 		print "--- Called _process in ProcessQueue file"
 		try:
 			if self.queue == []:
+				print "Seems the queue is empty"
 				reactor.callLater(0.0, self.get)
 			else:
 				while self.consumers != [] and self.queue != []:
