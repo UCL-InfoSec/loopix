@@ -30,6 +30,7 @@ class ProcessQueue():
 		try:
 			if self.queue == []:
 				print "Seems the queue is empty"
+				print len(self.queue)
 				self.get()
 			else:
 				while self.consumers != [] and self.queue != []:
