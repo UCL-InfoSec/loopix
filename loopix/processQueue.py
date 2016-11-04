@@ -7,7 +7,7 @@ import weakref
 
 class ProcessQueue():
 
-	def __init__(self, parent):
+	def __init__(self):
 		self.queue = []
 		self.consumers = []
 
