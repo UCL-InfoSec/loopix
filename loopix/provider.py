@@ -90,7 +90,7 @@ class Provider(MixNode):
 
     def datagramReceived(self, data, (host, port)):
         # self.testReceived += 1
-        print "[%s] > Received data from %s" % (self.name, host)
+        # print "[%s] > Received data from %s" % (self.name, host)
         # log.info("[%s] > received data" % self.name)
 
         #self.testQueueSize += 1
@@ -105,14 +105,15 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         data, (host, port) = obj
-        print data[:4]
+        print "Received data in do_PROCESS: ", data[:4]
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
-        #print "[%s] > Called do_PROCESS" % self.name
 
         try:
+            print "Called another GET: "
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
+
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
