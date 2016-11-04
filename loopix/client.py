@@ -89,9 +89,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (1, None)
-        self.EXP_PARAMS_LOOPS = (1, None)
-        self.EXP_PARAMS_COVER = (1, None)
+        self.EXP_PARAMS_PAYLOAD = (10, None)
+        self.EXP_PARAMS_LOOPS = (10, None)
+        self.EXP_PARAMS_COVER = (10, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -124,8 +124,10 @@ class Client(DatagramProtocol):
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
-        self.readInData("example.db")
-        reactor.callLater(30.0, self.sendPing)
+
+        self.sendPing()
+
+        reactor.callLater(50.0, self.readInData("example.db"))
 
         reactor.callLater(60.0, self.turnOnProcessing)
 
