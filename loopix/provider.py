@@ -53,7 +53,7 @@ class Provider(MixNode):
         self.testQueueSize = 0
 
         # ==============
-        self.processQueue = ProcessQueue(self)
+        self.processQueue = ProcessQueue()
         # ==============
 
     def startProtocol(self):
@@ -111,7 +111,7 @@ class Provider(MixNode):
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
-        # self.processMessage(obj)
+        self.processMessage(obj)
 
     def processMessage(self, obj):
         print "Processing Message"

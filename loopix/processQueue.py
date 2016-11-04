@@ -11,12 +11,12 @@ class ProcessQueue():
 		self.queue = []
 		self.consumers = []
 
-		self.parent = weakref.ref(parent)
 
 	def put(self, obj):
 		self.queue.append(obj)
 		print "Putting to the queue."
-		#print "Current size PUT: ", len(self.queue)
+		
+		self._process()
 
 	def get(self):
 		print "Process Queue: Called get"
@@ -29,16 +29,10 @@ class ProcessQueue():
 	def _process(self):
 		print "--- Called _process in ProcessQueue file"
 		try:
-			if self.queue == []:
-				print "Seems the queue is empty"
-				self.parent.processQueue.get().addCallback(self.parent.do_PROCESS)
-			else:
-				print "Else condition"
-				while self.consumers != [] and self.queue != []:
-					print "Inside while"
-					d = self.consumers.pop(0)
-					obj = self.queue.pop(0)
-					dt = threads.deferToThread(self._process_in_thread, d, obj)
+			while self.consumers != [] and self.queue != []:
+				d = self.consumers.pop(0)
+				obj = self.queue.pop(0)
+				dt = threads.deferToThread(self._process_in_thread, d, obj)
 		except Exception, e:
 			print str(e)
 
