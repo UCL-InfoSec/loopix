@@ -177,7 +177,7 @@ class Provider(MixNode):
         print name
         print host
         print port
-        print self.storage.keys()
+        print self.storage
         def send_to_ip(IPAddrs):
             print "Inside send_to_ip"
             if name in self.storage.keys():
