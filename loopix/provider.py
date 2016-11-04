@@ -53,7 +53,7 @@ class Provider(MixNode):
         self.testQueueSize = 0
 
         # ==============
-        self.processQueue = ProcessQueue()
+        self.processQueue = ProcessQueue(self)
         # ==============
 
     def startProtocol(self):

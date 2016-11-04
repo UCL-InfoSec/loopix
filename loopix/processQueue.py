@@ -3,14 +3,15 @@ import heapq
 import time
 import copy
 from twisted.internet.defer import DeferredQueue, DeferredLock
+import weakref
 
 class ProcessQueue():
 
-	def __init__(self):
+	def __init__(self, parent):
 		self.queue = []
 		self.consumers = []
 
-		self._lock = DeferredLock()
+		self.parent = weakref.ref(parent)
 
 	def put(self, obj):
 		self.queue.append(obj)
@@ -30,7 +31,7 @@ class ProcessQueue():
 		try:
 			if self.queue == []:
 				print "Seems the queue is empty"
-				self.get()
+				self.parent.processQueue.get().addCallback(self.parent.do_PROCESS)
 			else:
 				print "Else condition"
 				while self.consumers != [] and self.queue != []:
