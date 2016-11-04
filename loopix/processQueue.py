@@ -11,11 +11,11 @@ class ProcessQueue():
 		self.queue = []
 		self.consumers = []
 
-		self.target = 0.05
+		self.target = 0.5
 
-		self.Kp = 2.0
-		self.Ki = 2.0
-		self.Kd = 5.0
+		self.Kp = 2.0 #2
+		self.Ki = 2.0 #1
+		self.Kd = 5.0 #5
 
 		self.drop = 0
 		self.sum_Error = 0.0
@@ -35,7 +35,6 @@ class ProcessQueue():
 		return d
 
 	def _process(self):
-		#print "--- Called _process in ProcessQueue file"
 		try:
 			while self.consumers != [] and self.queue != []:
 				d = self.consumers.pop(0)
@@ -45,7 +44,6 @@ class ProcessQueue():
 			print str(e)
 
 	def _process_in_thread(self, d, obj):
-		#print "---- Called process in thread in ProcessQueue ------"
 		inserted_time, message = obj
 		start_time = time.time()
 		d.callback(message)
