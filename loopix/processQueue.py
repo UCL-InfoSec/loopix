@@ -11,7 +11,7 @@ class ProcessQueue():
 		self.queue = []
 		self.consumers = []
 
-		self.target = 0.1
+		self.target = 0.5
 
 		self.Kp = 3.0 #2
 		self.Ki = 1.0 #1
