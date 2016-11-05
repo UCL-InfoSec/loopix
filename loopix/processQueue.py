@@ -50,18 +50,21 @@ class ProcessQueue():
 		end_time = time.time()
 
 
-		self.timings = 0.5*self.timings + 0.5 * (start_time - inserted_time)
+		# self.timings = 0.5*self.timings + 0.5 * (start_time - inserted_time)
 
 
 		# the proportional term produces an output value that is proportional to the current error value
-		P = self.timings - self.target
-		
+		#P = self.timings - self.target
+		P = self.target - (start_time - inserted_time)
 		# the contribution from the integral term is proportional to both the magnitude of the error and the duration of the error
-		I = 0.8 * self.sum_Error + 0.2 * P # the integral in a PID controller is the sum of the instantaneous error over time and gives the accumulated offset that should have been corrected previously
-		
+		#I = 0.8 * self.sum_Error + 0.2 * P # the integral in a PID controller is the sum of the instantaneous error over time and gives the accumulated offset that should have been corrected previously
+		I = self.sum_Error + P
+
 		# Derivative action predicts system behavior and thus improves settling time and stability of the system
-		D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
-		
+		#D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
+		D = P - self.prev_Error
+
+
 		self.prev_Error = P
 		self.sum_Error = I
 
