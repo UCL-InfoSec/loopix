@@ -43,7 +43,7 @@ import copy
 #         fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
-TIME_PULL = 60
+TIME_PULL = 30
 NOISE_LENGTH = 1000
 
 log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
@@ -122,7 +122,7 @@ class Client(DatagramProtocol):
         print "Provider: ", self.provider
 
         self.sendPing()
-        reactor.callLater(50.0, self.readInData, "example.db")
+        reactor.callLater(60.0, self.readInData, "example.db")
         reactor.callLater(60.0, self.turnOnProcessing)
 
         #if self.TESTMODE:
