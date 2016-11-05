@@ -6,12 +6,13 @@ import fabric.contrib.files
 import boto3
 import sys
 import os
-import petlib.pack
 import sys
 import sqlite3
 import random
 from binascii import hexlify
 import csv
+import petlib
+#from petlib.pack import encode, decode
 
 ec2 = boto3.resource('ec2')
 
@@ -75,7 +76,7 @@ env.key_filename = '../keys/Loopix.pem'
 # ----------------------------------------LAUNCHING-FUNCTIONS------------------------------------------
 
 #launching new instances
-def ec2start(num, typ='t2.micro'):
+def ec2start(num, typ='m4.xlarge'):
     instances = ec2.create_instances( 
         ImageId='ami-ed82e39e', 
         InstanceType=typ,
@@ -94,7 +95,7 @@ def ec2start_mixnode_instance(num):
 
 @runs_once
 def ec2start_client_instance(num):
-    clients = ec2start(num, typ='t2.large')
+    clients = ec2start(num, typ='m4.xlarge')
     for i in clients:
         ec2tagInstance(i.id, "Client")
 
@@ -204,8 +205,10 @@ def gitpull():
 
 @roles("mixnodes")
 @parallel
-def start_mixnode():
+def start_mixnode(test):
     with cd("loopix/loopix"):
+        if test=="True":
+            run("git checkout develop")
         run("git pull")
         run("twistd -y run_mixnode.py")
         pid = run("cat twistd.pid")
@@ -219,6 +222,7 @@ def kill_mixnode():
         pid = run("cat twistd.pid", warn_only=True)
         print "Kill %s with PID %s" % (env.host, pid)
         run("kill `cat twistd.pid`", warn_only=True)
+        run("rm -f *.csv")
 
 
 @roles("clients")
@@ -229,6 +233,7 @@ def start_client():
         run("twistd -y run_client.py")
         pid = run("cat twistd.pid")
         print "Run Client on %s with PID %s" % (env.host, pid)
+        run("rm -f *.csv")
 
 @roles("clients")
 @parallel
@@ -240,10 +245,12 @@ def kill_client():
 
 @roles("clients")
 @parallel
-def start_multi_client(num):
+def start_multi_client(num, test):
     for i in range(int(num)):
         dirc = 'client%s' % i
         with cd(dirc+'/loopix/loopix'):
+            if test=="True":
+                run("git checkout develop")
             run('git pull')
             run('twistd -y run_client.py')
             pid = run('cat twistd.pid')
@@ -262,8 +269,10 @@ def kill_multi_client(num):
         
 @roles("providers")
 @parallel
-def start_provider():
+def start_provider(test):
     with cd("loopix/loopix"):
+        if test=="True":
+            run("git checkout develop")
         run("git pull")
         run("twistd -y run_provider.py")
         pid = run("cat twistd.pid")
@@ -294,10 +303,10 @@ def killAll():
 
 @runs_once
 @parallel
-def startMultiAll(num):
-    execute(start_mixnode)
-    execute(start_provider)
-    execute(start_multi_client,num)
+def startMultiAll(num, test="False"):
+    execute(start_mixnode, test)
+    execute(start_provider, test)
+    execute(start_multi_client,num, test)
 
 @runs_once
 @parallel
@@ -334,23 +343,28 @@ def loaddirClients(num):
 def whoami():
     run('whoami', env.hosts)
 
-@roles("mixnodes", "clients", "providers","board")
 @parallel
-def setupAll():
-    sudo('apt-get -y update')
-    sudo('apt-get -y dist-upgrade')
-    sudo('apt-get -y install python-pip python-dev build-essential')
-    sudo('apt-get -y install libssl-dev libffi-dev git-all')
-    sudo('yes | pip install --upgrade pip')
-    sudo('yes | pip install --upgrade virtualenv')
-    sudo('yes | pip install petlib')
-    sudo('yes | pip install twisted')
-    sudo('yes | pip install numpy')
-    if fabric.contrib.files.exists("loopix"):
-        with cd("loopix"):
-            run("git pull")
-    else:
-        run("git clone https://github.com/UCL-InfoSec/loopix.git")
+def setupAll(num):
+    execute(setupServers)
+    execute(setupClients, num)   
+
+# @roles("mixnodes", "clients", "providers","board")
+# @parallel
+# def setupAll():
+#     sudo('apt-get -y update')
+#     sudo('apt-get -y dist-upgrade')
+#     sudo('apt-get -y install python-pip python-dev build-essential')
+#     sudo('apt-get -y install libssl-dev libffi-dev git-all')
+#     sudo('yes | pip install --upgrade pip')
+#     sudo('yes | pip install --upgrade virtualenv')
+#     sudo('yes | pip install petlib')
+#     sudo('yes | pip install twisted')
+#     sudo('yes | pip install numpy')
+#     if fabric.contrib.files.exists("loopix"):
+#         with cd("loopix"):
+#             run("git pull")
+#     else:
+#         run("git clone https://github.com/UCL-InfoSec/loopix.git")
 
 
 @roles("mixnodes", "providers")
@@ -362,14 +376,41 @@ def setupServers():
     sudo('apt-get -y install libssl-dev libffi-dev git-all')
     sudo('yes | pip install --upgrade pip')
     sudo('yes | pip install --upgrade virtualenv')
-    sudo('yes | pip install petlib')
+    sudo('yes | pip install --upgrade petlib')
     sudo('yes | pip install twisted')
     sudo('yes | pip install numpy')
+    sudo('yes | pip install service_identity')
+    sudo('apt-get install htop')
     if fabric.contrib.files.exists("loopix"):
         with cd("loopix"):
             run("git pull")
     else:
         run("git clone https://github.com/UCL-InfoSec/loopix.git")
+
+
+@roles("clients")
+@parallel
+def setupClients(num):
+    sudo('apt-get -y update')
+    sudo('apt-get -y dist-upgrade')
+    sudo('apt-get -y install python-pip python-dev build-essential')
+    sudo('apt-get -y install libssl-dev libffi-dev git-all')
+    sudo('yes | pip install --upgrade pip')
+    sudo('yes | pip install --upgrade virtualenv')
+    sudo('yes | pip install --upgrade petlib')
+    sudo('yes | pip install twisted')
+    sudo('yes | pip install numpy')
+    sudo('yes | pip install service_identity')
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        if not fabric.contrib.files.exists(dirc):
+            run("mkdir %s" % dirc)
+        with cd(dirc):
+            if fabric.contrib.files.exists("loopix"):
+                with cd("loopix"):
+                    run("git pull")
+            else:
+                run("git clone https://github.com/UCL-InfoSec/loopix.git")    
 
 
 @roles("clients")
@@ -381,7 +422,7 @@ def setupMultiClients(num):
     sudo('apt-get -y install libssl-dev libffi-dev git-all')
     sudo('yes | pip install --upgrade pip')
     sudo('yes | pip install --upgrade virtualenv')
-    sudo('yes | pip install petlib')
+    sudo('yes | pip install --upgrade petlib')
     sudo('yes | pip install twisted')
     sudo('yes | pip install numpy')
     for i in range(int(num)):
@@ -402,6 +443,7 @@ def test_petlib():
 
 @runs_once
 def storeProvidersNames():
+    import petlib.pack
     pn = []
     for f in os.listdir('.'):
         if f.endswith(".bin"):
@@ -414,6 +456,7 @@ def storeProvidersNames():
 
 @runs_once
 def getProvidersNames():
+    import petlib.pack
     filedir = 'providersNames.bi2'
     with open(filedir, "rb") as infile:
         lines = petlib.pack.decode(infile.read())
@@ -463,6 +506,15 @@ def cleanClients(num):
     for i in range(int(num)):
         with cd('client%d/loopix/loopix'%i):
             run("rm *.log* *.bin example.db *.prv log.json", warn_only=True)
+
+@roles("mixnodes", "clients", "providers")
+@parallel
+def cleanSetup():
+    with settings(warn_only=True):
+        run("rm -rf loopix")
+        run("rm -rf client*")
+        run("rm -rf mixnode*")
+        run("rm -rf provider*")
 
 @roles("mixnodes")
 @parallel
@@ -533,6 +585,8 @@ def takeNamesDb():
 
 @runs_once
 def readFiles():
+    import petlib.pack
+
     sys.path += ["../loopix"]
     local("rm -f example.db")
 
@@ -566,12 +620,20 @@ def readFiles():
                     assert False
     db.commit()
 
-@roles("mixnodes")
+@roles("providers")
 @parallel
 def getPerformance():
     with settings(warn_only=True):
         local("rm -f *.csv")
     get('loopix/loopix/performance.csv', 'performance-%s.csv'%env.host)
+
+# @roles("mixnodes", "providers")
+# @parallel
+# def getQueueSize():
+#     with settings(warn_only=True):
+#         local("rm -f *.csv")
+#     get('loopix/loopix/deferredQueueSize.csv', 'deferredQueueSize-%s.csv'%env.host)        
+
 
 def readPerformance():
     for f in os.listdir('.'):
@@ -585,6 +647,18 @@ def readPerformance():
             except Exception, e:
                 print str(e)
 
+# def readQueueSize():
+#     for f in os.listdir('.'):
+#         if f.startswith('deferredQueueSize'):
+#             print "File : %s" % f
+#             try:
+#                 with open(f, 'rb') as infile:
+#                     csvR = csv.reader(infile)
+#                     for row in csvR:
+#                         print row
+#             except Exception, e:
+#                 print str(e)
+
 @roles("clients")
 @parallel
 def getMessagesSent(num):
@@ -594,16 +668,17 @@ def getMessagesSent(num):
         dirc = 'client%d'%i
         get(dirc+'/loopix/loopix/messagesSent.csv', 'messagesSent_client%d.csv'%i)
 
+
 @roles("providers")
 @parallel
-def getMessagesReceived():
+def getProvidersProcData():
     with settings(warn_only=True):
         local("rm -f *.csv")
-    get('loopix/loopix/messagesReceived.csv', 'messagesReceived-%s.csv'%env.host)
+    get('loopix/loopix/messagesReceivedSend.csv', 'messagesReceivedSend-%s.csv'%env.host)
 
-def readMessagesSent():
+def readProcData():
     for f in os.listdir('.'):
-        if f.startswith('messagesSent'):
+        if f.startswith('messagesReceivedSend'):
             print "File: ", f
             try:
                 with open(f, 'rb') as infile:
@@ -611,7 +686,7 @@ def readMessagesSent():
                     for row in csvR:
                         print row
             except Exception, e:
-                print str(e)
+                print str(e)   
 
 def readMessagesReceived():
     for f in os.listdir('.'):
@@ -624,6 +699,26 @@ def readMessagesReceived():
                         print row
             except Exception, e:
                 print str(e)
+
+def readMessagesSent():
+    for f in os.listdir('.'):
+        if f.startswith('messagesSent_client'):
+            print "File: ", f
+            try:
+                with open(f, 'rb') as infile:
+                    csvR = csv.reader(infile)
+                    for row in csvR:
+                        print row
+            except Exception, e:
+                print str(e)
+
+
+@roles("providers")
+def getPIDcontrolVal():
+    with settings(warn_only="True"):
+        local("rm -f PIDcontrolVal*.csv")
+    get("loopix/loopix/PIDcontrolVal.csv", "PIDcontrolVal-%s.csv"%env.host)
+
 
 @roles("clients")
 @parallel
@@ -651,4 +746,6 @@ def takeData(num):
     execute(takeMixnodesData)
     execute(takeProvidersData)
     execute(readFiles)
+
+
         
