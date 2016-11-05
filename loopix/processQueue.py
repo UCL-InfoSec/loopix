@@ -14,7 +14,7 @@ class ProcessQueue():
 
 		self.target = 0.5
 
-		self.Kp = 2.0 #2
+		self.Kp = 1.0 #2
 		self.Ki = 0 #1
 		self.Kd = 0 #5
 
@@ -69,6 +69,7 @@ class ProcessQueue():
 		self.sum_Error = I
 
 		self.drop += self.Kp*P + self.Ki*I + self.Kd*D
+		save_drop = self.drop
 		self.drop = max(0.0, self.drop)
 
 		q_len = len(self.queue)
@@ -79,6 +80,6 @@ class ProcessQueue():
 
 		with open('PIDcontrolVal.csv', 'ab') as outfile:
 			csvW = csv.writer(outfile, delimiter=',')
-			data = [[self.drop]]
+			data = [[save_drop]]
 			csvW.writerows(data)
 
