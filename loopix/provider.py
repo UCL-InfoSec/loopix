@@ -91,8 +91,6 @@ class Provider(MixNode):
             self.processQueue.put(obj)
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
-        print "Queue size: ", len(self.processQueue.queue)
-
 
     def do_PROCESS(self, obj):
         data, (host, port) = obj
@@ -177,7 +175,7 @@ class Provider(MixNode):
                         if self.storage[name]:
                             message = self.storage[name].pop(0)
                             self.transport.write("PMSG" + message, (IPAddrs, port))
-                            print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
+                            # print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
                             # log.info("[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port))
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))

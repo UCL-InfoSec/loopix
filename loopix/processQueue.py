@@ -11,11 +11,11 @@ class ProcessQueue():
 		self.queue = []
 		self.consumers = []
 
-		self.target = 0.5
+		self.target = 0.1
 
-		self.Kp = 2.0 #2
-		self.Ki = 2.0 #1
-		self.Kd = 5.0 #5
+		self.Kp = 3.0 #2
+		self.Ki = 1.0 #1
+		self.Kd = 1.0 #5
 
 		self.drop = 0
 		self.sum_Error = 0.0
@@ -49,19 +49,28 @@ class ProcessQueue():
 		d.callback(message)
 		end_time = time.time()
 
+
 		self.timings = 0.5*self.timings + 0.5 * (start_time - inserted_time)
 
+
+		# the proportional term produces an output value that is proportional to the current error value
 		P = self.timings - self.target
-		I = 0.8 * self.sum_Error + 0.2 * P
-		D = P - I
+		
+		# the contribution from the integral term is proportional to both the magnitude of the error and the duration of the error
+		I = 0.8 * self.sum_Error + 0.2 * P # the integral in a PID controller is the sum of the instantaneous error over time and gives the accumulated offset that should have been corrected previously
+		
+		# Derivative action predicts system behavior and thus improves settling time and stability of the system
+		D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
+		
 		self.prev_Error = P
 		self.sum_Error = I
 
 		self.drop += self.Kp*P + self.Ki*I + self.Kd*D
 		self.drop = max(0.0, self.drop)
 
+		q_len = len(self.queue)
 		del self.queue[:int(self.drop)]
 
 		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
-		print "==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (len(self.queue), self.drop)
+		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 	
