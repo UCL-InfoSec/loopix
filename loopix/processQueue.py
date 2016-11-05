@@ -11,7 +11,7 @@ class ProcessQueue():
 		self.queue = []
 		self.consumers = []
 
-		self.target = 1
+		self.target = 0.5
 
 		self.Kp = 2.0 #2
 		self.Ki = 0 #1
@@ -75,4 +75,9 @@ class ProcessQueue():
 
 		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
-	
+		
+		with open('PIDcontrolVal.csv', 'ab') as outfile:
+            csvW = csv.writer(outfile, delimiter=',')
+            data = [[self.drop]]
+            csvW.writerows(data)
+
