@@ -4,6 +4,7 @@ import time
 import copy
 from twisted.internet.defer import DeferredQueue, DeferredLock
 import weakref
+import csv
 
 class ProcessQueue():
 
