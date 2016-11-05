@@ -20,6 +20,7 @@ class ProcessQueue():
 		self.drop = 0
 		self.sum_Error = 0.0
 		self.timings = 0.0
+		self.prev_Error = 0.0
 
 	def put(self, obj):
 		insert_t = time.time()
