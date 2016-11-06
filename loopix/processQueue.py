@@ -50,7 +50,7 @@ class ProcessQueue():
 		start_time = time.time()
 		d.callback(message)
 		end_time = time.time()
-
+		print end_time - start_time
 
 		self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
 
