@@ -15,8 +15,8 @@ class ProcessQueue():
 		self.target = 0.5
 
 		self.Kp = 8.0 #2
-		self.Ki = 2.0 #1
-		self.Kd = 0 #5
+		self.Ki = 0.0 #1
+		self.Kd = 0.0 #5
 
 		self.drop = 0
 		self.sum_Error = 0.0
@@ -87,3 +87,8 @@ class ProcessQueue():
 			csvW = csv.writer(outfile, delimiter=',')
 			pid = [[P, I, D]]
 			csvW.writerows(pid)
+
+		with open("queueLen.csv", "ab") as outfile:
+			csvW = csv.writer(outfile, delimiter=',')
+			qlen = [[q_len, len(self.queue)]]
+			csvW.writerows(qlen)
