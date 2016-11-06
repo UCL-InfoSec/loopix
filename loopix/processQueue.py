@@ -52,7 +52,7 @@ class ProcessQueue():
 		end_time = time.time()
 
 
-		self.timings = 0 * self.timings + 0.5 * (start_time - inserted_time)
+		self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
 
 
 		# the proportional term produces an output value that is proportional to the current error value
@@ -62,8 +62,8 @@ class ProcessQueue():
 		I = 0.8 * self.sum_Error + 0.2 * P # the integral in a PID controller is the sum of the instantaneous error over time and gives the accumulated offset that should have been corrected previously
 
 		# Derivative action predicts system behavior and thus improves settling time and stability of the system
-		D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
-
+		#D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
+		D = P - self.prev_Error
 
 		self.prev_Error = P
 		self.sum_Error = I
@@ -83,3 +83,7 @@ class ProcessQueue():
 			data = [[save_drop]]
 			csvW.writerows(data)
 
+		with open("PID.csv", "ab") as outfile:
+			csvW = csv.writer(outfile, delimiter=',')
+			pid = [[P, I, D]]
+			csvW.writerows(pid)
