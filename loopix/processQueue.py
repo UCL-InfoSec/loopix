@@ -68,7 +68,7 @@ class ProcessQueue():
 		self.prev_Error = P
 		self.sum_Error = I
 
-		self.drop += self.Kp*P + self.Ki*I + self.Kd*D
+		self.drop = self.Kp*P + self.Ki*I + self.Kd*D
 		save_drop = self.drop
 		self.drop = max(0.0, self.drop)
 
