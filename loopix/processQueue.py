@@ -14,9 +14,9 @@ class ProcessQueue():
 
 		self.target = 0.5
 
-		self.Kp = 8.0 #2
-		self.Ki = 6.5 #1
-		self.Kd = 15.0 #5
+		self.Kp = 5.0 #2
+		self.Ki = 3.0 #1
+		self.Kd = 0.0 #5
 
 		self.drop = 0
 		self.sum_Error = 0.0
