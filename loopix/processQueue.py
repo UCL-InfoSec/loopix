@@ -52,7 +52,7 @@ class ProcessQueue():
 		end_time = time.time()
 		print end_time - start_time
 
-		self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
+		self.timings = 0.5 * self.timings + 0.5 * (start_time - inserted_time)
 
 
 		# the proportional term produces an output value that is proportional to the current error value
