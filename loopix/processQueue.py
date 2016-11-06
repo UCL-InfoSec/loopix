@@ -92,3 +92,10 @@ class ProcessQueue():
 			csvW = csv.writer(outfile, delimiter=',')
 			qlen = [[q_len, len(self.queue)]]
 			csvW.writerows(qlen)
+
+		with open("delay.csv", "ab") as outfile:
+			csvW = csv.writer(outfile, delimiter=',')
+			vdelay = [[(start_time - inserted_time)]]
+			csvW.writerows(vdelay)
+
+
