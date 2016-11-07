@@ -51,7 +51,7 @@ class ProcessQueue():
 			print str(e)
 
 	def _process_in_thread(self, d, obj):
-		print "Start time: ", time.time()
+
 		inserted_time, message = obj
 		start_time = time.time()
 		d.callback(message)
@@ -91,35 +91,36 @@ class ProcessQueue():
 		self.array_pidConVal.append(self.drop)
 		self.array_queue.append((q_len, len(self.queue)))
 
-		if len(self.array_pidConVal) == 1000: 
+		if len(self.array_pidConVal) == 10: 
 			print "============================================"
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				for i in self.array_pidConVal:
-					data.append([[i]])
+				csvW = csv.writer(outfile, delimiter='\n')
+				data = [self.array_pidConVal]
 				csvW.writerows(data)
 			self.array_pidConVal = []
 
-		if len(self.array_pidVal) == 1000:
+		if len(self.array_pidVal) == 10:
+			pid = []
 			with open("PID.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				pid = [[self.array_pidVal]]
+				csvW = csv.writer(outfile, delimiter='\n')
+				pid = [self.array_pidVal]
 				csvW.writerows(pid)
 			self.array_pidVal = []
 
-		if len(self.array_queue) == 1000:
+		if len(self.array_queue) == 10:
+			qlen = []
 			with open("queueLen.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				qlen = [[self.array_queue]]
+				csvW = csv.writer(outfile, delimiter='\n')
+				qlen = [self.array_queue]
 				csvW.writerows(qlen)
 			self.array_queue = []
 
-		if len(self.array_delay) == 1000:
+		if len(self.array_delay) == 10:
+			vdelay = []
 			with open("delay.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				vdelay = [[self.array_delay]]
+				csvW = csv.writer(outfile, delimiter='\n')
+				vdelay = [self.array_delay]
 				csvW.writerows(vdelay)
 			self.array_delay = []
 
-		print "End time: ", time.time()
 

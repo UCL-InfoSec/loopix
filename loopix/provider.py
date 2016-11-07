@@ -107,7 +107,6 @@ class Provider(MixNode):
         print "[%s] > Processing Message" % self.name
         data, (host, port) = obj
 
-        print "Start: ", time.time()
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
         if data[:8] == "PULL_MSG":
@@ -156,7 +155,6 @@ class Provider(MixNode):
             print "[%s] > Received assign message from client (%s, %d)" % (self.name, host, port)
             # log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             self.subscribeClient(data[4:], host, port)
-        print "End time: ", time.time()
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
