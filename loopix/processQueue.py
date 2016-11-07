@@ -90,6 +90,8 @@ class ProcessQueue():
 		self.array_pidVal.append((P, I, D))
 		self.array_pidConVal.append(self.drop)
 		self.array_queue.append((q_len, len(self.queue)))
+		print self.array_queue
+
 
 		if len(self.array_pidConVal) == 10:
 			conVal = self.array_pidConVal
