@@ -58,7 +58,7 @@ class ProcessQueue():
 		end_time = time.time()
 
 		self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
-
+		self.array_delay.append(start_time - inserted_time)
 
 		# the proportional term produces an output value that is proportional to the current error value
 		P = self.timings - self.target
@@ -71,6 +71,10 @@ class ProcessQueue():
 		#D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
 		D = P - self.prev_Error
 
+
+		self.array_pidVal.append((P, I, D))
+
+
 		self.prev_Error = P
 		self.sum_Error = I
 
@@ -82,19 +86,15 @@ class ProcessQueue():
 
 		q_len = len(self.queue)
 		del self.queue[:int(self.drop)]
+		self.array_queue.append((q_len, len(self.queue)))
 
 		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 		
-		self.array_delay.append(start_time - inserted_time)
-		self.array_pidVal.append((P, I, D))
-		self.array_pidConVal.append(self.drop)
-		self.array_queue.append((q_len, len(self.queue)))
-		print self.array_queue
 
 
 		if len(self.array_pidConVal) == 10:
-			conVal = self.array_pidConVal
+			conVal = list(self.array_pidConVal)
 			self.array_pidConVal = []
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter='\n')
@@ -102,7 +102,7 @@ class ProcessQueue():
 				csvW.writerows(data)
 
 		if len(self.array_pidVal) == 10:
-			pid = self.array_pidVal
+			pid = list(self.array_pidVal)
 			self.array_pidVal = []
 			with open("PID.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
@@ -110,7 +110,7 @@ class ProcessQueue():
 					csvW.writerow(row)
 
 		if len(self.array_queue) == 10:
-			qlen = self.array_queue
+			qlen = list(self.array_queue)
 			self.array_queue = []
 			with open("queueLen.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
@@ -118,7 +118,7 @@ class ProcessQueue():
 					csvW.writerow(row)
 
 		if len(self.array_delay) == 10:
-			vdelay = self.array_delay
+			vdelay = list(self.array_delay)
 			self.array_delay = []
 			with open("delay.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter='\n')
