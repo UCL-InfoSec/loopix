@@ -6,6 +6,9 @@ from twisted.internet.defer import DeferredQueue, DeferredLock
 import weakref
 import csv
 import copy
+import threading
+
+
 
 class ProcessQueue():
 
@@ -28,6 +31,8 @@ class ProcessQueue():
 		self.array_delay = []
 		self.array_queue = []
 		self.array_pidVal = []
+
+		self.lock = threading.Lock()
 
 	def put(self, obj):
 		insert_t = time.time()
@@ -96,7 +101,8 @@ class ProcessQueue():
 
 		print len(self.array_pidConVal)
 
-		if len(self.array_pidConVal) == 100:
+		self.lock.acquire()
+		if len(self.array_pidConVal) == 10:
 			print "INSIDE"
 			conVal = list(self.array_pidConVal)
 			self.array_pidConVal[:] = []
@@ -104,6 +110,7 @@ class ProcessQueue():
 				csvW = csv.writer(outfile, delimiter='\n')
 				data = [conVal]
 				csvW.writerows(data)
+		self.lock.release()
 
 		# if len(self.array_pidVal) == 10:
 		# 	pid = list(self.array_pidVal)
