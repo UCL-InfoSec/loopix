@@ -163,12 +163,12 @@ class MixNode(DatagramProtocol):
 
 	def do_PROCESS(self, (data, (host, port))):
 		#self.receivedQueue.get().addCallback(self.do_PROCESS)
+		self.processMessage(data, (host, port))
+
 		try:
 			reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
 		except Exception, e:
 			print "[%s] > ERROR: %s" % (self.name, str(e))
-
-		self.processMessage(data, (host, port))
 
 	def processMessage(self, data, (host, port)):
 

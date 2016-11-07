@@ -96,12 +96,12 @@ class Provider(MixNode):
         data, (host, port) = obj
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
 
+        self.processMessage(obj)
+
         try:
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
-
-        self.processMessage(obj)
 
     def processMessage(self, obj):
         print "[%s] > Processing Message" % self.name
