@@ -51,6 +51,7 @@ class ProcessQueue():
 			print str(e)
 
 	def _process_in_thread(self, d, obj):
+		print "Start time: ", time.time()
 		inserted_time, message = obj
 		start_time = time.time()
 		d.callback(message)
@@ -85,15 +86,17 @@ class ProcessQueue():
 
 		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
-		self.array_delay.append((start_time - inserted_time))
+		self.array_delay.append(start_time - inserted_time)
 		self.array_pidVal.append((P, I, D))
 		self.array_pidConVal.append(self.drop)
 		self.array_queue.append((q_len, len(self.queue)))
 
 		if len(self.array_pidConVal) == 1000: 
+			print "============================================"
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				data = [[self.array_pidConVal]]
+				for i in self.array_pidConVal:
+					data.append([[i]])
 				csvW.writerows(data)
 			self.array_pidConVal = []
 
@@ -117,4 +120,6 @@ class ProcessQueue():
 				vdelay = [[self.array_delay]]
 				csvW.writerows(vdelay)
 			self.array_delay = []
+
+		print "End time: ", time.time()
 
