@@ -5,6 +5,7 @@ import copy
 from twisted.internet.defer import DeferredQueue, DeferredLock
 import weakref
 import csv
+import copy
 
 class ProcessQueue():
 
@@ -94,10 +95,11 @@ class ProcessQueue():
 		
 
 		print len(self.array_pidConVal)
-		if len(self.array_pidConVal) == 10:
+
+		if len(self.array_pidConVal) == 100:
 			print "INSIDE"
 			conVal = list(self.array_pidConVal)
-			del self.array_pidConVal[:]
+			self.array_pidConVal[:] = []
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter='\n')
 				data = [conVal]
