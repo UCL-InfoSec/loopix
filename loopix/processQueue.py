@@ -95,6 +95,7 @@ class ProcessQueue():
 
 		print len(self.array_pidConVal)
 		if len(self.array_pidConVal) == 10:
+			print "INSIDE"
 			conVal = list(self.array_pidConVal)
 			del self.array_pidConVal[:]
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
