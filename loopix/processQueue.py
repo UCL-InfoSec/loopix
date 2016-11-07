@@ -56,7 +56,6 @@ class ProcessQueue():
 		start_time = time.time()
 		d.callback(message)
 		end_time = time.time()
-		print end_time - start_time
 
 		self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
 
@@ -84,43 +83,43 @@ class ProcessQueue():
 		q_len = len(self.queue)
 		del self.queue[:int(self.drop)]
 
-		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
-		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
+		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
+		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
+		
 		self.array_delay.append(start_time - inserted_time)
 		self.array_pidVal.append((P, I, D))
 		self.array_pidConVal.append(self.drop)
 		self.array_queue.append((q_len, len(self.queue)))
 
-		if len(self.array_pidConVal) == 10: 
-			print "============================================"
+		if len(self.array_pidConVal) == 10:
+			conVal = self.array_pidConVal
+			self.array_pidConVal = []
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter='\n')
-				data = [self.array_pidConVal]
+				data = [conVal]
 				csvW.writerows(data)
-			self.array_pidConVal = []
 
 		if len(self.array_pidVal) == 10:
-			pid = []
-			with open("PID.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter='\n')
-				pid = [self.array_pidVal]
-				csvW.writerows(pid)
+			pid = self.array_pidVal
 			self.array_pidVal = []
+			with open("PID.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				for row in pid:
+        			csvW.writerow(row)
 
 		if len(self.array_queue) == 10:
-			qlen = []
-			with open("queueLen.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter='\n')
-				qlen = [self.array_queue]
-				csvW.writerows(qlen)
+			qlen = self.array_queue
 			self.array_queue = []
+			with open("queueLen.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				for row in qlen:
+					csvW.writerow(row)
 
 		if len(self.array_delay) == 10:
-			vdelay = []
+			vdelay = self.array_delay
+			self.array_delay = []
 			with open("delay.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter='\n')
-				vdelay = [self.array_delay]
-				csvW.writerows(vdelay)
-			self.array_delay = []
+				csvW.writerows([vdelay])
 
 
