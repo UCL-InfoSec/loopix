@@ -92,8 +92,8 @@ class ProcessQueue():
 		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 		
-		print self.array_pidConVal
 
+		print len(self.array_pidConVal)
 		if len(self.array_pidConVal) == 10:
 			conVal = list(self.array_pidConVal)
 			del self.array_pidConVal[:]
