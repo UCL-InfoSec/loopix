@@ -23,6 +23,11 @@ class ProcessQueue():
 		self.timings = 0.0
 		self.prev_Error = 0.0
 
+		self.array_pidConVal = []
+		self.array_delay = []
+		self.array_queue = []
+		self.array_pidVal = []
+
 	def put(self, obj):
 		insert_t = time.time()
 		self.queue.append((insert_t, obj))
@@ -70,32 +75,46 @@ class ProcessQueue():
 		self.sum_Error = I
 
 		self.drop = self.Kp*P + self.Ki*I + self.Kd*D
-		save_drop = self.drop
+		# save_drop = self.drop
+		self.array_pidConVal.append(self.drop)
+
 		self.drop = max(0.0, self.drop)
 
 		q_len = len(self.queue)
 		del self.queue[:int(self.drop)]
 
-		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
-		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
+		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
+		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
+		self.array_delay.append((start_time - inserted_time))
+		self.array_pidVal.append((P, I, D))
+		self.array_pidConVal.append(self.drop)
+		self.array_queue.append((q_len, len(self.queue)))
 
-		with open('PIDcontrolVal.csv', 'ab') as outfile:
-			csvW = csv.writer(outfile, delimiter=',')
-			data = [[save_drop]]
-			csvW.writerows(data)
+		if len(self.array_pidConVal) == 1000: 
+			with open('PIDcontrolVal.csv', 'ab') as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				data = [[self.array_pidConVal]]
+				csvW.writerows(data)
+			self.array_pidConVal = []
 
-		with open("PID.csv", "ab") as outfile:
-			csvW = csv.writer(outfile, delimiter=',')
-			pid = [[P, I, D]]
-			csvW.writerows(pid)
+		if len(self.array_pidVal) == 1000:
+			with open("PID.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				pid = [[self.array_pidVal]]
+				csvW.writerows(pid)
+			self.array_pidVal = []
 
-		with open("queueLen.csv", "ab") as outfile:
-			csvW = csv.writer(outfile, delimiter=',')
-			qlen = [[q_len, len(self.queue)]]
-			csvW.writerows(qlen)
+		if len(self.array_queue) == 1000:
+			with open("queueLen.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				qlen = [[self.array_queue]]
+				csvW.writerows(qlen)
+			self.array_queue = []
 
-		with open("delay.csv", "ab") as outfile:
-			csvW = csv.writer(outfile, delimiter=',')
-			vdelay = [[(start_time - inserted_time)]]
-			csvW.writerows(vdelay)
+		if len(self.array_delay) == 1000:
+			with open("delay.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				vdelay = [[self.array_delay]]
+				csvW.writerows(vdelay)
+			self.array_delay = []
 
