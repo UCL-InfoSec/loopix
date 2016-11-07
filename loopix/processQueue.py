@@ -71,8 +71,6 @@ class ProcessQueue():
 		#D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
 		D = P - self.prev_Error
 
-
-
 		self.prev_Error = P
 		self.sum_Error = I
 
@@ -91,8 +89,8 @@ class ProcessQueue():
 		dataTmp = [self.drop, P, I, D, q_len, start_time - inserted_time]
 
 		with open('PIDcontrolVal.csv', 'ab') as outfile:
-			csv_out.writerow(['PIDControlVal', 'P', 'I', 'D', 'QueueLen', 'Delay'])
 			csvW = csv.writer(outfile, delimiter=',')
+			csvW.writerow(['PIDControlVal', 'P', 'I', 'D', 'QueueLen', 'Delay'])
 			for row in dataTmp:
 				csvW.writerow(row)
 
