@@ -65,8 +65,8 @@ class Provider(MixNode):
         reactor.callLater(30.0, self.turnOnProcessing)
 
         self.run()
-        #self.d.addCallback(self.turnOnHeartbeats)
-        #self.d.addErrback(self.errbackHeartbeats)
+        self.d.addCallback(self.turnOnHeartbeats)
+        self.d.addErrback(self.errbackHeartbeats)
 
         self.turnOnReliableUDP()
         self.readInData('example.db')
