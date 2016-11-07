@@ -76,9 +76,9 @@ class ProcessQueue():
 
 		self.drop = self.Kp*P + self.Ki*I + self.Kd*D
 		# save_drop = self.drop
-		self.array_pidConVal.append(self.drop)
 
 		self.drop = max(0.0, self.drop)
+		self.array_pidConVal.append(self.drop)
 
 		q_len = len(self.queue)
 		del self.queue[:int(self.drop)]
