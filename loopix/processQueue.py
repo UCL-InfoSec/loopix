@@ -91,7 +91,7 @@ class ProcessQueue():
 		with open('PIDcontrolVal.csv', 'ab') as outfile:
 			csvW = csv.writer(outfile, delimiter=',')
 			csvW.writerow(['PIDControlVal', 'P', 'I', 'D', 'QueueLen', 'Delay'])
-			for row in dataTmp:
-				csvW.writerow(row)
+			#for row in dataTmp:
+			csvW.writerows([dataTmp])
 
 
