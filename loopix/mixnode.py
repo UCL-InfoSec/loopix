@@ -94,8 +94,9 @@ class MixNode(DatagramProtocol):
 		print "[%s] > Start protocol" % self.name
 		# log.info("[%s] > Start protocol" % self.name)
 		# self.announce()
-		self.d.addCallback(self.turnOnHeartbeats)
-		self.d.addErrback(self.errbackHeartbeats)
+		
+		#self.d.addCallback(self.turnOnHeartbeats)
+		#self.d.addErrback(self.errbackHeartbeats)
 
 		reactor.callLater(30.0, self.turnOnProcessing)
 		self.run()
@@ -178,7 +179,7 @@ class MixNode(DatagramProtocol):
 			self.bReceived += sys.getsizeof(data[4:])
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				self.sendMessage("ACKN"+idt, (host, port))
+				# self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 			except Exception, e:
 				print "ERROR: ", str(e)
