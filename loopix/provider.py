@@ -105,7 +105,9 @@ class Provider(MixNode):
 
     def processMessage(self, obj):
         print "[%s] > Processing Message" % self.name
+
         data, (host, port) = obj
+        self.bReceived += sys.getsizeof(data)
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
@@ -141,7 +143,7 @@ class Provider(MixNode):
             #     #self.numMsgClients += 1
             #     pass
             try:
-                self.bReceived += sys.getsizeof(data[4:])
+                self.gbReceived += sys.getsizeof(data)
                 idt, msgData = petlib.pack.decode(data[4:])
                 self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))

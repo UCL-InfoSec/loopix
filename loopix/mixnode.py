@@ -221,6 +221,9 @@ class MixNode(DatagramProtocol):
 		else:
 			if peeledData:
 				(xtoPort, xtoHost, xtoName), forw_msg, idt, delay = peeledData
+				#print xtoPort
+				#print xtoHost
+				#print xtoName
 				if (xtoName is None and xtoPort is None and xtoHost is None):
 				#if (xtoPort is None or xtoHost is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
@@ -419,21 +422,19 @@ class MixNode(DatagramProtocol):
 		self.bReceived = 0
 		goodbytes = self.gbReceived
 		self.gbReceived = 0
-		# print "Bytes received: %d, Bytes processed: %d" % (received, processed)
-		# print "Good bytes: %d " % goodbytes
 		try:
 			with open('performance.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[received, processed, goodbytes]]
 				csvW.writerows(data)
-			with open('deferredQueueSize.csv', 'ab') as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
-				csvW.writerows(data)
-			with open('mixnodeSent.csv', 'ab') as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				data = [[self.gbSent]]
-				csvW.writerows(data)
+			# with open('deferredQueueSize.csv', 'ab') as outfile:
+			# 	csvW = csv.writer(outfile, delimiter=',')
+			# 	data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
+			# 	csvW.writerows(data)
+			# with open('mixnodeSent.csv', 'ab') as outfile:
+			# 	csvW = csv.writer(outfile, delimiter=',')
+			# 	data = [[self.gbSent]]
+			# 	csvW.writerows(data)
 		except Exception, e:
 			print str(e)
 

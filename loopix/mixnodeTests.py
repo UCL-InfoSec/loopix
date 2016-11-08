@@ -146,9 +146,15 @@ def testDo_RINF(testMixes):
 def testSendHeartbeat(testMixes):
 	mix1, mix2 = testMixes
 	mix3 = MixNode("M3", 8003, "127.0.0.1", setup)
+	provider = Provider("P1", 8000, "127.0.0.1", setup)
 	mix3.transport = proto_helpers.FakeDatagramTransport()
+	provider.transport = proto_helpers.FakeDatagramTransport()
+
+	mix1.prvList.append(provider)
+	predefinedPath = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
+	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), format3.Mix(provider.name, provider.port, provider.host, provider.pubk)]
 	mix1.sendHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
-	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)])
+	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)], predefinedPath)
 	assert len(mix1.heartbeatsSent) == 1
 
 	msg, addr = mix1.transport.written[0]

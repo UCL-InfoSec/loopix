@@ -6,6 +6,7 @@ from twisted.internet.defer import DeferredQueue, DeferredLock
 import weakref
 import csv
 import copy
+import os
 
 
 
@@ -40,6 +41,7 @@ class ProcessQueue():
 		return d
 
 	def _process(self):
+		print os.getpid()
 		try:
 			while self.consumers != [] and self.queue != []:
 				d = self.consumers.pop(0)
