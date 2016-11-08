@@ -297,11 +297,11 @@ class MixNode(DatagramProtocol):
 		forward = message[1]
 		backward = message[2]
 		element = EcPt.from_binary(elem, G)
-		if element in self.seenElements:
-			print "[%s] > Element already seen. This might be a duplicate. Message dropped." % self.name
-			return None
-		else:
-			self.seenElements.append(element)
+		#if element in self.seenElements:
+		#	print "[%s] > Element already seen. This might be a duplicate. Message dropped." % self.name
+		#	return None
+		#else:
+		#	self.seenElements.append(element)
 		aes = Cipher("AES-128-CTR")
 
 		# Derive first key
@@ -312,16 +312,16 @@ class MixNode(DatagramProtocol):
 		new_element = b * element
 		# Check the forward MAC
 		expected_mac = forward[:20]
-		if self.checkMac(expected_mac):
-			print "[%s] > MAC already seen. Message droped." % self.name
-			log.warning("[%s] > MAC already seen. Message droped." % self.name)
-			return None
+		#if self.checkMac(expected_mac):
+		#	print "[%s] > MAC already seen. Message droped." % self.name
+		#	log.warning("[%s] > MAC already seen. Message droped." % self.name)
+		#	return None
 		ciphertext_metadata, ciphertext_body = msgpack.unpackb(forward[20:])
 		mac1 = hmac.new(k1.kmac, ciphertext_metadata, digestmod=sha1).digest()
 		if not (expected_mac == mac1):
 			raise Exception("> WRONG MAC")
 			log.error("[%s] > WRONG MAC." % self.name)
-		self.seenMacs.append(mac1)
+		#self.seenMacs.append(mac1)
 
 		# Decrypt the forward message
 		enc_metadata = aes.dec(k1.kenc, k1.iv)
@@ -382,7 +382,7 @@ class MixNode(DatagramProtocol):
 				ret_forw = new_back
 				ret_back = "None"
 
-				self.bounceInformation["ACKN"+str(idt)] = ([ret_elem.export(), ret_forw, ret_back])
+				# self.bounceInformation["ACKN"+str(idt)] = ([ret_elem.export(), ret_forw, ret_back])
 			else:
 				xfrom, xto, new_forw = header[4], header[5], pt
 				if not (backward == "None"):
@@ -508,7 +508,7 @@ class MixNode(DatagramProtocol):
 		"""
 		try:
 			heartMsg = "HBIT" + urandom(1000)
-			self.heartbeatsSent.append((heartMsg, str(timestamp)))
+			# self.heartbeatsSent.append((heartMsg, str(timestamp)))
 			current_time = time.time()
 			delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')

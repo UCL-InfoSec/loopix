@@ -103,7 +103,7 @@ class Provider(MixNode):
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
     def processMessage(self, obj):
-        print "[%s] > Processing Message" % self.name
+        # print "[%s] > Processing Message" % self.name
 
         data, (host, port) = obj
         self.bReceived += 1
@@ -202,7 +202,7 @@ class Provider(MixNode):
                     else:
                         # self.addToQueue(
                         #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
-                        print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
+                        #print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
                         try:
                             dtmp = delay - sf.epoch()
                             if dtmp > 0:
@@ -231,7 +231,7 @@ class Provider(MixNode):
     def subscribeClient(self, name, host, port):
         if name not in self.clientList.keys():
             self.clientList[name] = (host, port)
-            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
+            # print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
         else:
             self.clientList[name] = (host, port)
             # print "[%s] > Client %s already subscribed to provider" % (self.name, name)
