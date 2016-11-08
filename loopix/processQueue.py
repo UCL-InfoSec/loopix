@@ -41,7 +41,6 @@ class ProcessQueue():
 		return d
 
 	def _process(self):
-		print os.getpid()
 		try:
 			while self.consumers != [] and self.queue != []:
 				d = self.consumers.pop(0)
@@ -57,10 +56,11 @@ class ProcessQueue():
 		d.callback(message)
 		end_time = time.time()
 
-		self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
+		# self.timings = 0 * self.timings + 1 * (start_time - inserted_time)
 
 		# the proportional term produces an output value that is proportional to the current error value
-		P = self.timings - self.target
+		# P = self.timings - self.target
+		P = (start_time - inserted_time) - self.target
 
 		# the contribution from the integral term is proportional to both the magnitude of the error and the duration of the error
 		# I = 0.8 * self.sum_Error + 0.2 * P # the integral in a PID controller is the sum of the instantaneous error over time and gives the accumulated offset that should have been corrected previously
@@ -87,8 +87,8 @@ class ProcessQueue():
 		
 		# dataTmp = [self.drop, P, I, D, q_len, start_time - inserted_time]
 
-		# with open('PIDcontrolVal.csv', 'ab') as outfile:
-		# 	csvW = csv.writer(outfile, delimiter=',')
-		# 	csvW.writerows([dataTmp])
+		with open('PIDcontrolVal.csv', 'ab') as outfile:
+			csvW = csv.writer(outfile, delimiter=',')
+			csvW.writerows([dataTmp])
 
 
