@@ -212,6 +212,7 @@ class Provider(MixNode):
                     else:
                         # self.addToQueue(
                         #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
+                        print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
                         try:
                             dtmp = delay - sf.epoch()
                             if dtmp > 0:
