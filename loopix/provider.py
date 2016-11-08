@@ -71,7 +71,6 @@ class Provider(MixNode):
         self.turnOnReliableUDP()
         self.readInData('example.db')
 
-        # self.measureMsgReceived()
         self.turnOnMeasurments()
         #self.saveInDB('example.db')
 
@@ -271,47 +270,21 @@ class Provider(MixNode):
         # log.info("[%s] > Provider public information saved in database." % self.name)
 
 
-    def measureMsgReceived(self):
-        lc = task.LoopingCall(self.saveNumbers)
-        lc.start(60)
-
-    def saveNumbers(self):
-        print "----MEASURING MESSAGES RECEIVED--------"
-        msgsR = self.numMsgReceived
-        msgsClients = self.numMsgClients
-        msgsSent = self.nMsgSent
-        testR = self.testReceived
-        # print "RECEIVED: ", msgsR
-        self.numMsgReceived = 0
-        self.numMsgClients = 0
-        self.nMsgSent = 0
-        self.testReceived = 0
-        try:
-            with open('messagesReceivedSend.csv', 'ab') as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                data = [[testR, msgsR, msgsSent, msgsClients]]
-                csvW.writerows(data)
-            with open('messagesFromClients.csv', 'ab') as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                data = [[msgsClients]]
-                csvW.writerows(data)
-        except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
-
-
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)
-        lc.start(60, False)
+        lc.start(10, False)
 
     def measurments(self):
         num = self.bReceived
         self.bReceived = 0
         good = self.gbReceived
         self.gbReceived = 0
+        received = self.numMsgReceived
+        self.numMsgReceived = 0
         try:
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[num, good]]
+                data = [[num, good, Received]]
                 csvW.writerows(data)
         except Exception, e:
             print "ERROR - ", str(e)
