@@ -108,7 +108,7 @@ class MixNode(DatagramProtocol):
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
-		log.info("[%s] > Stop protocol" % self.name)
+		# log.info("[%s] > Stop protocol" % self.name)
 
 	def turnOnProcessing(self):
 		#self.receivedQueue.get().addCallback(self.do_PROCESS)
@@ -155,8 +155,8 @@ class MixNode(DatagramProtocol):
 
 	def datagramReceived(self, data, (host, port)):
 		print "[%s] > Received data from %s" % (self.name, host)
-		# log.info("[%s] > received data from %s" % (self.name, host))
 		#self.receivedQueue.put((data, (host, port)))
+
 		try:
 			self.processQueue.put((data, (host, port)))
 		except Exception, e:
@@ -224,24 +224,19 @@ class MixNode(DatagramProtocol):
 				if (xtoName is None and xtoPort is None and xtoHost is None):
 					print "[%s] > Message discarded" % self.name
 				else:
-					def save_or_delay(IPAddrs):
-						print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
-						# log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs))
-						packet = petlib.pack.encode((idt, forw_msg))
-						# self.addToQueue(("ROUT" + packet, (IPAddrs, xtoPort), idt), delay)
-						try:
-							print delay
-							print sf.epoch()
-							dtmp = delay - sf.epoch()
-							if dtmp > 0:
-								reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (IPAddrs, xtoPort))
-							else:
-								self.sendMessage("ROUT" + packet, (IPAddrs, xtoPort))
-							self.bProcessed += sys.getsizeof(packet)
-							self.expectedACK.append("ACKN"+idt)
-						except Exception, e:
-							print "ERROR: ", str(e)
-					reactor.resolve(xtoHost).addCallback(save_or_delay)
+					print "[%s] > Decryption ended. " % (self.name)
+					packet = petlib.pack.encode((idt, forw_msg))
+					# self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
+					try:
+						dtmp = delay - sf.epoch()
+						if dtmp > 0:
+							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+						else:
+							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+						self.bProcessed += sys.getsizeof(packet)
+						self.expectedACK.append("ACKN"+idt)
+					except Exception, e:
+						print "ERROR: ", str(e)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
@@ -262,22 +257,19 @@ class MixNode(DatagramProtocol):
 				(xtoPort, xtoHost, xtoName), back_msg, idt, delay = peeledData
 				if (xtoPort is None and xtoHost is None and xtoName is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
-					# log.info("[%s] > Message discarded by conditions." % self.name)
 				else:
-					def save_or_delay(IPAddrs):
-						# log.info("[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, IPAddrs))
-						# self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (IPAddrs, xtoPort), idt), delay)
-						try:
-							dtmp = delay - sf.epoch()
-							if dtmp > 0:
-								reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (IPAddrs, xtoPort))
-							else:
-								self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (IPAddrs, xtoPort))
-							self.bProcessed += sys.getsizeof(packet)
-							self.expectedACK.append("ACKN"+idt)
-						except Exception, e:
-							print "ERROR: ", str(e)
-					reactor.resolve(xtoHost).addCallback(save_or_delay)
+					print ("[%s] > Bounce decrypted. ")
+					# self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
+					try:
+						dtmp = delay - sf.epoch()
+						if dtmp > 0:
+							reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						else:
+							self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						self.bProcessed += sys.getsizeof(packet)
+						self.expectedACK.append("ACKN"+idt)
+					except Exception, e:
+						print "ERROR: ", str(e)
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
@@ -347,7 +339,6 @@ class MixNode(DatagramProtocol):
 			dropMessage = header[1]
 			if dropMessage == '1':
 				print "[%s] > Drop message. This message is droped now." % self.name
-				# log.info("[%s] > Drop message. This message is droped now." % self.name)
 				return None
 
 			# typeFlag - auxiliary flag which tells what type of message it is; only used for statistics; 
