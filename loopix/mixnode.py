@@ -414,7 +414,7 @@ class MixNode(DatagramProtocol):
 	def measureBandwidth(self):
 		print "Measure bandwidth function called"
 		lc = task.LoopingCall(self.in_out_ratio)
-		lc.start(120, False)
+		lc.start(60, False)
 
 	def in_out_ratio(self):
 		processed = self.bProcessed

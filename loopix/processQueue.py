@@ -7,6 +7,7 @@ import weakref
 import csv
 import copy
 import os
+import threading
 
 
 
@@ -26,6 +27,9 @@ class ProcessQueue():
 		self.sum_Error = 0.0
 		self.timings = 0.0
 		self.prev_Error = 0.0
+
+		self.lock = threading.Lock()
+		self.logs = []
 
 	def put(self, obj):
 		insert_t = time.time()
@@ -60,35 +64,45 @@ class ProcessQueue():
 
 		# the proportional term produces an output value that is proportional to the current error value
 		# P = self.timings - self.target
-		P = (start_time - inserted_time) - self.target
+		with self.lock:
+			P = (start_time - inserted_time) - self.target
 
 		# the contribution from the integral term is proportional to both the magnitude of the error and the duration of the error
 		# I = 0.8 * self.sum_Error + 0.2 * P # the integral in a PID controller is the sum of the instantaneous error over time and gives the accumulated offset that should have been corrected previously
-		I  = 1 * self.sum_Error + 1 * P
+			I  = 1 * self.sum_Error + 1 * P
 
 		# Derivative action predicts system behavior and thus improves settling time and stability of the system
 		#D = P - I # the derivative of the process error is calculated by determining the slope of the error over time
-		D = P - self.prev_Error
+			D = P - self.prev_Error
 
-		self.prev_Error = P
-		self.sum_Error = I
+			self.prev_Error = P
+			self.sum_Error = I
 
-		self.drop = self.Kp*P + self.Ki*I + self.Kd*D
-		# save_drop = self.drop
+			self.drop = self.Kp*P + self.Ki*I + self.Kd*D
+			drop_tmp = self.drop
+			# save_drop = self.drop
 
-		self.drop = max(0.0, self.drop)
+			self.drop = max(0.0, self.drop)
 
-		q_len = len(self.queue)
-		del self.queue[:int(self.drop)]
+			q_len = len(self.queue)
+			del self.queue[:int(self.drop)]
 
 
 		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 		
-		dataTmp = [self.drop, P, I, D, q_len, start_time - inserted_time]
+			dataTmp = [drop_tmp, P, I, D, q_len, start_time - inserted_time]
+			self.log(dataTmp)
 
-		with open('PIDcontrolVal.csv', 'ab') as outfile:
-			csvW = csv.writer(outfile, delimiter=',')
-			csvW.writerows([dataTmp])
+
+	def log(self, data):
+		self.logs.append(data)
+		if len(self.logs) > 10:
+			with open('PIDcontrolVal.csv', 'ab') as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				csvW.writerows(self.logs)
+			self.logs = []
+		
+
 
 
