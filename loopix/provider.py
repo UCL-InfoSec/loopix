@@ -71,8 +71,8 @@ class Provider(MixNode):
         self.turnOnReliableUDP()
         self.readInData('example.db')
 
-        self.measureMsgReceived()
-        self.measureBandwidth()
+        # self.measureMsgReceived()
+        self.turnOnMeasurments()
         #self.saveInDB('example.db')
 
     def stopProtocol(self):
@@ -107,7 +107,7 @@ class Provider(MixNode):
         print "[%s] > Processing Message" % self.name
 
         data, (host, port) = obj
-        self.bReceived += sys.getsizeof(data)
+        self.bReceived += 1
 
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
@@ -137,11 +137,6 @@ class Provider(MixNode):
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
             # log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
-            # if (host, port) not in self.clientList.values():
-            #     self.numMsgReceived += 1
-            # else:
-            #     #self.numMsgClients += 1
-            #     pass
             try:
                 self.gbReceived += sys.getsizeof(data)
                 idt, msgData = petlib.pack.decode(data[4:])
@@ -306,6 +301,22 @@ class Provider(MixNode):
                 csvW.writerows(data)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
+
+
+    def turnOnMeasurments(self):
+        lc = task.LoopingCall(self.measurments)
+        lc.start(60, False)
+
+    def measurments(self):
+        num = self.bReceived
+        self.bReceived = 0
+        try:
+            with open("performanceProvider.csv", "ab") as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[num]]
+                csvW.writerows(data)
+        except Exception, e:
+            print "ERROR - ", str(e)
 
 
 
