@@ -131,26 +131,22 @@ class Provider(MixNode):
             for element in dataList:
                 self.usersPubs.append(format3.User(element[0], element[1], element[2], element[3], element[4]))
             print "[%s] > Provider received public information of users registered in the system" % self.name
-            # log.info("[%s] > Provider received public information of users registered in the system" % self.name)
         if data[:4] == "INFO":
             self.sendInfoMixnet(host, port)
             print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
-            # log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
         if data[:4] == "ROUT":
             try:
-                self.gbReceived += sys.getsizeof(data)
+                self.gbReceived += 1
                 idt, msgData = petlib.pack.decode(data[4:])
                 self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
-                # log.error("[%s] > Error during ROUT received: %s" % (self.name, str(e)))
         if data[:4] == "ACKN":
             if data in self.expectedACK:
                 self.expectedACK.remove(data)
         if data[:4] == "PING":
             print "[%s] > Received assign message from client (%s, %d)" % (self.name, host, port)
-            # log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
             self.subscribeClient(data[4:], host, port)
 
     def do_PULL(self, name, (host, port)):
@@ -310,10 +306,12 @@ class Provider(MixNode):
     def measurments(self):
         num = self.bReceived
         self.bReceived = 0
+        good = self.gbReceived
+        self.gbReceived = 0
         try:
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[num]]
+                data = [[num, good]]
                 csvW.writerows(data)
         except Exception, e:
             print "ERROR - ", str(e)
