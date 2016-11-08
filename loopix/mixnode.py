@@ -99,7 +99,7 @@ class MixNode(DatagramProtocol):
 		self.d.addErrback(self.errbackHeartbeats)
 
 		reactor.callLater(30.0, self.turnOnProcessing)
-		self.run()
+		# self.run()
 		
 		self.turnOnReliableUDP()
 		self.readInData('example.db')
@@ -221,29 +221,27 @@ class MixNode(DatagramProtocol):
 		else:
 			if peeledData:
 				(xtoPort, xtoHost, xtoName), forw_msg, idt, delay = peeledData
-				#print xtoPort
-				#print xtoHost
-				#print xtoName
 				if (xtoName is None and xtoPort is None and xtoHost is None):
-				#if (xtoPort is None or xtoHost is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
 				else:
-					print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost)
-					# log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, xtoHost))
-					packet = petlib.pack.encode((idt, forw_msg))
-					self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
-					# try:
-					# 	print delay
-					# 	print sf.epoch()
-					# 	dtmp = delay - sf.epoch()
-					# 	if dtmp > 0:
-					# 		reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
-					# 	else:
-					# 		self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
-					# 	self.bProcessed += sys.getsizeof(packet)
-					# 	self.expectedACK.append("ACKN"+idt)
-					# except Exception, e:
-					# 	print "ERROR: ", str(e)
+					def save_or_delay(IPAddrs):
+						print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
+						# log.info("[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs))
+						packet = petlib.pack.encode((idt, forw_msg))
+						# self.addToQueue(("ROUT" + packet, (IPAddrs, xtoPort), idt), delay)
+						try:
+							print delay
+							print sf.epoch()
+							dtmp = delay - sf.epoch()
+							if dtmp > 0:
+								reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (IPAddrs, xtoPort))
+							else:
+								self.sendMessage("ROUT" + packet, (IPAddrs, xtoPort))
+							self.bProcessed += sys.getsizeof(packet)
+							self.expectedACK.append("ACKN"+idt)
+						except Exception, e:
+							print "ERROR: ", str(e)
+					reactor.resolve(xtoHost).addCallback(save_or_delay)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
@@ -266,8 +264,20 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 					# log.info("[%s] > Message discarded by conditions." % self.name)
 				else:
-					# log.info("[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, xtoHost))
-					self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
+					def save_or_delay(IPAddrs):
+						# log.info("[%s] > Bounce decrypted. Message bounced to (%d, %s): " % (self.name, xtoPort, IPAddrs))
+						# self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (IPAddrs, xtoPort), idt), delay)
+						try:
+							dtmp = delay - sf.epoch()
+							if dtmp > 0:
+								reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (IPAddrs, xtoPort))
+							else:
+								self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (IPAddrs, xtoPort))
+							self.bProcessed += sys.getsizeof(packet)
+							self.expectedACK.append("ACKN"+idt)
+						except Exception, e:
+							print "ERROR: ", str(e)
+					reactor.resolve(xtoHost).addCallback(save_or_delay)
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
@@ -427,23 +437,12 @@ class MixNode(DatagramProtocol):
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[received, processed, goodbytes]]
 				csvW.writerows(data)
-			# with open('deferredQueueSize.csv', 'ab') as outfile:
-			# 	csvW = csv.writer(outfile, delimiter=',')
-			# 	data = [[len(self.receivedQueue.waiting), len(self.receivedQueue.pending)]]
-			# 	csvW.writerows(data)
 			# with open('mixnodeSent.csv', 'ab') as outfile:
 			# 	csvW = csv.writer(outfile, delimiter=',')
 			# 	data = [[self.gbSent]]
 			# 	csvW.writerows(data)
 		except Exception, e:
 			print str(e)
-
-	def queueSize(self):
-		size = 0
-		for e in self.Queue:
-			t, m = e
-			size += sys.getsizeof(m[0])
-		return size
 
 	def flushQueue(self):
 		""" The function sends the messages queued in the mixnode pool.
