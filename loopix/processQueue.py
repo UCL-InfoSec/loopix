@@ -6,7 +6,6 @@ from twisted.internet.defer import DeferredQueue, DeferredLock
 import weakref
 import csv
 import copy
-import threading
 
 
 
@@ -20,14 +19,12 @@ class ProcessQueue():
 
 		self.Kp = 3.0 #2
 		self.Ki = 5.0 #1
-		self.Kd = 15.0 #5
+		self.Kd = 0 #5
 
 		self.drop = 0
 		self.sum_Error = 0.0
 		self.timings = 0.0
 		self.prev_Error = 0.0
-
-		self.lock = threading.Lock()
 
 	def put(self, obj):
 		insert_t = time.time()
@@ -83,14 +80,13 @@ class ProcessQueue():
 		del self.queue[:int(self.drop)]
 
 
-		print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
-		print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
+		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
+		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 		
 		dataTmp = [self.drop, P, I, D, q_len, start_time - inserted_time]
 
 		with open('PIDcontrolVal.csv', 'ab') as outfile:
 			csvW = csv.writer(outfile, delimiter=',')
-			#for row in dataTmp:
 			csvW.writerows([dataTmp])
 
 
