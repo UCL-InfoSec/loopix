@@ -64,7 +64,7 @@ class Provider(MixNode):
 
         reactor.callLater(30.0, self.turnOnProcessing)
 
-        self.run()
+        # self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
@@ -210,17 +210,17 @@ class Provider(MixNode):
                     if xtoName in self.clientList.keys():
                         self.saveInStorage(xtoName, msg_forw)
                     else:
-                        self.addToQueue(
-                            ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
-                #         try:
-                #             dtmp = delay - sf.epoch()
-                #             if dtmp > 0:
-                #                 reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                #             else:
-                #                 self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                #             self.expectedACK.append("ACKN"+idt)
-                #         except Exception, e:
-                #             print "ERROR: ", str(e)
+                        # self.addToQueue(
+                        #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
+                        try:
+                            dtmp = delay - sf.epoch()
+                            if dtmp > 0:
+                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            else:
+                                self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            self.expectedACK.append("ACKN"+idt)
+                        except Exception, e:
+                            print "ERROR: ", str(e)
                 reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
