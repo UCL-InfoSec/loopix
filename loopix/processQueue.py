@@ -85,7 +85,7 @@ class ProcessQueue():
 
 			self.drop = max(0.0, self.drop)
 
-			tmp = numpy.random.poisson(self.drop)
+			tmp = np.random.poisson(self.drop)
 			q_len = len(self.queue)
 			del self.queue[:int(tmp)]
 
