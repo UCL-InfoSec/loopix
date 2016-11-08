@@ -8,7 +8,7 @@ import csv
 import copy
 import os
 import threading
-
+import numpy as np
 
 
 class ProcessQueue():
@@ -79,14 +79,15 @@ class ProcessQueue():
 
 			self.prev_Error = P
 
-			self.drop = self.Kp*P + self.Ki*I + self.Kd*D
+			self.drop += self.Kp*P + self.Ki*I + self.Kd*D
 			drop_tmp = self.drop
 			# save_drop = self.drop
 
 			self.drop = max(0.0, self.drop)
 
+			tmp = numpy.random.poisson(self.drop)
 			q_len = len(self.queue)
-			del self.queue[:int(self.drop)]
+			del self.queue[:int(tmp)]
 
 
 		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
