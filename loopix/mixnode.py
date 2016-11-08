@@ -22,6 +22,7 @@ import supportFunctions as sf
 import sys
 import csv
 from processQueue import ProcessQueue
+from sets import Set
 
 from twisted.logger import jsonFileLogObserver, Logger
 
@@ -54,7 +55,7 @@ class MixNode(DatagramProtocol):
 		self.prvList = []
 		self.Queue = []
 
-		self.seenMacs = []
+		self.seenMacs = set()
 		self.seenElements = []
 		self.bounceInformation = {}
 		self.expectedACK = []
@@ -297,11 +298,11 @@ class MixNode(DatagramProtocol):
 		forward = message[1]
 		backward = message[2]
 		element = EcPt.from_binary(elem, G)
-		if element in self.seenElements:
-			print "[%s] > Element already seen. This might be a duplicate. Message dropped." % self.name
-			return None
-		else:
-			self.seenElements.append(element)
+		#if element in self.seenElements:
+		#	print "[%s] > Element already seen. This might be a duplicate. Message dropped." % self.name
+		#	return None
+		#else:
+		#	self.seenElements.append(element)
 		aes = Cipher("AES-128-CTR")
 
 		# Derive first key
@@ -321,7 +322,7 @@ class MixNode(DatagramProtocol):
 		if not (expected_mac == mac1):
 			raise Exception("> WRONG MAC")
 			log.error("[%s] > WRONG MAC." % self.name)
-		self.seenMacs.append(mac1)
+		self.seenMacs.add(mac1)
 
 		# Decrypt the forward message
 		enc_metadata = aes.dec(k1.kenc, k1.iv)
