@@ -284,7 +284,7 @@ class Provider(MixNode):
         try:
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[num, good, Received]]
+                data = [[num, good, received]]
                 csvW.writerows(data)
         except Exception, e:
             print "ERROR - ", str(e)
