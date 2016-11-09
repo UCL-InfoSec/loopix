@@ -145,18 +145,10 @@ class Provider(MixNode):
 
             if name in self.storage.keys():
                 if self.storage[name]:
-                    i = 0
-                    while self.storage[name]:
-                        message = self.storage[name].pop()
-                        self.transport.write("PMSG" + message, (IPAddrs, port))
-                        i += 1
-                        if i == self.MAX_RETRIEVE:
-                            break
-                    # for _ in range(self.MAX_RETRIEVE):
-                     #   if self.storage[name]:
-                     #       message = self.storage[name].pop(0)
-                     #       self.transport.write("PMSG" + message, (IPAddrs, port))
-                            # print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
+                    for _ in range(self.MAX_RETRIEVE):
+                       if self.storage[name]:
+                           message = self.storage[name].pop(0)
+                           self.transport.write("PMSG" + message, (IPAddrs, port))
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
 

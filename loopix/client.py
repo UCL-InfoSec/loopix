@@ -43,10 +43,10 @@ import copy
 #         fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
 
 
-TIME_PULL = 30
+TIME_PULL = 10
 NOISE_LENGTH = 1000
 
-log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
+#log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 
 class Client(DatagramProtocol):
@@ -109,12 +109,11 @@ class Client(DatagramProtocol):
 
         # self.receivedQueue = DeferredQueue()
 
-        self.processQueue = ProcessQueue()
+        # self.processQueue = ProcessQueue()
 
     def startProtocol(self):
         
         print "[%s] > Start Protocol" % self.name
-        log.info("[%s] > Start Protocol" % self.name)
 
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
@@ -142,7 +141,6 @@ class Client(DatagramProtocol):
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
-        log.info("[%s] > Stop Protocol" % self.name)
 
 
     def updateParams(self):
@@ -191,7 +189,6 @@ class Client(DatagramProtocol):
 
         lc = task.LoopingCall(self.pullMessages)
         lc.start(TIME_PULL)
-        log.info("[%s] > turned on messaging." % self.name)
 
     def turnOnMessaging(self, mixList):
         """ Function turns on sending cover traffic and real message buffer checking.
@@ -247,14 +244,12 @@ class Client(DatagramProtocol):
             if len(self.buffer) > 0:
                 message, addr = self.buffer.pop(0)
                 self.send(message, addr)
-                print "[%s] > Message sent from buffer." % self.name
             else:
                 self.sendDropMessage(mixList)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.checkBuffer, mixList)
         except Exception, e:
             print "[%s] > ERROR: Something went wrong during buffer checking: %s" % (self.name, str(e))
-            log.error("[%s] > ERROR: Something went wrong during buffer checking %s" % (self.name, str(e)))
 
     def generateLoopTraffic(self, mixList):
         """ Function sends hearbeat message following the Poisson distribution
@@ -270,7 +265,6 @@ class Client(DatagramProtocol):
             reactor.callLater(interval, self.generateLoopTraffic, mixList)
         except Exception, e:
             print "[%s] > ERROR: Loop cover traffic, something went wrong: %s" % (self.name, str(e))
-            log.error("[%s] > ERROR: Loop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def generateCoverTraffic(self, mixList):
         """ Function sends hearbeat message following the Poisson distribution
@@ -286,7 +280,6 @@ class Client(DatagramProtocol):
             reactor.callLater(interval, self.generateCoverTraffic, mixList)
         except Exception, e:
             print "[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e))
-            log.error("[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e)))
 
     def datagramReceived(self, data, (host, port)):
         # self.receivedQueue.put((data, (host, port)))
@@ -300,7 +293,8 @@ class Client(DatagramProtocol):
     def do_PROCESS(self, obj):
         data, (host, port) = obj 
         #self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
-
+        self.processMessage(obj)
+        
         try:
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
         except Exception, e:
@@ -309,13 +303,13 @@ class Client(DatagramProtocol):
     def processMessage(self, obj):
         data, (host, port) = obj
 
-        if data[:4] == "EMPT":
-            print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
-        if data[:4] == "RINF":
-            print "[%s] > Received information: about the active mixnodes from %s,  %d." % (self.name, host, port)
-            dataList = petlib.pack.decode(data[4:])
-            for element in dataList:
-                self.mixnet.append(format3.Mix(element[0], element[1], element[2], element[3]))
+        # if data[:4] == "EMPT":
+        #     print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
+        # if data[:4] == "RINF":
+        #     print "[%s] > Received information: about the active mixnodes from %s,  %d." % (self.name, host, port)
+        #     dataList = petlib.pack.decode(data[4:])
+        #     for element in dataList:
+        #         self.mixnet.append(format3.Mix(element[0], element[1], element[2], element[3]))
         if data[:4] == "PMSG":
             self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
@@ -398,7 +392,7 @@ class Client(DatagramProtocol):
                     readyPacket, addr = heartbeatData
                     self.send("ROUT" + readyPacket, addr)
                     self.numHeartbeatsSent += 1
-                    print "[%s] > Heartbeat sent." % self.name
+                    # print "[%s] > Heartbeat sent." % self.name
                 else:
                     print "[%s] > Heartbeat could not be send." % self.name
             except Exception, e:
@@ -439,7 +433,7 @@ class Client(DatagramProtocol):
                 readyPacket, addr = dropData
                 self.send("ROUT" + readyPacket, addr)
                 self.numDropMsgSent += 1
-                print "[%s] > Drop message sent " % self.name
+                # print "[%s] > Drop message sent " % self.name
             else:
                 print "[%s] > Drop message could not be send." % self.name
         except ValueError, e:
@@ -463,7 +457,7 @@ class Client(DatagramProtocol):
             else:
                 message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False)
             self.buffer.append(("ROUT" + message, addr))
-            print "[%s] > Buffered message to client %s" % (self.name, receiver.name)
+            # print "[%s] > Buffered message to client %s" % (self.name, receiver.name)
         except Exception, e:
             print "[%s] > ERROR: Message could not be buffered for send: %s" % (self.name, str(e))
 
@@ -627,8 +621,7 @@ class Client(DatagramProtocol):
             db.commit()
             db.close()
         except Exception, e:
-            print str(e)
-            log.error(str(e))
+            print "ERROR: ", str(e)
 
     def takeSingleUserFromDB(self, database, idt):
         """ Function takes information about a selected single client from a database.
@@ -648,8 +641,7 @@ class Client(DatagramProtocol):
                 return receiver
             return None
         except Exception, e:
-            print str(e)
-            log.error(str(e))
+            print "ERROR: ", str(e)
 
     def takeAllUsersFromDB(self, database):
         """ Function takes information about all clients from the database.
@@ -670,8 +662,7 @@ class Client(DatagramProtocol):
             db.close()
             return usersList
         except Exception, e:
-            print str(e)
-            log.error(str(e))
+            print "ERROR: ", str(e)
 
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
@@ -705,8 +696,7 @@ class Client(DatagramProtocol):
             #print "Provider taken."
         
         except Exception, e:
-            print str(e)
-            log.error(str(e))
+            print "ERROR: ", str(e)
         finally:
             db.close()
 
@@ -725,8 +715,7 @@ class Client(DatagramProtocol):
             for m in mixdata:
                 self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
         except Exception, e:
-            print str(e)
-            log.error(str(e))
+            print "ERROR: ", str(e)
 
     def readInUsersPubs(self, databaseName):
         self.usersPubs = self.takeAllUsersFromDB(databaseName)
