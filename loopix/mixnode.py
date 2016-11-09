@@ -452,15 +452,18 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		def send_to_ip(IPaddrs):
-			self.transport.write(data, (IPaddrs, port))
-			self.bSent += sys.getsizeof(data)
-			self.nMsgSent += 1
-			if data[:4] == "ROUT":
-				self.gbSent += sys.getsizeof(data)
+		self.transport.write(data, (host, port))
+		print "Send Message to: ", (host, port)
 
-		# Resolve and call the send function
-		reactor.resolve(host).addCallback(send_to_ip)
+		# def send_to_ip(IPaddrs):
+		# 	self.transport.write(data, (IPaddrs, port))
+		# 	self.bSent += sys.getsizeof(data)
+		# 	self.nMsgSent += 1
+		# 	if data[:4] == "ROUT":
+		# 		self.gbSent += sys.getsizeof(data)
+
+		# # Resolve and call the send function
+		# reactor.resolve(host).addCallback(send_to_ip)
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.

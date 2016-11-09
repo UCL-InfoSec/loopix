@@ -184,8 +184,8 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
-        print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
-        #log.info("[%s] > Received ROUT message from %s, %d " % (self.name, host, port))
+        # print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
+
         try:
             peeledData = self.mix_operate(self.setup, data)
         except Exception, e:
@@ -203,9 +203,9 @@ class Provider(MixNode):
                     try:
                         dtmp = delay - sf.epoch()
                         if dtmp > 0:
-                            reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (host, xtoPort))
                         else:
-                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (host, xtoPort))
                         self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
                         print "ERROR during ROUT: ", str(e)
@@ -227,7 +227,7 @@ class Provider(MixNode):
     def subscribeClient(self, name, host, port):
         if name not in self.clientList.keys():
             self.clientList[name] = (host, port)
-            # print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
+            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
         else:
             self.clientList[name] = (host, port)
             # print "[%s] > Client %s already subscribed to provider" % (self.name, name)
