@@ -224,11 +224,8 @@ class MixNode(DatagramProtocol):
 					packet = petlib.pack.encode((idt, forw_msg))
 					# self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
 					try:
-						#dtmp = delay - sf.epoch()
-						dtmp = delay
-						print "Delay: ", delay
-						if dtmp > 0:
-							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+						if delay > 0:
+							reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 						else:
 							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
 						self.bProcessed += sys.getsizeof(packet)

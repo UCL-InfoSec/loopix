@@ -200,14 +200,9 @@ class Provider(MixNode):
                         #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
                         #print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
                         try:
-                            #dtmp = delay - sf.epoch()
-                            dtmp = delay
-                            print "Delay: ", delay
-                            if dtmp > 0:
-                                print "Called later"
-                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            if delay > 0:
+                                reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             else:
-                                print "Send"
                                 self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             self.expectedACK.add("ACKN"+idt)
                         except Exception, e:
