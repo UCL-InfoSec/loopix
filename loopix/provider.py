@@ -211,10 +211,10 @@ class Provider(MixNode):
         try:
             self.storage[key].add(petlib.pack.encode((value, time.time())))
         except KeyError:
-            self.storage[key] = set{petlib.pack.encode((value, time.time()))}
+            self.storage[key] = set(petlib.pack.encode((value, time.time())))
         # if key not in self.storage.keys():
-        #    self.storage[key] = set{petlib.pack.encode((value, time.time()))}
-        #else:
+        #    self.storage[key] = set(petlib.pack.encode((value, time.time())))
+        # else:
         #    self.storage[key].add(petlib.pack.encode((value, time.time())))
         # print "[%s] > Saved message for User %s in storage" % (self.name, key)
 
