@@ -24,9 +24,7 @@ if __name__ == "__main__":
 		file("secretMixnode.prv", "wb").write(petlib.pack.encode(secret))
 
 		pub = secret * g
-		def save_resolved(IPAdress):
-			file("publicMixnode.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, IPAdress, pub]))
-		reactor.resolve(host).addCallback(save_resolved)
+		file("publicMixnode.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, pub]))
 
 	else:
 		print "Files exist"
