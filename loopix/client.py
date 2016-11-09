@@ -323,9 +323,7 @@ class Client(DatagramProtocol):
             msg = self.readMessage(encMsg, (host, port))
             #print "[%s] > New message unpacked: " % self.name
             if msg:
-                print "Hello 1"
                 if self.TESTMODE and msg.startswith("HTTAG"):
-                    print "Hello 2"
                     self.measureLatency(msg, timestamp)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
