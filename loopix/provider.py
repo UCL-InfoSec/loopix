@@ -35,7 +35,7 @@ class Provider(MixNode):
         self.storage = {}
         self.replyBlocks = {}
         self.MAX_RETRIEVE = 100
-        self.Queue = []
+        # self.Queue = []
 
         self.numMsgReceived = 0
         self.numMsgClients = 0
@@ -160,10 +160,17 @@ class Provider(MixNode):
 
             if name in self.storage.keys():
                 if self.storage[name]:
-                    for _ in range(self.MAX_RETRIEVE):
-                        if self.storage[name]:
-                            message = self.storage[name].pop(0)
-                            self.transport.write("PMSG" + message, (IPAddrs, port))
+                    i = 0
+                    while self.storage[name]:
+                        message = self.storage[name].pop(0)
+                        self.transport.write("PMSG" + message, (IPAddrs, port))
+                        i += 1
+                        if i == self.MAX_RETRIEVE:
+                            break
+                    # for _ in range(self.MAX_RETRIEVE):
+                     #   if self.storage[name]:
+                     #       message = self.storage[name].pop(0)
+                     #       self.transport.write("PMSG" + message, (IPAddrs, port))
                             # print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
