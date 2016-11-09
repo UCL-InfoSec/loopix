@@ -90,6 +90,8 @@ class MixNode(DatagramProtocol):
 		self.processQueue = ProcessQueue()
 
 	def startProtocol(self):
+		reactor.suggestThreadPoolSize(30)
+		
 		print "[%s] > Start protocol" % self.name
 		# self.announce()
 		

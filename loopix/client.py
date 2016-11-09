@@ -110,7 +110,6 @@ class Client(DatagramProtocol):
         self.processQueue = ProcessQueue()
 
     def startProtocol(self):
-        
         print "[%s] > Start Protocol" % self.name
 
         self.provider = self.takeProvidersData("example.db", self.providerId)
@@ -142,7 +141,6 @@ class Client(DatagramProtocol):
 
 
     def updateParams(self):
-        print "PARAMS UPDATE"
         old_payload = self.EXP_PARAMS_PAYLOAD[0]
         old_loops = self.EXP_PARAMS_LOOPS[0]
         old_drop = self.EXP_PARAMS_COVER[0]
@@ -282,23 +280,25 @@ class Client(DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
         # self.receivedQueue.put((data, (host, port)))
         # print "[%s] > Received new packet" % self.name
-        obj = (data, (host, port))
         try:
-            self.processQueue.put(obj)
+            self.processQueue.put((data, (host, port)))
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
-    def do_PROCESS(self, obj): 
+    def do_PROCESS(self, (data, (host, port))): 
         #self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
-        #self.processMessage(obj)
+        self.processMessage(data, (host, port))
         
         try:
-            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+            reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
-    def processMessage(self, obj):
-        data, (host, port) = obj
+    def get_and_addCallback(self, f):
+        self.processQueue.get().addCallback(f)
+
+    def processMessage(self, data, (host, port)):
+        # data, (host, port) = obj        
 
         # if data[:4] == "EMPT":
         #     print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
@@ -324,8 +324,8 @@ class Client(DatagramProtocol):
             msg = self.readMessage(encMsg, (host, port))
             
             #print "[%s] > New message unpacked: " % self.name
-            #if msg.startswith("HTTAG"):
-            #    self.measureLatency(msg, timestamp)
+            if self.TESTMODE and msg.startswith("HTTAG"):
+                self.measureLatency(msg, timestamp)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             pass
