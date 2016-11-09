@@ -122,7 +122,7 @@ class Client(DatagramProtocol):
 
         #if self.TESTMODE:
         self.measureSentMessages()
-        # reactor.callLater(180.0, self.updateParams)
+        reactor.callLater(180.0, self.updateParams)
 
 
     def turnOnProcessing(self):
