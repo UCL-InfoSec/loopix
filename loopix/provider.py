@@ -90,9 +90,13 @@ class Provider(MixNode):
         self.processMessage(obj)
 
         try:
-            reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+            #reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
+            reactor.callfromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
+
+    def get_and_addCallback(self, f):
+        self.processQueue.get().addCallback(f)
 
     def processMessage(self, obj):
         data, (host, port) = obj
