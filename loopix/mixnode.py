@@ -621,7 +621,7 @@ class MixNode(DatagramProtocol):
 		received = self.bReceived
 		self.bReceived = 0
 		try:
-			with open("performanceProvider.csv", "ab") as outfile:
+			with open("performanceMixnode.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[num, good, received]]
 				csvW.writerows(data)
