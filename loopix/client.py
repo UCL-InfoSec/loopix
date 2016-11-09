@@ -105,7 +105,6 @@ class Client(DatagramProtocol):
         self.tagedHeartbeat = set()
 
         self.tagForTesting = False
-        self.bytesSent = 0
 
         # self.receivedQueue = DeferredQueue()
 
@@ -124,7 +123,7 @@ class Client(DatagramProtocol):
 
         #if self.TESTMODE:
         self.measureSentMessages()
-        reactor.callLater(180.0, self.updateParams)
+        # reactor.callLater(180.0, self.updateParams)
 
 
     def turnOnProcessing(self):
@@ -134,7 +133,7 @@ class Client(DatagramProtocol):
     def sendPing(self):
 
         def send_to_ip(IPAddr):
-            print "PING sent to %s" % IPAddr
+            # print "PING sent to %s" % IPAddr
             self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
 
         reactor.resolve(self.provider.host).addCallback(send_to_ip)
@@ -282,7 +281,7 @@ class Client(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         # self.receivedQueue.put((data, (host, port)))
-        print "[%s] > Received new packet" % self.name
+        # print "[%s] > Received new packet" % self.name
         obj = (data, (host, port))
         try:
             self.processQueue.put(obj)
@@ -470,7 +469,6 @@ class Client(DatagramProtocol):
 
         def send_to_ip(IPAddrs):
             self.transport.write(packet, (IPAddrs, port))
-            self.bytesSent += sys.getsizeof(packet)
             self.numMessagesSent += 1
 
         reactor.resolve(host).addCallback(send_to_ip)
@@ -554,7 +552,7 @@ class Client(DatagramProtocol):
 
     def turnOnFakeMessaging(self):
         friendsGroup = random.sample(self.usersPubs, 3)
-        print "Friends group: ", friendsGroup
+        # print "Friends group: ", friendsGroup
         reactor.callLater(1, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
@@ -719,7 +717,6 @@ class Client(DatagramProtocol):
         self.usersPubs = self.takeAllUsersFromDB(databaseName)
 
     def readInData(self, databaseName):
-        print "[%s] > Read in data" % self.name
         self.readInUsersPubs(databaseName)
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
@@ -728,12 +725,15 @@ class Client(DatagramProtocol):
     def measureSentMessages(self):
         print "---MEASURING SENT MESSAGES----"
         lc = task.LoopingCall(self.sentMessages)
-        lc.start(120)
+        lc.start(60)
 
     def sentMessages(self):
+        print self.EXP_PARAMS_PAYLOAD
+        print self.EXP_PARAMS_LOOPS
+        print self.EXP_PARAMS_COVER
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
-        print "[%s] > -------- NUMBER OF MESSAGES SENT: %d" % (self.name, numSent)
+        # print "[%s] > -------- NUMBER OF MESSAGES SENT: %d" % (self.name, numSent)
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
             data = [[numSent]]
