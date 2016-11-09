@@ -109,7 +109,7 @@ class Client(DatagramProtocol):
 
         # self.receivedQueue = DeferredQueue()
 
-        # self.processQueue = ProcessQueue()
+        self.processQueue = ProcessQueue()
 
     def startProtocol(self):
         
