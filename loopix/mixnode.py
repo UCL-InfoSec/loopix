@@ -452,9 +452,6 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		#self.transport.write(data, (host, port))
-		#print "Send Message to: ", (host, port)
-
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
 			self.bSent += sys.getsizeof(data)
@@ -572,7 +569,7 @@ class MixNode(DatagramProtocol):
 			c.execute(insertQuery, [None, self.name, self.port, self.host, sqlite3.Binary(petlib.pack.encode(self.pubk))])
 			db.commit()
 			db.close()
-			print "Mixnode information saved in the database [%s]" % database
+			# print "Mixnode information saved in the database [%s]" % database
 		except Exception, e:
 			print "[%s] > Error during saveing in database: %s" % (self.name, str(e))
 
@@ -588,9 +585,7 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Mixnodes")
 			mixnodes = c.fetchall()
 			for m in mixnodes:
-				#def resolve_host(IPAddr):
 				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-				#reactor.resolve(m[3]).addCallback(resolve_host)
 			# print "> Available mixnodes: ", self.mixList
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
@@ -608,17 +603,13 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Providers")
 			fetched = c.fetchall()
 			for p in fetched:
-				#def resolve_host(IPAddr):
 				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
-				#reactor.resolve(p[3]).addCallback(resolve_host)
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 
 	def readInData(self, database):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
-		print "Mixnodes: ", self.mixList
-		print "Providers: ", self.prvList
 		self.d.callback(self.mixList)
 
 	def takePublicInfo(self):
