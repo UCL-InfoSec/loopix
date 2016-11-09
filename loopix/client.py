@@ -50,7 +50,7 @@ NOISE_LENGTH = 1000
 
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testMode=True,
+    def __init__(self, setup, name, port, host, testMode=False,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
