@@ -89,9 +89,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (10, None)
-        self.EXP_PARAMS_LOOPS = (10, None)
-        self.EXP_PARAMS_COVER = (10, None)
+        self.EXP_PARAMS_PAYLOAD = (0.05, None)
+        self.EXP_PARAMS_LOOPS = (0.05, None)
+        self.EXP_PARAMS_COVER = (0.05, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -176,7 +176,6 @@ class Client(DatagramProtocol):
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""
 
-        print "Pulling form the provider"
         def send_to_ip(IPAddrs):
             self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
             self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
@@ -290,10 +289,9 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
-    def do_PROCESS(self, obj):
-        data, (host, port) = obj 
+    def do_PROCESS(self, obj): 
         #self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
-        self.processMessage(obj)
+        #self.processMessage(obj)
         
         try:
             reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
@@ -515,9 +513,9 @@ class Client(DatagramProtocol):
             if pt.startswith('HT'):
                 print "[%s] > Decrypted heartbeat. " % self.name
                 for i in self.heartbeatsSent:
-                    if i[0] == pt[2:]:
+                    #if i[0] == pt[2:]:
                         # self.numHeartbeatsReceived += 1
-                        self.heartbeatsSent.remove(i)
+                        # self.heartbeatsSent.remove(i)
                 return pt
             else:
                 print "[%s] > Decrypted message. " % self.name
