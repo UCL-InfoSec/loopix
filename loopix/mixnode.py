@@ -471,7 +471,7 @@ class MixNode(DatagramProtocol):
 
 		# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
-			print len(self.resolvedAdr.keys())
+		print len(self.resolvedAdr.keys())
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
