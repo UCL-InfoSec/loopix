@@ -229,7 +229,6 @@ class MixNode(DatagramProtocol):
 							reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 						else:
 							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
-						self.bProcessed += sys.getsizeof(packet)
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
@@ -261,7 +260,6 @@ class MixNode(DatagramProtocol):
 							reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						else:
 							self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						self.bProcessed += sys.getsizeof(packet)
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during bounce processing: ", str(e)
@@ -508,7 +506,6 @@ class MixNode(DatagramProtocol):
 		"""
 		#data contains (packet, (host, poty), idt)
 		heapq.heappush(self.Queue, (delay, data))
-		self.bProcessed += sys.getsizeof(data[0][4:])
 
 	def ackListener(self):
 		""" Function checks if mixnode received the acknowledgments for the sent packets. """
