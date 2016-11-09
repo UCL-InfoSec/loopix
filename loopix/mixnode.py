@@ -76,6 +76,7 @@ class MixNode(DatagramProtocol):
 		self.bProcessed = 0
 		self.gbSent = 0
 		self.gbReceived = 0
+		self.nMsgSent = 0
 
 		self.PATH_LENGTH = 3
 		self._MEASURING = False
@@ -88,9 +89,9 @@ class MixNode(DatagramProtocol):
 
 		# self.receivedQueue = DeferredQueue()
 
-		self.nMsgSent = 0
-
 		self.processQueue = ProcessQueue()
+
+		self.resolvedAdr = {}
 
 	def startProtocol(self):
 		print "[%s] > Start protocol" % self.name
@@ -454,15 +455,23 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		def send_to_ip(IPaddrs):
+		if host in self.resolvedAdr.keys():
+			IPaddrs = self.resolvedAdr[host]
 			self.transport.write(data, (IPaddrs, port))
-			self.bSent += sys.getsizeof(data)
-			self.nMsgSent += 1
-			if data[:4] == "ROUT":
-				self.gbSent += sys.getsizeof(data)
+		else:
+			def send_to_ip(IPaddrs):
+				print "Resolving called"
+				self.resolvedAdr[host] = IPaddrs
+				self.transport.write(data, (IPaddrs, port))
+				
+				self.bSent += sys.getsizeof(data)
+				self.nMsgSent += 1
+				if data[:4] == "ROUT":
+					self.gbSent += sys.getsizeof(data)
 
 		# Resolve and call the send function
-		reactor.resolve(host).addCallback(send_to_ip)
+			reactor.resolve(host).addCallback(send_to_ip)
+			print len(self.resolvedAdr.keys())
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
