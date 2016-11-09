@@ -588,9 +588,9 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Mixnodes")
 			mixnodes = c.fetchall()
 			for m in mixnodes:
-				def resolve_host(IPAddr):
-					self.mixList.append(format3.Mix(m[1], m[2], IPAddr, petlib.pack.decode(m[4])))
-				reactor.resolve(m[3]).addCallback(resolve_host)
+				#def resolve_host(IPAddr):
+				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+				#reactor.resolve(m[3]).addCallback(resolve_host)
 			# print "> Available mixnodes: ", self.mixList
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
@@ -608,9 +608,9 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Providers")
 			fetched = c.fetchall()
 			for p in fetched:
-				def resolve_host(IPAddr):
-					self.prvList.append(format3.Mix(p[1], p[2], IPAddr, petlib.pack.decode(p[4])))
-				reactor.resolve(p[3]).addCallback(resolve_host)
+				#def resolve_host(IPAddr):
+				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+				#reactor.resolve(p[3]).addCallback(resolve_host)
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 

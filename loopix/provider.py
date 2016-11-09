@@ -227,7 +227,7 @@ class Provider(MixNode):
     def subscribeClient(self, name, host, port):
         if name not in self.clientList.keys():
             self.clientList[name] = (host, port)
-            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
+            # print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
         else:
             self.clientList[name] = (host, port)
             # print "[%s] > Client %s already subscribed to provider" % (self.name, name)
