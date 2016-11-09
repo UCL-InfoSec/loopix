@@ -54,7 +54,7 @@ class Provider(MixNode):
 
     def startProtocol(self):
         reactor.suggestThreadPoolSize(30)
-        
+
         print "[%s] > Start protocol." % self.name
         
         reactor.callLater(30.0, self.turnOnProcessing)
@@ -217,6 +217,7 @@ class Provider(MixNode):
     def subscribeClient(self, name, host, port):
         if name not in self.clientList.keys():
             self.clientList[name] = (host, port)
+        print "Subscribed client %s" % name
         #else:
         #    self.clientList[name] = (host, port)
 
