@@ -224,7 +224,9 @@ class MixNode(DatagramProtocol):
 					packet = petlib.pack.encode((idt, forw_msg))
 					# self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
 					try:
-						dtmp = delay - sf.epoch()
+						#dtmp = delay - sf.epoch()
+						dtmp = delay
+						print "Delay: ", delay
 						if dtmp > 0:
 							reactor.callLater(dtmp, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 						else:
@@ -337,12 +339,12 @@ class MixNode(DatagramProtocol):
 				return None
 
 			# typeFlag - auxiliary flag which tells what type of message it is; only used for statistics; 
-			# delay - message delay
 			typeFlag = header[2]
 			#if (typeFlag == 'H' or typeFlag == 'D'):
 			#	print 'Heartbeat or Drop'
 			#else:
 			#	self.gbReceived += sys.getsizeof(petlib.pack.encode(message))
+			# delay - message delay
 			delay = header[3]
 
 			# Parse the forward message
