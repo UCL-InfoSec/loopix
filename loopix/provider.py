@@ -147,7 +147,7 @@ class Provider(MixNode):
                 if self.storage[name]:
                     i = 0
                     while self.storage[name]:
-                        message = self.storage[name].pop(0)
+                        message = self.storage[name].pop()
                         self.transport.write("PMSG" + message, (IPAddrs, port))
                         i += 1
                         if i == self.MAX_RETRIEVE:
