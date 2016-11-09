@@ -256,7 +256,7 @@ class Provider(MixNode):
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)
-        lc.start(10, False)
+        lc.start(60, False)
 
     def measurments(self):
         num = self.bReceived

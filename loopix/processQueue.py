@@ -99,7 +99,7 @@ class ProcessQueue():
 
 	def log(self, data):
 		self.logs.append(data)
-		if len(self.logs) > 10:
+		if len(self.logs) > 1000:
 			with open('PIDcontrolVal.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
 				csvW.writerows(self.logs)
