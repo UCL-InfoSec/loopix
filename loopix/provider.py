@@ -184,8 +184,8 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
-        # print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
-
+        print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
+        #log.info("[%s] > Received ROUT message from %s, %d " % (self.name, host, port))
         try:
             peeledData = self.mix_operate(self.setup, data)
         except Exception, e:
@@ -193,23 +193,23 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
-                #def save_or_queue(IPAddrs):
-                if xtoName in self.clientList.keys():
-                    self.saveInStorage(xtoName, msg_forw)
-                else:
-                    # self.addToQueue(
-                    #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
-                    #print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
-                    try:
-                        dtmp = delay - sf.epoch()
-                        if dtmp > 0:
-                            reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (host, xtoPort))
-                        else:
-                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (host, xtoPort))
-                        self.expectedACK.add("ACKN"+idt)
-                    except Exception, e:
-                        print "ERROR during ROUT: ", str(e)
-                #reactor.resolve(xtoHost).addCallback(save_or_queue)
+                def save_or_queue(IPAddrs):
+                    if xtoName in self.clientList.keys():
+                        self.saveInStorage(xtoName, msg_forw)
+                    else:
+                        # self.addToQueue(
+                        #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
+                        #print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
+                        try:
+                            dtmp = delay - sf.epoch()
+                            if dtmp > 0:
+                                reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            else:
+                                self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
+                            self.expectedACK.add("ACKN"+idt)
+                        except Exception, e:
+                            print "ERROR during ROUT: ", str(e)
+                reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
@@ -262,6 +262,7 @@ class Provider(MixNode):
         db.commit()
         db.close()
         print "[%s] > Provider public information saved in database." % self.name
+
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)
