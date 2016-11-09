@@ -89,9 +89,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (0.05, None)
-        self.EXP_PARAMS_LOOPS = (0.05, None)
-        self.EXP_PARAMS_COVER = (0.05, None)
+        self.EXP_PARAMS_PAYLOAD = (0.01, None)
+        self.EXP_PARAMS_LOOPS = (0.01, None)
+        self.EXP_PARAMS_COVER = (0.01, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -512,7 +512,7 @@ class Client(DatagramProtocol):
 
             if pt.startswith('HT'):
                 print "[%s] > Decrypted heartbeat. " % self.name
-                for i in self.heartbeatsSent:
+                #for i in self.heartbeatsSent:
                     #if i[0] == pt[2:]:
                         # self.numHeartbeatsReceived += 1
                         # self.heartbeatsSent.remove(i)
