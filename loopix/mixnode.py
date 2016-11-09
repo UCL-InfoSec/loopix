@@ -468,10 +468,9 @@ class MixNode(DatagramProtocol):
 				self.nMsgSent += 1
 				if data[:4] == "ROUT":
 					self.gbSent += sys.getsizeof(data)
-
-		# Resolve and call the send function
+			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
-		print len(self.resolvedAdr.keys())
+		print self.resolvedAdr
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
