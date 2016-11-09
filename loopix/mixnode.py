@@ -452,18 +452,18 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		self.transport.write(data, (host, port))
-		print "Send Message to: ", (host, port)
+		#self.transport.write(data, (host, port))
+		#print "Send Message to: ", (host, port)
 
-		# def send_to_ip(IPaddrs):
-		# 	self.transport.write(data, (IPaddrs, port))
-		# 	self.bSent += sys.getsizeof(data)
-		# 	self.nMsgSent += 1
-		# 	if data[:4] == "ROUT":
-		# 		self.gbSent += sys.getsizeof(data)
+		def send_to_ip(IPaddrs):
+			self.transport.write(data, (IPaddrs, port))
+			self.bSent += sys.getsizeof(data)
+			self.nMsgSent += 1
+			if data[:4] == "ROUT":
+				self.gbSent += sys.getsizeof(data)
 
-		# # Resolve and call the send function
-		# reactor.resolve(host).addCallback(send_to_ip)
+		# Resolve and call the send function
+		reactor.resolve(host).addCallback(send_to_ip)
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
@@ -588,7 +588,9 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Mixnodes")
 			mixnodes = c.fetchall()
 			for m in mixnodes:
-				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+				def resolve_host(IPAddr):
+					self.mixList.append(format3.Mix(m[1], m[2], IPAddr, petlib.pack.decode(m[4])))
+				reactor.resolve(m[3]).addCallback(resolve_host)
 			# print "> Available mixnodes: ", self.mixList
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
@@ -606,13 +608,17 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Providers")
 			fetched = c.fetchall()
 			for p in fetched:
-				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+				def resolve_host(IPAddr):
+					self.prvList.append(format3.Mix(p[1], p[2], IPAddr, petlib.pack.decode(p[4])))
+				reactor.resolve(p[3]).addCallback(resolve_host)
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 
 	def readInData(self, database):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
+		print "Mixnodes: ", self.mixList
+		print "Providers: ", self.prvList
 		self.d.callback(self.mixList)
 
 	def takePublicInfo(self):
