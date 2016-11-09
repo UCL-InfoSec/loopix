@@ -98,11 +98,10 @@ class MixNode(DatagramProtocol):
 
 		reactor.callLater(30.0, self.turnOnProcessing)
 		# self.run()
-		
+
 		# self.turnOnReliableUDP()
 		self.readInData('example.db')
-
-		# self.measureBandwidth()
+		self.turnOnMeasurments()
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
@@ -151,6 +150,7 @@ class MixNode(DatagramProtocol):
 	def datagramReceived(self, data, (host, port)):
 		# print "[%s] > Received data from %s" % (self.name, host)
 		#self.receivedQueue.put((data, (host, port)))
+		self.bReceived += 1
 
 		try:
 			self.processQueue.put((data, (host, port)))
@@ -170,12 +170,13 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
+		self.bProcessed += 1
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
-			self.bReceived += sys.getsizeof(data[4:])
 			try:
+				self.gbReceived += 1
 				idt, msgData = petlib.pack.decode(data[4:])
 				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
@@ -187,7 +188,6 @@ class MixNode(DatagramProtocol):
 			except Exception, e:
 				print "ERROR: ", str(e)
 		if data.startswith("ACKN"):
-			self.bReceived += sys.getsizeof(data)
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
 
@@ -406,25 +406,6 @@ class MixNode(DatagramProtocol):
 	def errbackReliableUDP(self, failure):
 		print "> Errback of mix Reliable UDP took care of ", failure
 
-	def measureBandwidth(self):
-		# print "Measure bandwidth function called"
-		lc = task.LoopingCall(self.in_out_ratio)
-		lc.start(60, False)
-
-	def in_out_ratio(self):
-		processed = self.bProcessed
-		self.bProcessed = 0
-		received = self.bReceived
-		self.bReceived = 0
-		goodbytes = self.gbReceived
-		self.gbReceived = 0
-		try:
-			with open('performance.csv', 'ab') as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				data = [[received, processed, goodbytes]]
-				csvW.writerows(data)
-		except Exception, e:
-			print str(e)
 
 	def flushQueue(self):
 		""" The function sends the messages queued in the mixnode pool.
@@ -628,3 +609,21 @@ class MixNode(DatagramProtocol):
 		output += enc.finalize()
 		return output
 
+	def turnOnMeasurments(self):
+		lc = task.LoopingCall(self.measurments)
+		lc.start(60, False)
+
+	def measurments(self):
+		num = self.bProcessed
+		self.bProcessed = 0
+		good = self.gbReceived
+		self.gbReceived = 0
+		received = self.bReceived
+		self.bReceived = 0
+		try:
+			with open("performanceProvider.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				data = [[num, good, received]]
+				csvW.writerows(data)
+		except Exception, e:
+			print str(e)

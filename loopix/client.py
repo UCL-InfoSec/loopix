@@ -177,6 +177,7 @@ class Client(DatagramProtocol):
         def send_to_ip(IPAddrs):
             self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
             self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
+            self.numMessagesSent += 2
             # print "[%s] > Pulled messages from provider %s" % (self.name, str(IPAddrs))
 
         reactor.resolve(self.provider.host).addCallback(send_to_ip)
@@ -465,9 +466,9 @@ class Client(DatagramProtocol):
 
         def send_to_ip(IPAddrs):
             self.transport.write(packet, (IPAddrs, port))
-            self.numMessagesSent += 1
 
         reactor.resolve(host).addCallback(send_to_ip)
+        self.numMessagesSent += 1
 
     def readMessage(self, message, (host, port)):
         """ Function allows to decyrpt and read a received message.
@@ -553,7 +554,6 @@ class Client(DatagramProtocol):
         reactor.callLater(0.01, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
-        print "--RANDOM MESSAGING"
 
         r = random.choice(group)
         # #r = random.choice(self.usersPubs)
@@ -726,9 +726,6 @@ class Client(DatagramProtocol):
         lc.start(60)
 
     def sentMessages(self):
-        print self.EXP_PARAMS_PAYLOAD
-        print self.EXP_PARAMS_LOOPS
-        print self.EXP_PARAMS_COVER
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
         # print "[%s] > -------- NUMBER OF MESSAGES SENT: %d" % (self.name, numSent)

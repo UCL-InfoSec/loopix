@@ -3,7 +3,7 @@ import os
 import time
 
 def generateRandomNoise(length):
-    return os.urandom(length)
+    return numpy.random.bytes(length)
 
 def sampleFromExponential((lambdaParam, size)):
     return numpy.random.exponential(lambdaParam, size)

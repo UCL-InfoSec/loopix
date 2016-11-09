@@ -37,8 +37,6 @@ class Provider(MixNode):
         self.MAX_RETRIEVE = 100
         # self.Queue = []
 
-        self.numMsgReceived = 0
-        self.numMsgClients = 0
         self.bSent = 0
         self.bReceived = 0
         self.bProcessed = 0
@@ -77,7 +75,7 @@ class Provider(MixNode):
 
     def datagramReceived(self, data, (host, port)):
         #self.receivedQueue.put((data, (host, port)))
-        self.numMsgReceived += 1
+        self.bReceived += 1
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
@@ -100,7 +98,7 @@ class Provider(MixNode):
 
     def processMessage(self, obj):
         data, (host, port) = obj
-        self.bReceived += 1
+        self.bProcessed += 1
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
@@ -255,12 +253,12 @@ class Provider(MixNode):
         lc.start(60, False)
 
     def measurments(self):
-        num = self.bReceived
-        self.bReceived = 0
+        num = self.bProcessed
+        self.bProcessed = 0
         good = self.gbReceived
         self.gbReceived = 0
-        received = self.numMsgReceived
-        self.numMsgReceived = 0
+        received = self.bReceived
+        self.bReceived = 0
         try:
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
