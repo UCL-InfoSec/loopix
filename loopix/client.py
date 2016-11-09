@@ -655,7 +655,6 @@ class Client(DatagramProtocol):
                 if not self.name == u[1]:
                     usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
             db.close()
-            print "Users: ", usersList
             return usersList
         except Exception, e:
             print str(e)

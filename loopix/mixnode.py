@@ -499,7 +499,7 @@ class MixNode(DatagramProtocol):
 			current_time = time.time()
 			delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
-			self.savedElements.add(packet[0])
+			# self.savedElements.add(packet[0])
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
