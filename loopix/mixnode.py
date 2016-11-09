@@ -62,7 +62,6 @@ class MixNode(DatagramProtocol):
 		self.expectedACK = set()
 
 		self.heartbeatsSent = set()
-		self.numHeartbeatsSent = 0
 		self.numHeartbeatsReceived = 0
 
 		self.HBmessages = 0
@@ -101,7 +100,7 @@ class MixNode(DatagramProtocol):
 		reactor.callLater(30.0, self.turnOnProcessing)
 		# self.run()
 		
-		self.turnOnReliableUDP()
+		# self.turnOnReliableUDP()
 		self.readInData('example.db')
 
 		# self.measureBandwidth()
@@ -327,7 +326,7 @@ class MixNode(DatagramProtocol):
 		header = petlib.pack.decode(header_en)
 
 		if pt.startswith('HT'):
-			self.heartbeatListener(pt[2:])
+			# self.heartbeatListener(pt[2:])
 			return None
 		else:
 			dropMessage = header[1]
@@ -480,7 +479,6 @@ class MixNode(DatagramProtocol):
 			else:
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
-				self.numHeartbeatsSent += 1
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
@@ -568,7 +566,6 @@ class MixNode(DatagramProtocol):
 			c.execute(insertQuery, [None, self.name, self.port, self.host, sqlite3.Binary(petlib.pack.encode(self.pubk))])
 			db.commit()
 			db.close()
-			# print "Mixnode information saved in the database [%s]" % database
 		except Exception, e:
 			print "[%s] > Error during saveing in database: %s" % (self.name, str(e))
 
@@ -585,7 +582,6 @@ class MixNode(DatagramProtocol):
 			mixnodes = c.fetchall()
 			for m in mixnodes:
 				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-			# print "> Available mixnodes: ", self.mixList
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 
