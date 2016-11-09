@@ -455,7 +455,7 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		if host in self.resolvedAdr.keys() or host in self.resolvedAdr.values():
+		if host in self.resolvedAdr.keys() and host in self.resolvedAdr.values():
 			IPaddrs = self.resolvedAdr[host]
 			self.transport.write(data, (IPaddrs, port))
 		else:
