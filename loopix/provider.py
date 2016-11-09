@@ -53,6 +53,8 @@ class Provider(MixNode):
         self.processQueue = ProcessQueue()
 
     def startProtocol(self):
+        reactor.suggestThreadPoolSize(30)
+        
         print "[%s] > Start protocol." % self.name
         
         reactor.callLater(30.0, self.turnOnProcessing)
