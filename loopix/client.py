@@ -82,8 +82,8 @@ class Client(DatagramProtocol):
         self.mixnet = []
         self.usersPubs = []
 
-        self.sentElements = []
-        self.heartbeatsSent = []
+        self.sentElements = set()
+        self.heartbeatsSent = set()
         self.buffer = []
 
         self.aes = Cipher.aes_128_gcm()
@@ -102,9 +102,7 @@ class Client(DatagramProtocol):
         self.numHeartbeatsReceived = 0
         self.numMessagesSent = 0
         self.numDropMsgSent = 0
-        self.hearbeatLatency = []
-        self.receivedLatency = []
-        self.tagedHeartbeat = []
+        self.tagedHeartbeat = set()
 
         self.tagForTesting = False
         self.bytesSent = 0
@@ -345,7 +343,7 @@ class Client(DatagramProtocol):
         delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
 #        delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
         package = format3.create_mixpacket_format(self, receiver, path, setup, dest_message, return_message, delay, dropFlag, typeFlag)
-        self.sentElements.append(package[0])
+        self.sentElements.add(package[0])
         return (petlib.pack.encode((str(uuid.uuid1()), package[1:])), (self.provider.host, self.provider.port))
 
     def createHeartbeat(self, mixes, timestamp):
@@ -357,7 +355,7 @@ class Client(DatagramProtocol):
         """
         try:
             heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
-            self.heartbeatsSent.append((heartMsg, '%.5f' % time.time()))
+            self.heartbeatsSent.add((heartMsg, '%.5f' % time.time()))
             if self.TESTMODE:
                 readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False, typeFlag='H')
             else:
@@ -510,9 +508,8 @@ class Client(DatagramProtocol):
                 print "[%s] > Decrypted heartbeat. " % self.name
                 for i in self.heartbeatsSent:
                     if i[0] == pt[2:]:
-                        self.numHeartbeatsReceived += 1
-                        latency = float(time.time()) - float(i[1])
-                        self.hearbeatLatency.append(latency)
+                        # self.numHeartbeatsReceived += 1
+                        self.heartbeatsSent.remove(i)
                 return pt
             else:
                 print "[%s] > Decrypted message. " % self.name
@@ -571,7 +568,7 @@ class Client(DatagramProtocol):
             tagedMessage = "TAG" + os.urandom(1000)
             packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
             self.send("ROUT" + packet, addr)
-            self.tagedHeartbeat.append((time.time(), tagedMessage))
+            self.tagedHeartbeat.add((time.time(), tagedMessage))
             print "[%s] > TAGED MESSAGE SENT." % self.name
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
@@ -583,6 +580,7 @@ class Client(DatagramProtocol):
                 latency = (float(providerTimestamp) - float(i[0]))
                 print '%.5f' % latency
                 file('latency.bi2', 'ab').write('%.5f' % latency + "\n")
+                self.tagedHeartbeat.remove(i)
                 self.sendTagedMessage()
 
     def setExpParamsDelay(self, newParameter):
