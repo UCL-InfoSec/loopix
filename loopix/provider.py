@@ -111,12 +111,10 @@ class Provider(MixNode):
         if data[:4] == "ROUT" and (host, port) in self.clientList.values():
             self.numMsgClients += 1
         if data[:8] == "PULL_MSG":
-            print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
-            # log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
+            # print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
             self.do_PULL(data[8:], (host, port))
         if data[:4] == "RINF":
-            print "[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port)
-            # log.info("[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port))
+            # print "[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port)
             dataList = petlib.pack.decode(data[4:])
             for element in dataList:
                 self.mixList.append(
@@ -129,10 +127,10 @@ class Provider(MixNode):
             dataList = petlib.pack.decode(data[4:])
             for element in dataList:
                 self.usersPubs.append(format3.User(element[0], element[1], element[2], element[3], element[4]))
-            print "[%s] > Provider received public information of users registered in the system" % self.name
+            # print "[%s] > Provider received public information of users registered in the system" % self.name
         if data[:4] == "INFO":
             self.sendInfoMixnet(host, port)
-            print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
+            # print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
         if data[:4] == "ROUT":
             try:
                 self.gbReceived += 1
@@ -145,7 +143,7 @@ class Provider(MixNode):
             if data in self.expectedACK:
                 self.expectedACK.remove(data)
         if data[:4] == "PING":
-            print "[%s] > Received assign message from client (%s, %d)" % (self.name, host, port)
+            # print "[%s] > Received assign message from client (%s, %d)" % (self.name, host, port)
             self.subscribeClient(data[4:], host, port)
 
     def do_PULL(self, name, (host, port)):
@@ -167,7 +165,6 @@ class Provider(MixNode):
                             message = self.storage[name].pop(0)
                             self.transport.write("PMSG" + message, (IPAddrs, port))
                             # print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
-                            # log.info("[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port))
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
 
@@ -192,7 +189,7 @@ class Provider(MixNode):
         try:
             peeledData = self.mix_operate(self.setup, data)
         except Exception, e:
-            log.info("[%s] > ERROR during packet processing." % self.name)
+            print "[%s] > ERROR during packet processing." % self.name
         else:
             if peeledData:
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
@@ -211,7 +208,7 @@ class Provider(MixNode):
                                 self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
                             self.expectedACK.add("ACKN"+idt)
                         except Exception, e:
-                            print "ERROR: ", str(e)
+                            print "ERROR during ROUT: ", str(e)
                 reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
@@ -225,8 +222,7 @@ class Provider(MixNode):
             self.storage[key] = [petlib.pack.encode((value, time.time()))]
         else:
             self.storage[key].append(petlib.pack.encode((value, time.time())))
-        print "[%s] > Saved message for User %s in storage" % (self.name, key)
-        # log.info("[%s] > Saved message for User %s in storage" % (self.name, key))
+        # print "[%s] > Saved message for User %s in storage" % (self.name, key)
 
     def subscribeClient(self, name, host, port):
         if name not in self.clientList.keys():
@@ -246,15 +242,14 @@ class Provider(MixNode):
         if not self.mixList:
             self.transport.write("EMPT", (host, port))
         else:
-            print "> Sending Mixnet Public Info."
+            # print "> Sending Mixnet Public Info."
             self.transport.write("RINF" + petlib.pack.encode(self.mixList), (host, port))
 
     def sendInfoUsers(self, host, port):
-        print "Sending users info."
         if not self.usersPubs:
             self.transport.write("EMPT", (host, port))
         else:
-            print "> Sending Users Public Info."
+            # print "> Sending Users Public Info."
             self.transport.write("UINF" + petlib.pack.encode(self.usersPubs), (host, port))
 
     def saveInDB(self, databaseName):
@@ -267,8 +262,6 @@ class Provider(MixNode):
         db.commit()
         db.close()
         print "[%s] > Provider public information saved in database." % self.name
-        # log.info("[%s] > Provider public information saved in database." % self.name)
-
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)

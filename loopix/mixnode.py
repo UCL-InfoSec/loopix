@@ -28,7 +28,7 @@ from twisted.logger import jsonFileLogObserver, Logger
 
 TIME_ACK = 1600
 TIME_FLUSH = 0.01
-TIME_CLEAN = 108000
+TIME_CLEAN = 1600
 MAX_DELAY_TIME = -432000
 
 # log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
@@ -148,11 +148,11 @@ class MixNode(DatagramProtocol):
 		resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
 		def send_announce(IPAddr):
 			self.transport.write(resp, (IPAddr, self.boardPort))
-			print "[%s] > Announced itself to the board." % self.name
+			# print "[%s] > Announced itself to the board." % self.name
 		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
-		print "[%s] > Received data from %s" % (self.name, host)
+		# print "[%s] > Received data from %s" % (self.name, host)
 		#self.receivedQueue.put((data, (host, port)))
 
 		try:
@@ -221,7 +221,7 @@ class MixNode(DatagramProtocol):
 				if (xtoName is None and xtoPort is None and xtoHost is None):
 					print "[%s] > Message discarded" % self.name
 				else:
-					print "[%s] > Decryption ended. " % (self.name)
+					# print "[%s] > Decryption ended. " % (self.name)
 					packet = petlib.pack.encode((idt, forw_msg))
 					# self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
 					try:
@@ -233,7 +233,7 @@ class MixNode(DatagramProtocol):
 						self.bProcessed += sys.getsizeof(packet)
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
-						print "ERROR: ", str(e)
+						print "ERROR during ROUT processing: ", str(e)
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
@@ -254,7 +254,7 @@ class MixNode(DatagramProtocol):
 				if (xtoPort is None and xtoHost is None and xtoName is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
 				else:
-					print ("[%s] > Bounce decrypted. ")
+					# print ("[%s] > Bounce decrypted. ")
 					# self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
 					try:
 						dtmp = delay - sf.epoch()
@@ -265,7 +265,7 @@ class MixNode(DatagramProtocol):
 						self.bProcessed += sys.getsizeof(packet)
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
-						print "ERROR: ", str(e)
+						print "ERROR during bounce processing: ", str(e)
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
@@ -293,11 +293,11 @@ class MixNode(DatagramProtocol):
 		forward = message[1]
 		backward = message[2]
 		element = EcPt.from_binary(elem, G)
-		if element in self.seenElements:
+		#if element in self.seenElements:
 		#	print "[%s] > Element already seen. This might be a duplicate. Message dropped." % self.name
-			return None
-		else:
-			self.seenElements.add(element)
+		#	return None
+		#else:
+		#	self.seenElements.add(element)
 		aes = Cipher("AES-128-CTR")
 
 		# Derive first key
@@ -308,14 +308,14 @@ class MixNode(DatagramProtocol):
 		new_element = b * element
 		# Check the forward MAC
 		expected_mac = forward[:20]
-		if self.checkMac(expected_mac):
+		# if self.checkMac(expected_mac):
 		#	print "[%s] > MAC already seen. Message droped." % self.name
-			return None
+		#	return None
 		ciphertext_metadata, ciphertext_body = msgpack.unpackb(forward[20:])
 		mac1 = hmac.new(k1.kmac, ciphertext_metadata, digestmod=sha1).digest()
 		if not (expected_mac == mac1):
 			raise Exception("> WRONG MAC")
-		self.seenMacs.add(mac1)
+		# self.seenMacs.add(mac1)
 
 		# Decrypt the forward message
 		enc_metadata = aes.dec(k1.kenc, k1.iv)
@@ -332,7 +332,7 @@ class MixNode(DatagramProtocol):
 		else:
 			dropMessage = header[1]
 			if dropMessage == '1':
-				print "[%s] > Drop message. This message is droped now." % self.name
+				# print "[%s] > Drop message. This message is droped now." % self.name
 				return None
 
 			# typeFlag - auxiliary flag which tells what type of message it is; only used for statistics; 
@@ -406,7 +406,7 @@ class MixNode(DatagramProtocol):
 		print "> Errback of mix Reliable UDP took care of ", failure
 
 	def measureBandwidth(self):
-		print "Measure bandwidth function called"
+		# print "Measure bandwidth function called"
 		lc = task.LoopingCall(self.in_out_ratio)
 		lc.start(60, False)
 
@@ -422,10 +422,6 @@ class MixNode(DatagramProtocol):
 				csvW = csv.writer(outfile, delimiter=',')
 				data = [[received, processed, goodbytes]]
 				csvW.writerows(data)
-			# with open('mixnodeSent.csv', 'ab') as outfile:
-			# 	csvW = csv.writer(outfile, delimiter=',')
-			# 	data = [[self.gbSent]]
-			# 	csvW.writerows(data)
 		except Exception, e:
 			print str(e)
 
@@ -485,7 +481,7 @@ class MixNode(DatagramProtocol):
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1
-				print "[%s] > Sending heartbeat." % self.name
+				# print "[%s] > Sending heartbeat." % self.name
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
@@ -555,7 +551,7 @@ class MixNode(DatagramProtocol):
 		"""
 		for element in self.heartbeatsSent:
 			if heartbeat in element:
-				print "[%s] > Heartbeat Listener received back a heartbeat. " % self.name
+				# print "[%s] > Heartbeat Listener received back a heartbeat. " % self.name
 				self.numHeartbeatsReceived += 1
 				self.heartbeatsSent.remove(element)
 
