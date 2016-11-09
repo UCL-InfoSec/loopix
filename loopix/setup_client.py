@@ -23,6 +23,9 @@ if __name__ == "__main__":
 		file("secretClient.prv", "wb").write(petlib.pack.encode(secret))
 
 		pub = secret * g
-		file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, host, pub, prvname]))
+		def save_resolved(IPAdress):
+			file("publicClient.bin", "wb").write(petlib.pack.encode(["client", name, port, IPAdress, pub, prvname]))
+		reactor.resolve(host).addCallback(save_resolved)
+
 	else:
 		print "Files exist"
