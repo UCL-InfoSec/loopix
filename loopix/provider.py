@@ -21,8 +21,8 @@ import supportFunctions as sf
 from processQueue import ProcessQueue
 
 
-from twisted.logger import jsonFileLogObserver, Logger
-log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
+# from twisted.logger import jsonFileLogObserver, Logger
+# log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 class Provider(MixNode):
 
@@ -184,8 +184,7 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
-        print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
-        #log.info("[%s] > Received ROUT message from %s, %d " % (self.name, host, port))
+        # print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
         try:
             peeledData = self.mix_operate(self.setup, data)
         except Exception, e:

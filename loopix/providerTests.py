@@ -165,8 +165,8 @@ def testProviderACKNBack(testProvider):
 	setup, provider = testProvider
 	_fakeACK = "ACKN67194593"
 	_fakeACK_2 = "ACKN67194594"
-	provider.expectedACK.append(_fakeACK)
-	provider.expectedACK.append(_fakeACK_2)
+	provider.expectedACK.add(_fakeACK)
+	provider.expectedACK.add(_fakeACK_2)
 	provider.do_PROCESS((_fakeACK, ("127.0.0.1", 9999)))
 	assert _fakeACK not in provider.expectedACK
 	assert _fakeACK_2 in provider.expectedACK

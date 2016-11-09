@@ -155,21 +155,22 @@ def testSendHeartbeat(testMixes):
 	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), format3.Mix(provider.name, provider.port, provider.host, provider.pubk)]
 	mix1.sendHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
 	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)], predefinedPath)
-	assert len(mix1.heartbeatsSent) == 1
+	assert len(mix1.transport.written) == 1
 
 	msg, addr = mix1.transport.written[0]
 	assert addr == (mix2.host, mix2.port)
 
-	mix2.datagramReceived(msg, addr)
-	timestamp, packet = mix2.Queue.pop()
-	assert packet[1] == (mix3.host, mix3.port)
+	xto, packet, idt, delay = mix2.mix_operate(mix2.setup, petlib.pack.decode(msg[4:])[1])
+	assert xto == [mix3.port, mix3.host, mix3.name]
 
-	mix3.datagramReceived(packet[0], packet[1])
-	timestamp2, packet2 = mix3.Queue.pop()
-	assert packet2[1] == (mix1.host, mix1.port)
 
-	mix1.datagramReceived(packet2[0], packet2[1])
-	assert len(mix1.heartbeatsSent) == 0	
+	xto, packet, idt, delay = mix3.mix_operate(mix1.setup, packet)
+	assert xto == [provider.port, provider.host, provider.name]
+
+	xto, packet, idt, delay = provider.mix_operate(provider.setup, packet)
+	assert xto == [mix1.port, mix1.host, mix1.name]
+
+	mix1.mix_operate(mix1.setup, packet)	
 
 
 def testAES_ENC_DEC(testMixes):
@@ -200,7 +201,7 @@ def testCheckSeenMAC(testMixes):
 	mix1, mix2 = testMixes
 	fake_mac = '0x23'
 	fake_mac_2 = '0x32'
-	mix1.seenMacs.append(fake_mac)
+	mix1.seenMacs.add(fake_mac)
 	assert mix1.checkMac(fake_mac) == True and mix1.checkMac(fake_mac_2) == False
 
 

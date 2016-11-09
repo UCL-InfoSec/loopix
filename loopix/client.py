@@ -31,7 +31,7 @@ import csv
 from twisted.internet.interfaces import IPullProducer
 from zope.interface import implementer
 from processQueue import ProcessQueue
-
+from sets import Set
 
 import copy
 

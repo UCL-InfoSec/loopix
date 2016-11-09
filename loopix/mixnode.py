@@ -61,7 +61,7 @@ class MixNode(DatagramProtocol):
 		self.bounceInformation = {}
 		self.expectedACK = set()
 
-		self.heartbeatsSent = []
+		self.heartbeatsSent = set()
 		self.numHeartbeatsSent = 0
 		self.numHeartbeatsReceived = 0
 
@@ -69,7 +69,7 @@ class MixNode(DatagramProtocol):
 		self.DPmessages = 0
 		self.GPmessages = 0
 
-		self.savedElements = []
+		self.savedElements = set()
 
 		self.bSent = 0
 		self.bReceived = 0
@@ -314,6 +314,8 @@ class MixNode(DatagramProtocol):
 		ciphertext_metadata, ciphertext_body = msgpack.unpackb(forward[20:])
 		mac1 = hmac.new(k1.kmac, ciphertext_metadata, digestmod=sha1).digest()
 		if not (expected_mac == mac1):
+			print expected_mac
+			print mac1
 			raise Exception("> WRONG MAC")
 		# self.seenMacs.add(mac1)
 
@@ -481,7 +483,6 @@ class MixNode(DatagramProtocol):
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.numHeartbeatsSent += 1
-				# print "[%s] > Sending heartbeat." % self.name
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
@@ -494,11 +495,11 @@ class MixNode(DatagramProtocol):
 		"""
 		try:
 			heartMsg = "HBIT" + urandom(1000)
-			# self.heartbeatsSent.append((heartMsg, str(timestamp)))
+			# self.heartbeatsSent.add((heartMsg, str(timestamp)))
 			current_time = time.time()
 			delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
-			self.savedElements.append(packet[0])
+			self.savedElements.add(packet[0])
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
