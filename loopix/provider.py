@@ -91,7 +91,7 @@ class Provider(MixNode):
 
         try:
             #reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
-            reactor.callfromThread(self.get_and_addCallback, self.do_PROCESS)
+            reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
