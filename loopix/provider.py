@@ -34,7 +34,7 @@ class Provider(MixNode):
         self.usersPubs = []
         self.storage = {}
         self.replyBlocks = {}
-        self.MAX_RETRIEVE = 100
+        self.MAX_RETRIEVE = 500
         # self.Queue = []
 
         self.bSent = 0

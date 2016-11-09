@@ -105,9 +105,9 @@ class Client(DatagramProtocol):
 
         self.tagForTesting = False
 
-        # self.receivedQueue = DeferredQueue()
+        self.receivedQueue = DeferredQueue()
 
-        self.processQueue = ProcessQueue()
+        #self.processQueue = ProcessQueue()
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
@@ -125,8 +125,8 @@ class Client(DatagramProtocol):
 
 
     def turnOnProcessing(self):
-        # self.receivedQueue.get().addCallback(self.do_PROCESS)
-        self.processQueue.get().addCallback(self.do_PROCESS)
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
+        #self.processQueue.get().addCallback(self.do_PROCESS)
 
     def sendPing(self):
 
@@ -278,21 +278,21 @@ class Client(DatagramProtocol):
             print "[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e))
 
     def datagramReceived(self, data, (host, port)):
-        # self.receivedQueue.put((data, (host, port)))
+        self.receivedQueue.put((data, (host, port)))
         # print "[%s] > Received new packet" % self.name
-        try:
-            self.processQueue.put((data, (host, port)))
-        except Exception, e:
-            print "[%s] > ERROR: %s " % (self.name, str(e))
+        # try:
+        #     self.processQueue.put((data, (host, port)))
+        # except Exception, e:
+        #     print "[%s] > ERROR: %s " % (self.name, str(e))
 
     def do_PROCESS(self, (data, (host, port))): 
-        #self.receivedQueue.get().addCallback(self.do_PROCESS_IN_THREAD)
         self.processMessage(data, (host, port))
+        self.receivedQueue.get().addCallback(self.do_PROCESS)
         
-        try:
-            reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
-        except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+        # try:
+        #     reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
+        # except Exception, e:
+        #     print "[%s] > ERROR: %s" % (self.name, str(e))
 
     def get_and_addCallback(self, f):
         self.processQueue.get().addCallback(f)
@@ -317,15 +317,16 @@ class Client(DatagramProtocol):
 
     def do_PMSG(self, data, host, port):
 
-        print "[%s] > Unpacking new message: " % self.name
-
+        # print "[%s] > Unpacking new message: " % self.name
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
-            
             #print "[%s] > New message unpacked: " % self.name
-            if self.TESTMODE and msg.startswith("HTTAG"):
-                self.measureLatency(msg, timestamp)
+            if msg:
+                print "Hello 1"
+                if self.TESTMODE and msg.startswith("HTTAG"):
+                    print "Hello 2"
+                    self.measureLatency(msg, timestamp)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             pass
@@ -493,10 +494,8 @@ class Client(DatagramProtocol):
             expected_mac = forward[:20]
             ciphertext_metadata, ciphertext_body = msgpack.unpackb(forward[20:])
             mac1 = hmac.new(k1.kmac, ciphertext_metadata, digestmod=sha1).digest()
-
             if not (expected_mac == mac1):
                 raise Exception("> CLIENT %s : WRONG MAC ON PACKET" % self.name)
-
             enc_metadata = aes.dec(k1.kenc, k1.iv)
             enc_body = aes.dec(k1.kenc, k1.iv)
             pt = enc_body.update(ciphertext_body)
@@ -504,9 +503,8 @@ class Client(DatagramProtocol):
             header = enc_metadata.update(ciphertext_metadata)
             header += enc_metadata.finalize()
             header = petlib.pack.decode(header)
-
             if pt.startswith('HT'):
-                print "[%s] > Decrypted heartbeat. " % self.name
+                # print "[%s] > Decrypted heartbeat. " % self.name
                 #for i in self.heartbeatsSent:
                     #if i[0] == pt[2:]:
                         # self.numHeartbeatsReceived += 1
@@ -567,9 +565,13 @@ class Client(DatagramProtocol):
     def sendTagedMessage(self):
         try:
             mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            tagedMessage = "TAG" + sf.generateRandomNoise(1000)
-            packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
-            self.send("ROUT" + packet, addr)
+            tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
+            #packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
+            #self.send("ROUT" + packet, addr)
+            #self.sendMessage(self, mixes, 'HT'+tagedMessage, 'HB'+tagedMessage)
+            message, addr = self.makePacket(self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
+            packet = "ROUT" + message
+            self.send(packet, addr)
             self.tagedHeartbeat.add((time.time(), tagedMessage))
             print "[%s] > TAGED MESSAGE SENT." % self.name
         except Exception, e:

@@ -91,7 +91,7 @@ class MixNode(DatagramProtocol):
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
-		
+
 		print "[%s] > Start protocol" % self.name
 		# self.announce()
 		
@@ -164,11 +164,11 @@ class MixNode(DatagramProtocol):
 		self.processMessage(data, (host, port))
 
 		try:
-			reactor.callFromThread(self.get_and_addCallack, self.do_PROCESS)
+			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
 		except Exception, e:
 			print "[%s] > ERROR: %s" % (self.name, str(e))
 
-	def get_and_addCallack(self, f):
+	def get_and_addCallback(self, f):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
