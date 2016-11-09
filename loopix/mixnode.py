@@ -59,7 +59,7 @@ class MixNode(DatagramProtocol):
 		self.seenMacs = set()
 		self.seenElements = set()
 		self.bounceInformation = {}
-		self.expectedACK = []
+		self.expectedACK = set()
 
 		self.heartbeatsSent = []
 		self.numHeartbeatsSent = 0
@@ -231,7 +231,7 @@ class MixNode(DatagramProtocol):
 						else:
 							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
 						self.bProcessed += sys.getsizeof(packet)
-						self.expectedACK.append("ACKN"+idt)
+						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR: ", str(e)
 
@@ -263,7 +263,7 @@ class MixNode(DatagramProtocol):
 						else:
 							self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						self.bProcessed += sys.getsizeof(packet)
-						self.expectedACK.append("ACKN"+idt)
+						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR: ", str(e)
 
@@ -442,7 +442,7 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Time elapsed - message droped" % self.name
 				else:
 					self.sendMessage(element[0], element[1])
-					self.expectedACK.append("ACKN"+element[2])
+					self.expectedACK.add("ACKN"+element[2])
 				heapq.heappop(self.Queue)
 				if self.Queue:
 					timeToSend, element = self.Queue[0]
@@ -538,7 +538,7 @@ class MixNode(DatagramProtocol):
 		""" Function checks if mixnode received the acknowledgments for the sent packets. """
 
 		if self.expectedACK:
-			ack = self.expectedACK.pop(0)
+			ack = self.expectedACK.pop()
 			if ack in self.bounceInformation:
 				try:
 					self.do_BOUNCE(self.bounceInformation[ack])
