@@ -5,8 +5,7 @@ import heapq
 import hmac
 import io
 import msgpack
-#import numpy
-from os import urandom
+import numpy
 from petlib.ec import EcGroup, EcPt
 from petlib.bn import Bn
 from petlib.cipher import Cipher
@@ -493,7 +492,7 @@ class MixNode(DatagramProtocol):
 			timestamp (time) : timestamp which will be included inside the heartbeat message.
 		"""
 		try:
-			heartMsg = "HBIT" + urandom(1000)
+			heartMsg = "HBIT" + sf.generateRandomNoise(1000)
 			# self.heartbeatsSent.add((heartMsg, str(timestamp)))
 			current_time = time.time()
 			delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
@@ -512,7 +511,7 @@ class MixNode(DatagramProtocol):
 			randomPath = random.sample(mixnet, length)
 		else:
 			randomPath = mixnet + []
-			random.shuffle(randomPath) #TO DO: better and more secure
+			numpy.random.shuffle(randomPath) #TO DO: better and more secure
 		randomPath.insert(length, random.choice(self.prvList))
 		return randomPath
 

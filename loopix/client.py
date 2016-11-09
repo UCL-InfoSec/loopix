@@ -7,7 +7,7 @@ import hmac
 import math
 from mixnode import MixNode
 import msgpack
-#import numpy
+import numpy
 import os
 from petlib.cipher import Cipher
 from petlib.ec import EcPt, Bn, EcGroup
@@ -101,7 +101,6 @@ class Client(DatagramProtocol):
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
         self.numMessagesSent = 0
-        self.numDropMsgSent = 0
         self.tagedHeartbeat = set()
 
         self.tagForTesting = False
@@ -197,8 +196,8 @@ class Client(DatagramProtocol):
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        #if self.TESTMODE:
-        #    self.turnOnFakeMessaging()
+        if self.TESTMODE:
+            self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -360,7 +359,7 @@ class Client(DatagramProtocol):
         """
         try:
             heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
-            self.heartbeatsSent.add((heartMsg, '%.5f' % time.time()))
+            # self.heartbeatsSent.add((heartMsg, '%.5f' % time.time()))
             if self.TESTMODE:
                 readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False, typeFlag='H')
             else:
@@ -389,7 +388,6 @@ class Client(DatagramProtocol):
                     readyPacket, addr = heartbeatData
                     self.send("ROUT" + readyPacket, addr)
                     self.numHeartbeatsSent += 1
-                    # print "[%s] > Heartbeat sent." % self.name
                 else:
                     print "[%s] > Heartbeat could not be send." % self.name
             except Exception, e:
@@ -429,8 +427,6 @@ class Client(DatagramProtocol):
             if dropData:
                 readyPacket, addr = dropData
                 self.send("ROUT" + readyPacket, addr)
-                self.numDropMsgSent += 1
-                # print "[%s] > Drop message sent " % self.name
             else:
                 print "[%s] > Drop message could not be send." % self.name
         except ValueError, e:
@@ -533,7 +529,7 @@ class Client(DatagramProtocol):
             randomPath = random.sample(mixnet, length)
         else:
             randomPath = mixnet
-            random.shuffle(randomPath)
+            numpy.random.shuffle(randomPath)
         return randomPath
 
     def encryptData(self, data):
@@ -551,9 +547,10 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        friendsGroup = random.sample(self.usersPubs, 3)
+        #friendsGroup = random.sample(self.usersPubs, 3)
+        friendsGroup = self.usersPubs
         # print "Friends group: ", friendsGroup
-        reactor.callLater(1, self.randomMessaging, friendsGroup)
+        reactor.callLater(0.01, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
         print "--RANDOM MESSAGING"
@@ -564,12 +561,13 @@ class Client(DatagramProtocol):
         msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         self.sendMessage(r, mixpath, msgF, msgB)
-        reactor.callLater(1, self.randomMessaging, group)
+
+        reactor.callLater(0.01, self.randomMessaging, group)
 
     def sendTagedMessage(self):
         try:
             mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            tagedMessage = "TAG" + os.urandom(1000)
+            tagedMessage = "TAG" + sf.generateRandomNoise(1000)
             packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
             self.send("ROUT" + packet, addr)
             self.tagedHeartbeat.add((time.time(), tagedMessage))
