@@ -643,8 +643,6 @@ class Client(DatagramProtocol):
                 Args:
                 database (str) - dir and name of the database.
         """
-        def save_user(IPAddr):
-            usersList.append(format3.User(str(u[1]), u[2], IPAddr, petlib.pack.decode(u[4]), p))
 
         usersList = []
         try:
@@ -655,11 +653,9 @@ class Client(DatagramProtocol):
             for u in users:
                 p = self.takeProvidersData("example.db", u[5])
                 if not self.name == u[1]:
-                    #usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
-                    host = u[3]
-                    reactor.resolve(host).addCallback(save_user)
+                    usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
             db.close()
-            print usersList
+            print "Users: ", usersList
             return usersList
         except Exception, e:
             print str(e)
