@@ -131,7 +131,6 @@ class Client(DatagramProtocol):
     def sendPing(self):
 
         def send_to_ip(IPAddr):
-            # print "PING sent to %s" % IPAddr
             self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
 
         reactor.resolve(self.provider.host).addCallback(send_to_ip)
@@ -321,13 +320,12 @@ class Client(DatagramProtocol):
 
     def do_PMSG(self, data, host, port):
 
-        # print "[%s] > Unpacking new message: " % self.name
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
             #print "[%s] > New message unpacked: " % self.name
             if msg:
-                if self.TESTMODE and msg.startswith("HTTAG"):
+                if msg.startswith("HTTAG"):
                     self.measureLatency(msg, timestamp)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
