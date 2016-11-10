@@ -565,14 +565,15 @@ class Client(DatagramProtocol):
     def sendTagedMessage(self):
         try:
             mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
+            tag = "TAG" + str(uuid.uuid4())
+            tagedMessage = tag + sf.generateRandomNoise(NOISE_LENGTH)
             #packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
             #self.send("ROUT" + packet, addr)
             #self.sendMessage(self, mixes, 'HT'+tagedMessage, 'HB'+tagedMessage)
             message, addr = self.makePacket(self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
             packet = "ROUT" + message
             self.send(packet, addr)
-            self.tagedHeartbeat.add((time.time(), tagedMessage))
+            self.tagedHeartbeat.add((time.time(), tag))
             # print "[%s] > TAGED MESSAGE SENT." % self.name
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
@@ -580,7 +581,7 @@ class Client(DatagramProtocol):
     def measureLatency(self, msg, providerTimestamp):
         # print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
         for i in self.tagedHeartbeat:
-            if i[1] == msg[2:]:
+            if i[1][:39] == msg[2:][:39]:
                 latency = (float(providerTimestamp) - float(i[0]))
                 self.tagedHeartbeat.remove(i)
                 with open('latency.csv', 'ab') as outfile:

@@ -297,7 +297,7 @@ class Provider(MixNode):
         std_gbReceived = numpy.std(self.gbRecList)
         self.gbRecList = []
         avg_bReceived = numpy.mean(self.bRecList)
-        std_bReceived = numpy.std(selg.bRecList)
+        std_bReceived = numpy.std(self.bRecList)
         self.bRecList = []
         hbSent = numpy.mean(self.hbSentList)
         self.hbSentList = []
