@@ -81,7 +81,7 @@ class MixNode(DatagramProtocol):
 		# self.boardHost = "127.0.0.1"
 
 		self.EXP_PARAMS_DELAY = (0.05, None)
-		self.EXP_PARAMS_LOOPS = (10, None)
+		self.EXP_PARAMS_LOOPS = (1, None)
 
 		# self.receivedQueue = DeferredQueue()
 
@@ -182,13 +182,11 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
-		print "processing message"
 		self.bProcessed += 1
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
-			print "in rout"
 			try:
 				self.gbReceived += 1
 				idt, msgData = petlib.pack.decode(data[4:])
@@ -474,6 +472,7 @@ class MixNode(DatagramProtocol):
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.hbSent += 1
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+				print "Heartbeat sent"
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
 	def createHeartbeat(self, mixes, timestamp):
