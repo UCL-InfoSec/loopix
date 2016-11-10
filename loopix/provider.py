@@ -163,6 +163,7 @@ class Provider(MixNode):
                        if self.storage[name]:
                            message = self.storage[name].pop()
                            self.transport.write("PMSG" + message, (IPAddrs, port))
+                           print "message poped"
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
 
