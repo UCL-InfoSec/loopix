@@ -651,4 +651,4 @@ class MixNode(DatagramProtocol):
 				csvW.writerows(self.measurments)
 		except Exception, e:
 			print "Error while saving: ", str(e)
-		self.measurments = list([])
+		self.measurments = []

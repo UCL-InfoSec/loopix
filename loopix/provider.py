@@ -280,6 +280,6 @@ class Provider(MixNode):
                 csvW.writerows(self.measurments)
         except Exception, e:
             print "ERROR saving to file: ", str(e)
-        self.measurments = list([])
+        self.measurments = []
 
 
