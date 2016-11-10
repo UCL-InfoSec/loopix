@@ -492,6 +492,7 @@ class MixNode(DatagramProtocol):
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
 
 	def sendTagedMessage(self):
+		print "Started sending"
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
 			tagedMessage = tag + sf.generateRandomNoise(NOISE_LENGTH)
@@ -503,6 +504,7 @@ class MixNode(DatagramProtocol):
 			print "ERROR: Send tagged message: ", str(e)
 
 	def measureLatency(self, msg):
+		print "Received tages message"
 		try:
 			if msg[2:] in self.tagedHeartbeat:
 				latency = float(time.time()) - float(self.tagedHeartbeat[msg[2:]])
@@ -511,6 +513,7 @@ class MixNode(DatagramProtocol):
 					csvW = csv.writer(outfile, delimiter=',')
 					data = [[latency]]
 					csvW.writerows(data)
+				print "Saved latency"
 				self.sendTagedMessage()
 		except Exception, e:
 			print str(e)
