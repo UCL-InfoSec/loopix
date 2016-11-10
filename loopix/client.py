@@ -573,12 +573,12 @@ class Client(DatagramProtocol):
             packet = "ROUT" + message
             self.send(packet, addr)
             self.tagedHeartbeat.add((time.time(), tagedMessage))
-            print "[%s] > TAGED MESSAGE SENT." % self.name
+            # print "[%s] > TAGED MESSAGE SENT." % self.name
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
     def measureLatency(self, msg, providerTimestamp):
-        print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
+        # print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
         for i in self.tagedHeartbeat:
             if i[1] == msg[2:]:
                 latency = (float(providerTimestamp) - float(i[0]))

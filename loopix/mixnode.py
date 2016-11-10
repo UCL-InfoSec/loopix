@@ -610,7 +610,7 @@ class MixNode(DatagramProtocol):
 
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.measurments)
-		lc.start(60, False)
+		lc.start(180, False)
 
 	def measurments(self):
 		num = self.bProcessed

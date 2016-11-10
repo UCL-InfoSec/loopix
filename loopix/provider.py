@@ -19,6 +19,7 @@ import csv
 from twisted.internet.defer import DeferredQueue
 import supportFunctions as sf
 from processQueue import ProcessQueue
+import numpy
 
 
 # from twisted.logger import jsonFileLogObserver, Logger
@@ -252,7 +253,7 @@ class Provider(MixNode):
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)
-        lc.start(600, False)
+        lc.start(180, False)
 
     def measurments(self):
         num = self.bProcessed
@@ -269,6 +270,19 @@ class Provider(MixNode):
         except Exception, e:
             print "ERROR - ", str(e)
 
+    # def save_to_file(self):
+    #     avg_bProcessed = numpy.mean(self.bProcessed)
+    #     std_bProcessed = numpy.std(self.bProcessed)
+    #     avg_gbReceived = numpy.mean(self.gbReceived)
+    #     std_gbReceived = numpy.std(self.gbReceived)
+    #     avg_bReceived = numpy.mean(self.bReceived)
+    #     std_bReceived = numpy.std(selg.bReceived)
+    #     try:
+    #         with open("performanceProvider.csv", "ab") as outfile:
+    #             csvW = csv.writer(outfile, delimiter=',')
+    #             data = [[avg_bProcessed, std_bProcessed, avg_gbReceived, std_gbReceived, avg_bReceived, std_bReceived]]
+    #     except Exception, e:
+    #         print "ERROR saving to file: ", str(e)
 
 
 
