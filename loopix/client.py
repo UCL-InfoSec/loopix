@@ -582,9 +582,11 @@ class Client(DatagramProtocol):
         for i in self.tagedHeartbeat:
             if i[1] == msg[2:]:
                 latency = (float(providerTimestamp) - float(i[0]))
-                print '%.5f' % latency
-                file('latency.bi2', 'ab').write('%.5f' % latency + "\n")
                 self.tagedHeartbeat.remove(i)
+                with open('latency.csv', 'ab') as outfile:
+                    csvW = csv.writer(outfile, delimiter=',')
+                    data = [[latency]]
+                    csvW.writerows(data)
                 self.sendTagedMessage()
 
     def setExpParamsDelay(self, newParameter):
