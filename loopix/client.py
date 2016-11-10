@@ -101,7 +101,7 @@ class Client(DatagramProtocol):
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
         self.numMessagesSent = 0
-        self.tagedHeartbeat = set()
+        self.tagedHeartbeat = {}
 
         self.tagForTesting = False
 
@@ -573,22 +573,30 @@ class Client(DatagramProtocol):
             message, addr = self.makePacket(self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
             packet = "ROUT" + message
             self.send(packet, addr)
-            self.tagedHeartbeat.add((time.time(), tag))
+            self.tagedHeartbeat[tagedMessage] = time.time()
             # print "[%s] > TAGED MESSAGE SENT." % self.name
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
     def measureLatency(self, msg, providerTimestamp):
         # print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
-        for i in self.tagedHeartbeat:
-            if i[1][:39] == msg[2:][:39]:
-                latency = (float(providerTimestamp) - float(i[0]))
-                self.tagedHeartbeat.remove(i)
-                with open('latency.csv', 'ab') as outfile:
-                    csvW = csv.writer(outfile, delimiter=',')
-                    data = [[latency]]
-                    csvW.writerows(data)
-                self.sendTagedMessage()
+        if msg[2] in self.tagedHeartbeat.keys():
+            latency = (float(providerTimestamp) - float(i[0]))
+            del self.tagedHeartbeat[msg[2]]
+            with open('latency.csv', 'ab') as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                data = [[latency]]
+                csvW.writerows(data)
+            self.sendTagedMessage()
+        # for i in self.tagedHeartbeat:
+        #     if i[1] == msg[2:]:
+        #         latency = (float(providerTimestamp) - float(i[0]))
+        #         self.tagedHeartbeat.remove(i)
+        #         with open('latency.csv', 'ab') as outfile:
+        #             csvW = csv.writer(outfile, delimiter=',')
+        #             data = [[latency]]
+        #             csvW.writerows(data)
+        #         self.sendTagedMessage()
 
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
