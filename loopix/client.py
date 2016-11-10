@@ -194,10 +194,12 @@ class Client(DatagramProtocol):
             Args:
                 mixList (list): a list of active mixnodes in the network.
         """
+        # ====== This is generating fake messages to fake reall traffic=====
+        self.turnOnFakeMessaging()
+        # ==================================================================
         self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        self.turnOnFakeMessaging()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
