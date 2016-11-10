@@ -170,7 +170,7 @@ def testSendHeartbeat(testMixes):
 	xto, packet, idt, delay = provider.mix_operate(provider.setup, packet)
 	assert xto == [mix1.port, mix1.host, mix1.name]
 
-	mix1.mix_operate(mix1.setup, packet)	
+	assert mix1.mix_operate(mix1.setup, packet)	== None
 
 
 def testAES_ENC_DEC(testMixes):

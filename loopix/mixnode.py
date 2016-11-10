@@ -339,9 +339,7 @@ class MixNode(DatagramProtocol):
 
 		if pt.startswith('HT'):
 			self.hbRec += 1
-			print "Heartbeat"
 			if pt.startswith('HTTAG'):
-				print "Tag"
 				self.measureLatency(msg)
 			return None
 		else:
@@ -473,7 +471,6 @@ class MixNode(DatagramProtocol):
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				self.hbSent += 1
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
-				print "Heartbeat sent"
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
 	def createHeartbeat(self, mixes, timestamp):
@@ -495,7 +492,6 @@ class MixNode(DatagramProtocol):
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
 
 	def sendTagedMessage(self):
-		print "Started sending"
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
 			tagedMessage = sf.generateRandomNoise(NOISE_LENGTH)
@@ -516,7 +512,6 @@ class MixNode(DatagramProtocol):
 					csvW = csv.writer(outfile, delimiter=',')
 					data = [[latency]]
 					csvW.writerows(data)
-				print "Saved latency"
 				self.sendTagedMessage()
 		except Exception, e:
 			print str(e)
