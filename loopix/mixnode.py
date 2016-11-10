@@ -160,7 +160,7 @@ class MixNode(DatagramProtocol):
 		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
-		# print "[%s] > Received data from %s" % (self.name, host)
+		print "[%s] > Received data from %s" % (self.name, host)
 		#self.receivedQueue.put((data, (host, port)))
 		self.bReceived += 1
 

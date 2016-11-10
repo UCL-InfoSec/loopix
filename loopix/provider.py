@@ -214,7 +214,7 @@ class Provider(MixNode):
                 key (int): clients key,
                 value (str): message (encrypted) stored for the client.
         """
-        if key in self.storage:
+        if key in self.storage.keys():
             self.storage[key].append(petlib.pack.encode((value, time.time())))
         else:
             self.storage[key] = [petlib.pack.encode((value, time.time()))]
@@ -225,7 +225,7 @@ class Provider(MixNode):
         # print "[%s] > Saved message for User %s in storage" % (self.name, key)
 
     def subscribeClient(self, name, host, port):
-        if name not in self.clientList:
+        if name not in self.clientList.keys():
             self.clientList[name] = (host, port)
         #else:
         #    self.clientList[name] = (host, port)
