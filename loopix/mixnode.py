@@ -501,7 +501,6 @@ class MixNode(DatagramProtocol):
 			print "ERROR: Send tagged message: ", str(e)
 
 	def measureLatency(self, msg):
-		print "Received tages message"
 		try:
 			if msg[2:] in self.tagedHeartbeat:
 				latency = float(time.time()) - float(self.tagedHeartbeat[msg[2:]])
