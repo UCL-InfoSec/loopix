@@ -612,7 +612,7 @@ class MixNode(DatagramProtocol):
 
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.measurments)
-		lc.start(60, False)
+		lc.start(30, False)
 
 	def measurments(self):
 		self.bProcList.append(self.bProcessed)
@@ -637,7 +637,7 @@ class MixNode(DatagramProtocol):
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
-		lc.start(600, False)
+		lc.start(300, False)
 
 	def save_to_file(self):
 		avg_bProcessed = numpy.mean(self.bProcList)
