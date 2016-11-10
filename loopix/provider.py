@@ -57,7 +57,7 @@ class Provider(MixNode):
 
         print "[%s] > Start protocol." % self.name
         
-        reactor.callLater(30.0, self.turnOnProcessing)
+        reactor.callLater(10.0, self.turnOnProcessing)
 
         # self.run()
         self.d.addCallback(self.turnOnHeartbeats)

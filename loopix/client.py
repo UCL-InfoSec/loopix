@@ -44,7 +44,7 @@ import copy
 
 
 TIME_PULL = 10
-NOISE_LENGTH = 1000
+NOISE_LENGTH = 500
 
 #log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
@@ -115,7 +115,7 @@ class Client(DatagramProtocol):
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
-        reactor.callLater(10.0, self.sendPing)
+        self.sendPing()
         reactor.callLater(100.0, self.readInData, "example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
 
@@ -279,7 +279,7 @@ class Client(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         self.receivedQueue.put((data, (host, port)))
-        # print "[%s] > Received new packet" % self.name
+        print "[%s] > Received new packet" % self.name
         # try:
         #     self.processQueue.put((data, (host, port)))
         # except Exception, e:
@@ -729,5 +729,5 @@ class Client(DatagramProtocol):
         self.numMessagesSent = 0
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
-            data = [[numSent]]
+            data = [[numSent, self.EXP_PARAMS_PAYLOAD[0]]]
             csvW.writerows(data)
