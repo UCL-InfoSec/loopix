@@ -257,14 +257,14 @@ class Provider(MixNode):
 
 
     def turnOnMeasurments(self):
-        lc = task.LoopingCall(self.measurments)
+        lc = task.LoopingCall(self.takeMeasurments)
         lc.start(60, False)
 
     def saveMeasurments(self):
         lc = task.LoopingCall(self.save_to_file)
         lc.start(300, False)
 
-    def measurments(self):
+    def takeMeasurments(self):
         self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.hbSent, self.hbRec, self.pProcessed])
         self.bProcessed = 0
         self.gbReceived = 0
