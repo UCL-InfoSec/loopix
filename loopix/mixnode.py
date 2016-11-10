@@ -74,6 +74,9 @@ class MixNode(DatagramProtocol):
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.pProcessed = 0
+		self.hbSent = 0
+		self.hbRec = 0
+		self.measurments = []
 
 		self.PATH_LENGTH = 3
 
@@ -84,15 +87,6 @@ class MixNode(DatagramProtocol):
 		self.EXP_PARAMS_LOOPS = (10, None)
 
 		self.processQueue = ProcessQueue()
-
-		self.bProcList = []
-		self.gbRecList = []
-		self.bRecList = []
-		self.pProcList = []
-		self.hbSentList = []
-		self.hbSent = 0
-		self.hbRec = 0
-		self.hbRecList = []
 
 		self.tagedHeartbeat = {}
 
@@ -638,51 +632,23 @@ class MixNode(DatagramProtocol):
 		lc.start(60, False)
 
 	def measurments(self):
-		self.bProcList.append(self.bProcessed)
+		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.hbSent, self.hbRec, self.pProcessed])
 		self.bProcessed = 0
-		self.gbRecList.append(self.gbReceived)
 		self.gbReceived = 0
-		self.bRecList.append(self.bReceived)
 		self.bReceived = 0
-		self.hbSentList.append(self.hbSent)
 		self.hbSent = 0
-		self.hbRecList.append(self.hbRec)
 		self.hbRec = 0
-		self.pProcList.append(self.pProcessed)
 		self.pProcessed = 0
-		# try:
-		# 	with open("performanceMixnode.csv", "ab") as outfile:
-		# 		csvW = csv.writer(outfile, delimiter=',')
-		# 		data = [[num, good, received]]
-		# 		csvW.writerows(data)
-		# except Exception, e:
-		# 	print str(e)
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
-		lc.start(300, False)
+		lc.start(310, False)
 
 	def save_to_file(self):
-		avg_bProcessed = numpy.mean(self.bProcList)
-		std_bProcessed = numpy.std(self.bProcList)
-		self.bProcList = []
-		avg_gbReceived = numpy.mean(self.gbRecList)
-		std_gbReceived = numpy.std(self.gbRecList)
-		self.gbRecList = []
-		avg_bReceived = numpy.mean(self.bRecList)
-		std_bReceived = numpy.std(self.bRecList)
-		self.bRecList = []
-		hbSent = numpy.mean(self.hbSentList)
-		self.hbSentList = []
-		hbRec = numpy.mean(self.hbRecList)
-		self.hbRecList = []
-		avg_pProc = numpy.mean(self.pProcList)
-		std_pProc = numpy.std(self.pProcList)
-		self.pProcList = []
 		try:
 			with open("performanceMixnode.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				data = [[avg_bProcessed, std_bProcessed, avg_gbReceived, std_gbReceived, avg_bReceived, std_bReceived, avg_pProc, std_pProc ,hbSent, hbRec]]
-				csvW.writerows(data)
+				csvW.writerows(self.measurments)
 		except Exception, e:
 			print "Error while saving: ", str(e)
+		self.measurments = list([])

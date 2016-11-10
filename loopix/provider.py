@@ -43,6 +43,8 @@ class Provider(MixNode):
         self.bProcessed = 0
         self.gbSent = 0
         self.gbReceived = 0
+        self.hbSent = 0
+        self.hbRec = 0
 
         self.receivedQueue = DeferredQueue()
 
@@ -53,13 +55,7 @@ class Provider(MixNode):
 
         self.processQueue = ProcessQueue()
 
-        self.bProcList = []
-        self.gbRecList = []
-        self.bRecList = []
-        self.hbSentList = []
-        self.hbSent = 0
-        self.hbRecList = []
-        self.hbRec = 0
+        self.measurments = []
 
     def startProtocol(self):
         reactor.suggestThreadPoolSize(30)
@@ -157,7 +153,7 @@ class Provider(MixNode):
 
         def send_to_ip(IPAddrs):
 
-            if name in self.storage.keys():
+            if name in self.storage:
                 if self.storage[name]:
                     for _ in range(self.MAX_RETRIEVE):
                        if self.storage[name]:
@@ -191,7 +187,7 @@ class Provider(MixNode):
             if peeledData:
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
                 def save_or_queue(IPAddrs):
-                    if xtoName in self.clientList.keys():
+                    if xtoName in self.clientList:
                         self.saveInStorage(xtoName, msg_forw)
                     else:
                         # self.addToQueue(
@@ -214,7 +210,7 @@ class Provider(MixNode):
                 key (int): clients key,
                 value (str): message (encrypted) stored for the client.
         """
-        if key in self.storage.keys():
+        if key in self.storage:
             self.storage[key].append(petlib.pack.encode((value, time.time())))
         else:
             self.storage[key] = [petlib.pack.encode((value, time.time()))]
@@ -225,7 +221,7 @@ class Provider(MixNode):
         # print "[%s] > Saved message for User %s in storage" % (self.name, key)
 
     def subscribeClient(self, name, host, port):
-        if name not in self.clientList.keys():
+        if name not in self.clientList:
             self.clientList[name] = (host, port)
         #else:
         #    self.clientList[name] = (host, port)
@@ -269,50 +265,21 @@ class Provider(MixNode):
         lc.start(300, False)
 
     def measurments(self):
-        self.bProcList.append(self.bProcessed)
+        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.hbSent, self.hbRec, self.pProcessed])
         self.bProcessed = 0
-        self.gbRecList.append(self.gbReceived)
         self.gbReceived = 0
-        self.bRecList.append(self.bReceived)
         self.bReceived = 0
-        self.hbSentList.append(self.hbSent)
         self.hbSent = 0
-        self.hbRecList.append(self.hbRec)
         self.hbRec = 0
-        self.pProcList.append(self.pProcessed)
         self.pProcessed = 0
-        # try:
-        #     with open("performanceProvider.csv", "ab") as outfile:
-        #         csvW = csv.writer(outfile, delimiter=',')
-        #         data = [[num, good, received]]
-        #         csvW.writerows(data)
-        # except Exception, e:
-        #     print "ERROR - ", str(e)
 
     def save_to_file(self):
-        avg_bProcessed = numpy.mean(self.bProcList)
-        std_bProcessed = numpy.std(self.bProcList)
-        self.bProcList = []
-        avg_gbReceived = numpy.mean(self.gbRecList)
-        std_gbReceived = numpy.std(self.gbRecList)
-        self.gbRecList = []
-        avg_bReceived = numpy.mean(self.bRecList)
-        std_bReceived = numpy.std(self.bRecList)
-        self.bRecList = []
-        hbSent = numpy.mean(self.hbSentList)
-        self.hbSentList = []
-        hbRec = numpy.mean(self.hbRecList)
-        self.hbRecList = []
-        avg_pProc = numpy.mean(self.pProcList)
-        std_pProc = numpy.std(self.pProcList)
-        self.pProcList = []
         try:
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[avg_bProcessed, std_bProcessed, avg_gbReceived, std_gbReceived, avg_bReceived, std_bReceived, avg_pProc, std_pProc, hbSent, hbRec]]
-                csvW.writerows(data)
+                csvW.writerows(self.measurments)
         except Exception, e:
             print "ERROR saving to file: ", str(e)
-
+        self.measurments = list([])
 
 
