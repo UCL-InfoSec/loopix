@@ -580,7 +580,7 @@ class Client(DatagramProtocol):
 
     def measureLatency(self, msg, providerTimestamp):
         print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
-        if msg[2] in self.tagedHeartbeat.keys():
+        if msg[2:] in self.tagedHeartbeat.keys():
             latency = (float(providerTimestamp) - float(i[0]))
             del self.tagedHeartbeat[msg[2]]
             with open('latency.csv', 'ab') as outfile:
