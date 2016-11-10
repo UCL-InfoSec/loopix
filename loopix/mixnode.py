@@ -496,7 +496,7 @@ class MixNode(DatagramProtocol):
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
 			tagedMessage = sf.generateRandomNoise(NOISE_LENGTH)
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
-			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message))
+			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
 			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
 		except Exception, e:
