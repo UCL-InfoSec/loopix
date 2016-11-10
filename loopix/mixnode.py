@@ -323,8 +323,6 @@ class MixNode(DatagramProtocol):
 		ciphertext_metadata, ciphertext_body = msgpack.unpackb(forward[20:])
 		mac1 = hmac.new(k1.kmac, ciphertext_metadata, digestmod=sha1).digest()
 		if not (expected_mac == mac1):
-			print expected_mac
-			print mac1
 			raise Exception("> WRONG MAC")
 		# self.seenMacs.add(mac1)
 
@@ -463,7 +461,6 @@ class MixNode(DatagramProtocol):
 		else:
 			try:
 				mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
-				print mixes
 			except ValueError, e:
 				print "ERROR: ", str(e)
 			else:
