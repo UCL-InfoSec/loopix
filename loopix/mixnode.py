@@ -343,7 +343,6 @@ class MixNode(DatagramProtocol):
 				self.measureLatency(msg)
 			return None
 		else:
-			print pt[:2]
 			dropMessage = header[1]
 			if dropMessage == '1':
 				# print "[%s] > Drop message. This message is droped now." % self.name
