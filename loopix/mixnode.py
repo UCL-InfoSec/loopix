@@ -267,9 +267,8 @@ class MixNode(DatagramProtocol):
 					# print ("[%s] > Bounce decrypted. ")
 					# self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
 					try:
-						dtmp = delay - sf.epoch()
-						if dtmp > 0:
-							reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						if delay > 0:
+							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						else:
 							self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						self.expectedACK.add("ACKN"+idt)
@@ -341,6 +340,8 @@ class MixNode(DatagramProtocol):
 			if pt.startswith('HTTAG'):
 				print "HT - TAG"
 				self.measureLatency(msg)
+			if pt.startswith('HTBAR'):
+				print "Here"
 			return None
 		else:
 			dropMessage = header[1]
@@ -481,9 +482,8 @@ class MixNode(DatagramProtocol):
 		"""
 		try:
 			heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
-			# self.heartbeatsSent.add((heartMsg, str(timestamp)))
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
-			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
+			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HTBAR'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
 			# self.savedElements.add(packet[0])
 			return packet[1:]
 		except Exception, e:
@@ -495,7 +495,6 @@ class MixNode(DatagramProtocol):
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			msg_forw = 'HT'+tagedMessage
 			msg_back = 'HB'+tagedMessage
-			print msg_forw[:5]
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  msg_forw, msg_back, delay, False, typeFlag = 'P')
 			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
