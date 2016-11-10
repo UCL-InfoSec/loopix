@@ -83,8 +83,6 @@ class MixNode(DatagramProtocol):
 		self.EXP_PARAMS_DELAY = (0.05, None)
 		self.EXP_PARAMS_LOOPS = (10, None)
 
-		# self.receivedQueue = DeferredQueue()
-
 		self.processQueue = ProcessQueue()
 
 		self.bProcList = []
@@ -119,7 +117,6 @@ class MixNode(DatagramProtocol):
 		print "> Stop Protocol"
 
 	def turnOnProcessing(self):
-		#self.receivedQueue.get().addCallback(self.do_PROCESS)
 		self.processQueue.get().addCallback(self.do_PROCESS)
 
 	def run(self):
@@ -127,6 +124,10 @@ class MixNode(DatagramProtocol):
 
 		lc = task.LoopingCall(self.flushQueue)
 		lc.start(TIME_FLUSH, False)
+
+	def turnOnTagedSending(self):
+		lc = task.LoopingCall(self.sendTagedMessage)
+		lc.start(60, True)
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
@@ -136,7 +137,6 @@ class MixNode(DatagramProtocol):
 		"""
 		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 		reactor.callLater(interval, self.sendHeartbeat, mixnet)
-		self.sendTagedMessage()
 
 	def errbackHeartbeats(self, failure):
 		print "> Mixnode Errback during sending heartbeat: ", failure
@@ -161,7 +161,6 @@ class MixNode(DatagramProtocol):
 		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
-		#self.receivedQueue.put((data, (host, port)))
 		self.bReceived += 1
 
 		try:
@@ -170,7 +169,6 @@ class MixNode(DatagramProtocol):
 			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
-		#self.receivedQueue.get().addCallback(self.do_PROCESS)
 		self.processMessage(data, (host, port))
 
 		try:
@@ -490,10 +488,8 @@ class MixNode(DatagramProtocol):
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
-			msg_forw = 'HT'+tagedMessage
-			msg_back = 'HB'+tagedMessage
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
-			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  msg_forw, msg_back, delay, False, typeFlag = 'P')
+			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
 			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
 			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
@@ -509,7 +505,6 @@ class MixNode(DatagramProtocol):
 					csvW = csv.writer(outfile, delimiter=',')
 					data = [[latency]]
 					csvW.writerows(data)
-				self.sendTagedMessage()
 		except Exception, e:
 			print str(e)
 
@@ -618,6 +613,7 @@ class MixNode(DatagramProtocol):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
 		self.d.callback(self.mixList)
+		self.turnOnTagedSending()
 
 	def takePublicInfo(self):
 		return petlib.pack.encode([self.name, self.port, self.host, self.pubk])
