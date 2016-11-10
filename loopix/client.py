@@ -121,7 +121,7 @@ class Client(DatagramProtocol):
 
         #if self.TESTMODE:
         self.measureSentMessages()
-        reactor.callLater(180.0, self.updateParams)
+        reactor.callLater(400.0, self.updateParams)
 
 
     def turnOnProcessing(self):
@@ -197,9 +197,9 @@ class Client(DatagramProtocol):
         # ====== This is generating fake messages to fake reall traffic=====
         self.turnOnFakeMessaging()
         # ==================================================================
-        self.turnOnBufferChecking(mixList)
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
+        self.turnOnBufferChecking(mixList)
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
