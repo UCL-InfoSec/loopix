@@ -479,7 +479,7 @@ class Client(DatagramProtocol):
         backward = message[2]
         element = EcPt.from_binary(elem, self.G)
         if elem in self.sentElements:
-            print "[%s] > Decrypted bounce:" % self.name
+            # print "[%s] > Decrypted bounce:" % self.name
             return forward
         else:
             aes = Cipher("AES-128-CTR")
@@ -502,7 +502,7 @@ class Client(DatagramProtocol):
                 # print "[%s] > Decrypted heartbeat. " % self.name
                 return pt
             else:
-                print "[%s] > Decrypted message. " % self.name
+                # print "[%s] > Decrypted message. " % self.name
                 return pt
 
     def takePathSequence(self, mixnet, length):
@@ -544,11 +544,12 @@ class Client(DatagramProtocol):
 
     def randomMessaging(self, group):
 
-        r = random.choice(group)
-        mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-        msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        self.sendMessage(r, mixpath, msgF, msgB)
+        #r = random.choice(group)
+        for r in group:
+            mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+            msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+            msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+            self.sendMessage(r, mixpath, msgF, msgB)
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, group)
 
