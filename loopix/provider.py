@@ -262,7 +262,7 @@ class Provider(MixNode):
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)
-        lc.start(30, False)
+        lc.start(60, False)
 
     def saveMeasurments(self):
         lc = task.LoopingCall(self.save_to_file)
