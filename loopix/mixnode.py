@@ -339,6 +339,7 @@ class MixNode(DatagramProtocol):
 			self.hbRec += 1
 			print "HT"
 			if pt.startswith('HTTAG'):
+				print "HT - TAG"
 				self.measureLatency(msg)
 			return None
 		else:
@@ -492,7 +493,8 @@ class MixNode(DatagramProtocol):
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
 			tagedMessage = sf.generateRandomNoise(NOISE_LENGTH)
-			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
+			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
+			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
 			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
 			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
