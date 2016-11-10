@@ -726,7 +726,7 @@ class Client(DatagramProtocol):
 
     def measureSentMessages(self):
         lc = task.LoopingCall(self.sentMessages)
-        lc.start(60)
+        lc.start(600)
 
     def sentMessages(self):
         numSent = self.numMessagesSent
