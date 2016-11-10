@@ -136,6 +136,7 @@ class MixNode(DatagramProtocol):
 		"""
 		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 		reactor.callLater(interval, self.sendHeartbeat, mixnet)
+		self.sendTagedMessage()
 
 	def errbackHeartbeats(self, failure):
 		print "> Mixnode Errback during sending heartbeat: ", failure
@@ -160,7 +161,6 @@ class MixNode(DatagramProtocol):
 		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
-		print "[%s] > Received data from %s" % (self.name, host)
 		#self.receivedQueue.put((data, (host, port)))
 		self.bReceived += 1
 
@@ -182,11 +182,13 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
+		print "processing message"
 		self.bProcessed += 1
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
+			print "in rout"
 			try:
 				self.gbReceived += 1
 				idt, msgData = petlib.pack.decode(data[4:])
@@ -624,7 +626,6 @@ class MixNode(DatagramProtocol):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
 		self.d.callback(self.mixList)
-		self.sendTagedMessage()
 
 	def takePublicInfo(self):
 		return petlib.pack.encode([self.name, self.port, self.host, self.pubk])
