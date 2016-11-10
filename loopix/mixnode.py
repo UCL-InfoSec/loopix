@@ -29,6 +29,7 @@ TIME_ACK = 1600
 TIME_FLUSH = 0.01
 TIME_CLEAN = 1600
 MAX_DELAY_TIME = -432000
+NOISE_LENGTH = 500
 
 # log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
@@ -94,6 +95,8 @@ class MixNode(DatagramProtocol):
 		self.hbSent = 0
 		self.hbRec = 0
 		self.hbRecList = []
+
+		self.tagedHeartbeat = {}
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -285,6 +288,7 @@ class MixNode(DatagramProtocol):
 		if format3.Mix(self.name, self.port, self.host, self.pubk) in self.mixList:
 			self.mixList.remove(format3.Mix(self.name, self.port, self.host, self.pubk))
 		self.d.callback(self.mixList)
+		self.sendTagedMessage()
 
 	def mix_operate(self, setup, message):
 		""" Mixnode operates on the received packet. It removes the encryption layer of the forward header, builts up the
@@ -336,6 +340,8 @@ class MixNode(DatagramProtocol):
 
 		if pt.startswith('HT'):
 			self.hbRec += 1
+			if pt.startswith('HTTAG'):
+				self.measureLatency(msg)
 			return None
 		else:
 			dropMessage = header[1]
@@ -484,6 +490,30 @@ class MixNode(DatagramProtocol):
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
+
+	def sendTagedMessage(self):
+		try:
+			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
+			tagedMessage = tag + sf.generateRandomNoise(NOISE_LENGTH)
+			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
+			packet = "ROUT" + message
+			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
+			self.tagedHeartbeat[tagedMessage] = time.time()
+		except Exception, e:
+			print "ERROR: Send tagged message: ", str(e)
+
+	def measureLatency(self, msg):
+		try:
+			if msg[2:] in self.tagedHeartbeat:
+				latency = float(time.time()) - float(self.tagedHeartbeat[msg[2:]])
+				del self.tagedHeartbeat[msg[2:]]
+				with open('latency.csv', 'ab') as outfile:
+					csvW = csv.writer(outfile, delimiter=',')
+					data = [[latency]]
+					csvW.writerows(data)
+				self.sendTagedMessage()
+		except Exception, e:
+			print str(e)
 
 	def takePathSequence(self, mixnet, length):
 		""" Function takes path sequence of a given length. If the length is 

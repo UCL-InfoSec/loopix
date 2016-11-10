@@ -199,7 +199,6 @@ class Client(DatagramProtocol):
         self.turnOnCoverMsg(mixList)
         if self.TESTMODE:
             self.turnOnFakeMessaging()
-        self.sendTagedMessage()
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -324,9 +323,6 @@ class Client(DatagramProtocol):
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
             #print "[%s] > New message unpacked: " % self.name
-            if msg:
-                if msg.startswith("HTTAG"):
-                    self.measureLatency(msg, timestamp)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
@@ -562,41 +558,41 @@ class Client(DatagramProtocol):
 
         reactor.callLater(0.01, self.randomMessaging, group)
 
-    def sendTagedMessage(self):
-        try:
-            mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            tag = "TAG" + str(uuid.uuid4())
-            tagedMessage = tag + sf.generateRandomNoise(NOISE_LENGTH)
-            #packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
-            #self.send("ROUT" + packet, addr)
-            #self.sendMessage(self, mixes, 'HT'+tagedMessage, 'HB'+tagedMessage)
-            message, addr = self.makePacket(self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
-            packet = "ROUT" + message
-            self.send(packet, addr)
-            self.tagedHeartbeat[tagedMessage] = time.time()
-            # print "[%s] > TAGED MESSAGE SENT." % self.name
-        except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+    # def sendTagedMessage(self):
+    #     try:
+    #         mixes = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+    #         tag = "TAG" + str(uuid.uuid4())
+    #         tagedMessage = tag + sf.generateRandomNoise(NOISE_LENGTH)
+    #         #packet, addr = self.makePacket(self, mixes, self.setup, 'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag='P')
+    #         #self.send("ROUT" + packet, addr)
+    #         #self.sendMessage(self, mixes, 'HT'+tagedMessage, 'HB'+tagedMessage)
+    #         message, addr = self.makePacket(self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
+    #         packet = "ROUT" + message
+    #         self.send(packet, addr)
+    #         self.tagedHeartbeat[tagedMessage] = time.time()
+    #         # print "[%s] > TAGED MESSAGE SENT." % self.name
+    #     except Exception, e:
+    #         print "[%s] > ERROR: %s" % (self.name, str(e))
 
-    def measureLatency(self, msg, providerTimestamp):
-        # print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
-        if msg[2:] in self.tagedHeartbeat.keys():
-            latency = (float(providerTimestamp) - float(self.tagedHeartbeat[msg[2:]]))
-            del self.tagedHeartbeat[msg[2:]]
-            with open('latency.csv', 'ab') as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                data = [[latency]]
-                csvW.writerows(data)
-            self.sendTagedMessage()
-        # for i in self.tagedHeartbeat:
-        #     if i[1] == msg[2:]:
-        #         latency = (float(providerTimestamp) - float(i[0]))
-        #         self.tagedHeartbeat.remove(i)
-        #         with open('latency.csv', 'ab') as outfile:
-        #             csvW = csv.writer(outfile, delimiter=',')
-        #             data = [[latency]]
-        #             csvW.writerows(data)
-        #         self.sendTagedMessage()
+    # def measureLatency(self, msg, providerTimestamp):
+    #     # print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
+    #     if msg[2:] in self.tagedHeartbeat:
+    #         latency = (float(providerTimestamp) - float(self.tagedHeartbeat[msg[2:]]))
+    #         del self.tagedHeartbeat[msg[2:]]
+    #         with open('latency.csv', 'ab') as outfile:
+    #             csvW = csv.writer(outfile, delimiter=',')
+    #             data = [[latency]]
+    #             csvW.writerows(data)
+    #         self.sendTagedMessage()
+    #     # for i in self.tagedHeartbeat:
+    #     #     if i[1] == msg[2:]:
+    #     #         latency = (float(providerTimestamp) - float(i[0]))
+    #     #         self.tagedHeartbeat.remove(i)
+    #     #         with open('latency.csv', 'ab') as outfile:
+    #     #             csvW = csv.writer(outfile, delimiter=',')
+    #     #             data = [[latency]]
+    #     #             csvW.writerows(data)
+    #     #         self.sendTagedMessage()
 
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
