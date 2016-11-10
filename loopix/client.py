@@ -579,7 +579,7 @@ class Client(DatagramProtocol):
             print "[%s] > ERROR: %s" % (self.name, str(e))
 
     def measureLatency(self, msg, providerTimestamp):
-        print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
+        # print ">TAG MESSAGE RECEIVED: This is a taged message, to measure latency"
         if msg[2:] in self.tagedHeartbeat.keys():
             latency = (float(providerTimestamp) - float(self.tagedHeartbeat[msg[2:]]))
             del self.tagedHeartbeat[msg[2:]]

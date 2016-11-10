@@ -163,7 +163,6 @@ class Provider(MixNode):
                        if self.storage[name]:
                            message = self.storage[name].pop()
                            self.transport.write("PMSG" + message, (IPAddrs, port))
-                           print "message poped"
                 else:
                     self.transport.write("NOMSG", (IPAddrs, port))
 
@@ -267,7 +266,7 @@ class Provider(MixNode):
 
     def saveMeasurments(self):
         lc = task.LoopingCall(self.save_to_file)
-        lc.start(100, False)
+        lc.start(600, False)
 
     def measurments(self):
         self.bProcList.append(self.bProcessed)
