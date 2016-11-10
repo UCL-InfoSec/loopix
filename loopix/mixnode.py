@@ -463,6 +463,7 @@ class MixNode(DatagramProtocol):
 		else:
 			try:
 				mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
+				print mixes
 			except ValueError, e:
 				print "ERROR: ", str(e)
 			else:
@@ -480,10 +481,9 @@ class MixNode(DatagramProtocol):
 			timestamp (time) : timestamp which will be included inside the heartbeat message.
 		"""
 		try:
-			heartMsg = "HBIT" + sf.generateRandomNoise(1000)
+			heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
 			# self.heartbeatsSent.add((heartMsg, str(timestamp)))
-			current_time = time.time()
-			delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
+			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
 			# self.savedElements.add(packet[0])
 			return packet[1:]
