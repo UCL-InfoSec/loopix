@@ -93,7 +93,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (10, None)
         self.EXP_PARAMS_COVER = (10, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
-        self.TESTMODE = testMode
+        self.TESTMODE = True
 
         self.boardHost = "127.0.0.1"
         self.boardPort = 9998
@@ -500,10 +500,6 @@ class Client(DatagramProtocol):
             header = petlib.pack.decode(header)
             if pt.startswith('HT'):
                 # print "[%s] > Decrypted heartbeat. " % self.name
-                #for i in self.heartbeatsSent:
-                    #if i[0] == pt[2:]:
-                        # self.numHeartbeatsReceived += 1
-                        # self.heartbeatsSent.remove(i)
                 return pt
             else:
                 print "[%s] > Decrypted message. " % self.name
