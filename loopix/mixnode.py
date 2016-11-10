@@ -493,8 +493,11 @@ class MixNode(DatagramProtocol):
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
+			msg_forw = 'HT'+tagedMessage
+			msg_back = 'HB'+tagedMessage
+			print msg_forw
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
-			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
+			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  msg_forw, msg_back, delay, False, typeFlag = 'P')
 			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
 			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
