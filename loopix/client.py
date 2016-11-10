@@ -89,9 +89,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (0.01, None)
-        self.EXP_PARAMS_LOOPS = (0.01, None)
-        self.EXP_PARAMS_COVER = (0.01, None)
+        self.EXP_PARAMS_PAYLOAD = (10, None)
+        self.EXP_PARAMS_LOOPS = (10, None)
+        self.EXP_PARAMS_COVER = (10, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = testMode
 
@@ -115,9 +115,9 @@ class Client(DatagramProtocol):
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
-        self.sendPing()
-        reactor.callLater(60.0, self.readInData, "example.db")
-        reactor.callLater(60.0, self.turnOnProcessing)
+        reactor.callLater(10.0, self.sendPing)
+        reactor.callLater(100.0, self.readInData, "example.db")
+        reactor.callLater(100.0, self.turnOnProcessing)
 
         #if self.TESTMODE:
         self.measureSentMessages()
@@ -327,7 +327,7 @@ class Client(DatagramProtocol):
                     self.measureLatency(msg, timestamp)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
-            pass
+            print data
 
     def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
         """ Function returns an encapsulated message,
@@ -721,14 +721,12 @@ class Client(DatagramProtocol):
         self.turnOnMessaging(self.mixnet)
 
     def measureSentMessages(self):
-        print "---MEASURING SENT MESSAGES----"
         lc = task.LoopingCall(self.sentMessages)
         lc.start(60)
 
     def sentMessages(self):
         numSent = self.numMessagesSent
         self.numMessagesSent = 0
-        # print "[%s] > -------- NUMBER OF MESSAGES SENT: %d" % (self.name, numSent)
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
             data = [[numSent]]

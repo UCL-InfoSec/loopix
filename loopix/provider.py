@@ -204,10 +204,10 @@ class Provider(MixNode):
                 key (int): clients key,
                 value (str): message (encrypted) stored for the client.
         """
-        try:
-            self.storage[key].add(petlib.pack.encode((value, time.time())))
-        except KeyError:
-            self.storage[key] = set(petlib.pack.encode((value, time.time())))
+        if key in self.storage.keys():
+            self.storage[key].append(petlib.pack.encode((value, time.time())))
+        else:
+            self.storage[key] = [petlib.pack.encode((value, time.time()))]
         # if key not in self.storage.keys():
         #    self.storage[key] = set(petlib.pack.encode((value, time.time())))
         # else:
