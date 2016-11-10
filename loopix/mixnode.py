@@ -287,8 +287,7 @@ class MixNode(DatagramProtocol):
 			self.mixList.append(format3.Mix(element[0], element[1], element[2], element[3]))
 		if format3.Mix(self.name, self.port, self.host, self.pubk) in self.mixList:
 			self.mixList.remove(format3.Mix(self.name, self.port, self.host, self.pubk))
-		self.d.callback(self.mixList)
-		self.sendTagedMessage()
+		#self.d.callback(self.mixList)
 
 	def mix_operate(self, setup, message):
 		""" Mixnode operates on the received packet. It removes the encryption layer of the forward header, builts up the
@@ -623,6 +622,7 @@ class MixNode(DatagramProtocol):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
 		self.d.callback(self.mixList)
+		self.sendTagedMessage()
 
 	def takePublicInfo(self):
 		return petlib.pack.encode([self.name, self.port, self.host, self.pubk])
