@@ -337,6 +337,7 @@ class MixNode(DatagramProtocol):
 
 		if pt.startswith('HT'):
 			self.hbRec += 1
+			print "HT"
 			if pt.startswith('HTTAG'):
 				self.measureLatency(msg)
 			return None
