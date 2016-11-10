@@ -495,7 +495,7 @@ class MixNode(DatagramProtocol):
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			msg_forw = 'HT'+tagedMessage
 			msg_back = 'HB'+tagedMessage
-			print msg_forw
+			print msg_forw[:5]
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  msg_forw, msg_back, delay, False, typeFlag = 'P')
 			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
