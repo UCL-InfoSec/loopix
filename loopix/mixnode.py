@@ -63,31 +63,37 @@ class MixNode(DatagramProtocol):
 		self.heartbeatsSent = set()
 		self.numHeartbeatsReceived = 0
 
-		self.HBmessages = 0
-		self.DPmessages = 0
-		self.GPmessages = 0
+		# self.HBmessages = 0
+		# self.DPmessages = 0
+		# self.GPmessages = 0
 
 		self.savedElements = set()
 
-		self.bSent = 0
 		self.bReceived = 0
 		self.bProcessed = 0
-		self.gbSent = 0
 		self.gbReceived = 0
-		self.nMsgSent = 0
+		self.pProcessed = 0
 
 		self.PATH_LENGTH = 3
-		self._MEASURING = False
 
-		self.boardPort = 9998
-		self.boardHost = "127.0.0.1"
+		# self.boardPort = 9998
+		# self.boardHost = "127.0.0.1"
 
-		self.EXP_PARAMS_DELAY = (0.5, None)
+		self.EXP_PARAMS_DELAY = (0.05, None)
 		self.EXP_PARAMS_LOOPS = (10, None)
 
 		# self.receivedQueue = DeferredQueue()
 
 		self.processQueue = ProcessQueue()
+
+		self.bProcList = []
+		self.gbRecList = []
+		self.bRecList = []
+		self.pProcList = []
+		self.hbSentList = []
+		self.hbSent = 0
+		self.hbRec = 0
+		self.hbRecList = []
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -104,6 +110,7 @@ class MixNode(DatagramProtocol):
 		# self.turnOnReliableUDP()
 		self.readInData('example.db')
 		self.turnOnMeasurments()
+		self.saveMeasurments()
 		
 	def stopProtocol(self):
 		print "> Stop Protocol"
@@ -328,7 +335,7 @@ class MixNode(DatagramProtocol):
 		header = petlib.pack.decode(header_en)
 
 		if pt.startswith('HT'):
-			# self.heartbeatListener(pt[2:])
+			self.hbRec += 1
 			return None
 		else:
 			dropMessage = header[1]
@@ -338,10 +345,8 @@ class MixNode(DatagramProtocol):
 
 			# typeFlag - auxiliary flag which tells what type of message it is; only used for statistics; 
 			typeFlag = header[2]
-			#if (typeFlag == 'H' or typeFlag == 'D'):
-			#	print 'Heartbeat or Drop'
-			#else:
-			#	self.gbReceived += sys.getsizeof(petlib.pack.encode(message))
+			if typeFlag == "P":
+				self.pProcessed += 1
 			# delay - message delay
 			delay = header[3]
 
@@ -436,10 +441,6 @@ class MixNode(DatagramProtocol):
 
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.bSent += sys.getsizeof(data)
-			self.nMsgSent += 1
-			if data[:4] == "ROUT":
-				self.gbSent += sys.getsizeof(data)
 
 		# Resolve and call the send function
 		reactor.resolve(host).addCallback(send_to_ip)
@@ -462,6 +463,7 @@ class MixNode(DatagramProtocol):
 			else:
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
+				self.hbSent += 1
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
 
@@ -610,19 +612,54 @@ class MixNode(DatagramProtocol):
 
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.measurments)
-		lc.start(180, False)
+		lc.start(60, False)
 
 	def measurments(self):
-		num = self.bProcessed
+		self.bProcList.append(self.bProcessed)
 		self.bProcessed = 0
-		good = self.gbReceived
+		self.gbRecList.append(self.gbReceived)
 		self.gbReceived = 0
-		received = self.bReceived
+		self.bRecList.append(self.bReceived)
 		self.bReceived = 0
+		self.hbSentList.append(self.hbSent)
+		self.hbSent = 0
+		self.hbRecList.append(self.hbRec)
+		self.hbRec = 0
+		self.pProcList.append(self.pProcessed)
+		self.pProcessed = 0
+		# try:
+		# 	with open("performanceMixnode.csv", "ab") as outfile:
+		# 		csvW = csv.writer(outfile, delimiter=',')
+		# 		data = [[num, good, received]]
+		# 		csvW.writerows(data)
+		# except Exception, e:
+		# 	print str(e)
+
+	def saveMeasurments(self):
+		lc = task.LoopingCall(self.save_to_file)
+		lc.start(600, False)
+
+	def save_to_file(self):
+		avg_bProcessed = numpy.mean(self.bProcList)
+		std_bProcessed = numpy.std(self.bProcList)
+		self.bProcList = []
+		avg_gbReceived = numpy.mean(self.gbRecList)
+		std_gbReceived = numpy.std(self.gbRecList)
+		self.gbRecList = []
+		avg_bReceived = numpy.mean(self.bRecList)
+		std_bReceived = numpy.std(self.bRecList)
+		self.bRecList = []
+		hbSent = numpy.mean(self.hbSentList)
+		self.hbSentList = []
+		hbRec = numpy.mean(self.hbRecList)
+		self.hbRecList = []
+		avg_pProc = numpy.mean(self.pProcList)
+		std_pProc = numpy.std(self.pProcList)
+		self.pProcList = []
 		try:
 			with open("performanceMixnode.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				data = [[num, good, received]]
+				data = [[avg_bProcessed, std_bProcessed, avg_gbReceived, std_gbReceived, avg_bReceived, std_bReceived, avg_pProc, std_pProc ,hbSent, hbRec]]
 				csvW.writerows(data)
 		except Exception, e:
-			print str(e)
+			print "Error while saving: ", str(e)

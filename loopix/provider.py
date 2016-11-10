@@ -53,6 +53,14 @@ class Provider(MixNode):
 
         self.processQueue = ProcessQueue()
 
+        self.bProcList = []
+        self.gbRecList = []
+        self.bRecList = []
+        self.hbSentList = []
+        self.hbSent = 0
+        self.hbRecList = []
+        self.hbRec = 0
+
     def startProtocol(self):
         reactor.suggestThreadPoolSize(30)
 
@@ -68,6 +76,7 @@ class Provider(MixNode):
         self.readInData('example.db')
 
         self.turnOnMeasurments()
+        self.saveMeasurments()
 
     def stopProtocol(self):
         print "[%s] > Stop protocol" % self.name
@@ -253,36 +262,57 @@ class Provider(MixNode):
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.measurments)
-        lc.start(180, False)
+        lc.start(60, False)
+
+    def saveMeasurments(self):
+        lc = task.LoopingCall(self.save_to_file)
+        lc.start(600, False)
 
     def measurments(self):
-        num = self.bProcessed
+        self.bProcList.append(self.bProcessed)
         self.bProcessed = 0
-        good = self.gbReceived
+        self.gbRecList.append(self.gbReceived)
         self.gbReceived = 0
-        received = self.bReceived
+        self.bRecList.append(self.bReceived)
         self.bReceived = 0
+        self.hbSentList.append(self.hbSent)
+        self.hbSent = 0
+        self.hbRecList.append(self.hbRec)
+        self.hbRec = 0
+        self.pProcList.append(self.pProcessed)
+        self.pProcessed = 0
+        # try:
+        #     with open("performanceProvider.csv", "ab") as outfile:
+        #         csvW = csv.writer(outfile, delimiter=',')
+        #         data = [[num, good, received]]
+        #         csvW.writerows(data)
+        # except Exception, e:
+        #     print "ERROR - ", str(e)
+
+    def save_to_file(self):
+        avg_bProcessed = numpy.mean(self.bProcList)
+        std_bProcessed = numpy.std(self.bProcList)
+        self.bProcList = []
+        avg_gbReceived = numpy.mean(self.gbRecList)
+        std_gbReceived = numpy.std(self.gbRecList)
+        self.gbRecList = []
+        avg_bReceived = numpy.mean(self.bRecList)
+        std_bReceived = numpy.std(selg.bRecList)
+        self.bRecList = []
+        hbSent = numpy.mean(self.hbSentList)
+        self.hbSentList = []
+        hbRec = numpy.mean(self.hbRecList)
+        self.hbRecList = []
+        avg_pProc = numpy.mean(self.pProcList)
+        std_pProc = numpy.std(self.pProcList)
+        self.pProcList = []
         try:
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[num, good, received]]
+                data = [[avg_bProcessed, std_bProcessed, avg_gbReceived, std_gbReceived, avg_bReceived, std_bReceived, avg_pProc, std_pProc, hbSent, hbRec]]
                 csvW.writerows(data)
         except Exception, e:
-            print "ERROR - ", str(e)
-
-    # def save_to_file(self):
-    #     avg_bProcessed = numpy.mean(self.bProcessed)
-    #     std_bProcessed = numpy.std(self.bProcessed)
-    #     avg_gbReceived = numpy.mean(self.gbReceived)
-    #     std_gbReceived = numpy.std(self.gbReceived)
-    #     avg_bReceived = numpy.mean(self.bReceived)
-    #     std_bReceived = numpy.std(selg.bReceived)
-    #     try:
-    #         with open("performanceProvider.csv", "ab") as outfile:
-    #             csvW = csv.writer(outfile, delimiter=',')
-    #             data = [[avg_bProcessed, std_bProcessed, avg_gbReceived, std_gbReceived, avg_bReceived, std_bReceived]]
-    #     except Exception, e:
-    #         print "ERROR saving to file: ", str(e)
+            print "ERROR saving to file: ", str(e)
 
 
 

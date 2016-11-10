@@ -77,21 +77,21 @@ def testMessage(testSender, testParticipantsPubs):
 	
 	return message
 
-def testAnnouce(testMixes):
-	mix, _ = testMixes
-	mix.announce()
-	announceMsg, addr = mix.transport.written[0]
-	assert addr == ("127.0.0.1", 9998)
-	assert announceMsg[:4] == "MINF"
-	plainMsg = petlib.pack.decode(announceMsg[4:])
-	assert plainMsg[0] ==  mix.name and plainMsg[1] == mix.port and plainMsg[2] == mix.host and plainMsg[3].pt_eq(mix.pubk)
+# def testAnnouce(testMixes):
+# 	mix, _ = testMixes
+# 	mix.announce()
+# 	announceMsg, addr = mix.transport.written[0]
+# 	assert addr == ("127.0.0.1", 9998)
+# 	assert announceMsg[:4] == "MINF"
+# 	plainMsg = petlib.pack.decode(announceMsg[4:])
+# 	assert plainMsg[0] ==  mix.name and plainMsg[1] == mix.port and plainMsg[2] == mix.host and plainMsg[3].pt_eq(mix.pubk)
 
-def testSendRequest(testMixes):
-	mix, _ = testMixes
-	mix.sendRequest("REQUEST")
-	msg, addr = mix.transport.written[0]
-	assert msg == "REQUEST"
-	assert addr == ("127.0.0.1", 9998)
+# def testSendRequest(testMixes):
+# 	mix, _ = testMixes
+# 	mix.sendRequest("REQUEST")
+# 	msg, addr = mix.transport.written[0]
+# 	assert msg == "REQUEST"
+# 	assert addr == ("127.0.0.1", 9998)
 
 def testDo_INFO(testMixes):
 	mix, mix2 = testMixes
