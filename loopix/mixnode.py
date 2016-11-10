@@ -494,7 +494,7 @@ class MixNode(DatagramProtocol):
 		print "Started sending"
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
-			tagedMessage = tag + sf.generateRandomNoise(NOISE_LENGTH)
+			tagedMessage = sf.generateRandomNoise(NOISE_LENGTH)
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, False, typeFlag = 'P')
 			packet = "ROUT" + message
 			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
