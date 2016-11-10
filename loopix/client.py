@@ -148,7 +148,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (float(old_loops/2.0), None)
         self.EXP_PARAMS_COVER = (float(old_drop/2.0), None)
 
-        if old_payload <= 0.05:
+        if old_payload <= 0.5:
             pass
         else:
             reactor.callLater(300, self.updateParams)
