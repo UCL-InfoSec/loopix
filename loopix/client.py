@@ -101,13 +101,9 @@ class Client(DatagramProtocol):
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
         self.numMessagesSent = 0
-        self.tagedHeartbeat = {}
-
-        self.tagForTesting = False
 
         self.receivedQueue = DeferredQueue()
-
-        #self.processQueue = ProcessQueue()
+        self.sendMeasurments = []
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
@@ -194,6 +190,9 @@ class Client(DatagramProtocol):
         """
         # ====== This is generating fake messages to fake reall traffic=====
         self.turnOnFakeMessaging()
+        if self.TESTMODE:
+            self.measureSentMessages()
+            self.save_measurments()
         # ==================================================================
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
@@ -687,17 +686,22 @@ class Client(DatagramProtocol):
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
         self.turnOnMessaging(self.mixnet)
-        #if self.TESTMODE:
-        self.measureSentMessages()
 
     def measureSentMessages(self):
-        lc = task.LoopingCall(self.sentMessages)
-        lc.start(600)
+        lc = task.LoopingCall(self.takeMeasurments)
+        lc.start(60, False)
 
-    def sentMessages(self):
-        numSent = self.numMessagesSent
+    def takeMeasurments(self):
+        self.sendMeasurments.append(self.numMessagesSent)
         self.numMessagesSent = 0
+
+    def save_measurments(self):
+        lc = task.LoopingCall(self.save_to_file)
+        lc.start(300, False)
+
+    def save_measurments(self):
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
-            data = [[numSent, self.EXP_PARAMS_PAYLOAD[0]]]
-            csvW.writerows(data)
+            csvW.writerows(self.sendMeasurments)
+        self.sendMeasurments = []
+
