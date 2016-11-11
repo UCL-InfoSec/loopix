@@ -699,7 +699,7 @@ class Client(DatagramProtocol):
         lc = task.LoopingCall(self.save_to_file)
         lc.start(300, False)
 
-    def save_measurments(self):
+    def save_to_file(self):
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
             csvW.writerows(self.sendMeasurments)
