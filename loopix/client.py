@@ -95,8 +95,8 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = True
 
-        self.boardHost = "127.0.0.1"
-        self.boardPort = 9998
+        # self.boardHost = "127.0.0.1"
+        # self.boardPort = 9998
 
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
@@ -119,8 +119,6 @@ class Client(DatagramProtocol):
         reactor.callLater(100.0, self.readInData, "example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
 
-        #if self.TESTMODE:
-        self.measureSentMessages()
         # reactor.callLater(400.0, self.updateParams)
 
 
@@ -689,6 +687,8 @@ class Client(DatagramProtocol):
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
         self.turnOnMessaging(self.mixnet)
+        #if self.TESTMODE:
+        self.measureSentMessages()
 
     def measureSentMessages(self):
         lc = task.LoopingCall(self.sentMessages)
