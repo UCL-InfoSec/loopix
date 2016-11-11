@@ -702,6 +702,6 @@ class Client(DatagramProtocol):
     def save_to_file(self):
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter=',')
-            csvW.writerows(self.sendMeasurments)
+            csvW.writerows([self.sendMeasurments])
         self.sendMeasurments = []
 
