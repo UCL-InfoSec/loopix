@@ -5,7 +5,7 @@
 			"EXP_PARAMS_LOOPS":"15", 
 			"EXP_PARAMS_COVER":"15", 
 			"EXP_PARAMS_DELAY":"0.005",
-			"TESTMODE":"False"
+			"TESTMODE":"True"
 		},
 	"parametersMixnodes": 
 		{
