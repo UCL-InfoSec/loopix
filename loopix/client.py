@@ -90,7 +90,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
         self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
-        self.TESTMODE = True
+        self.TESTMODE = bool(_PARAMS["parametersClients"]["TESTMODE"])
 
         # self.boardHost = "127.0.0.1"
         # self.boardPort = 9998
@@ -112,7 +112,8 @@ class Client(DatagramProtocol):
         reactor.callLater(100.0, self.readInData, "example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
 
-        # reactor.callLater(400.0, self.updateParams)
+        if TESTMODE:
+            reactor.callLater(400.0, self.updateParams)
 
     def turnOnProcessing(self):
         self.receivedQueue.get().addCallback(self.do_PROCESS)
@@ -138,7 +139,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (float(old_loops/2.0), None)
         self.EXP_PARAMS_COVER = (float(old_drop/2.0), None)
 
-        if old_payload <= 0.5:
+        if old_payload <= 1:
             pass
         else:
             reactor.callLater(300, self.updateParams)
