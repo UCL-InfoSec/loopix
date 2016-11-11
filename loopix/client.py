@@ -90,7 +90,10 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
         self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
-        self.TESTMODE = bool(_PARAMS["parametersClients"]["TESTMODE"])
+        if _PARAMS["parametersClients"]["TESTMODE"] == "True":
+            self.TESTMODE = True
+        else:
+            self.TESTMODE = False
 
         # self.boardHost = "127.0.0.1"
         # self.boardPort = 9998
