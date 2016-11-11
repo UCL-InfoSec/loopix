@@ -135,14 +135,14 @@ class Client(DatagramProtocol):
         old_loops = self.EXP_PARAMS_LOOPS[0]
         old_drop = self.EXP_PARAMS_COVER[0]
 
-        self.EXP_PARAMS_PAYLOAD = (float(old_payload-0.1), None)
-        self.EXP_PARAMS_LOOPS = (float(old_loops-0.1), None)
-        self.EXP_PARAMS_COVER = (float(old_drop-0.1), None)
+        self.EXP_PARAMS_PAYLOAD = (float(old_payload-0.01), None)
+        self.EXP_PARAMS_LOOPS = (float(old_loops-0.01), None)
+        self.EXP_PARAMS_COVER = (float(old_drop-0.01), None)
 
         if old_payload <= 1:
             pass
         else:
-            reactor.callLater(300, self.updateParams)
+            reactor.callLater(1, self.updateParams)
 
     # def announce(self):
     #     resp = "UINF" + petlib.pack.encode([self.name, self.port,
