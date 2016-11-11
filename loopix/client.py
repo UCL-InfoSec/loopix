@@ -112,7 +112,7 @@ class Client(DatagramProtocol):
         reactor.callLater(100.0, self.readInData, "example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
 
-        if TESTMODE:
+        if self.TESTMODE:
             reactor.callLater(400.0, self.updateParams)
 
     def turnOnProcessing(self):
