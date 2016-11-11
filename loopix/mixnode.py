@@ -22,14 +22,17 @@ import sys
 import csv
 from processQueue import ProcessQueue
 from sets import Set
-
+import json
 from twisted.logger import jsonFileLogObserver, Logger
 
-TIME_ACK = 1600
-TIME_FLUSH = 0.01
-TIME_CLEAN = 1600
-MAX_DELAY_TIME = -432000
-NOISE_LENGTH = 500
+with open('config.json') as infile:
+	_PARAMS = json.load(infile) 
+
+TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
+TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
+TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
+MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
+NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
 
 # log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
@@ -80,11 +83,8 @@ class MixNode(DatagramProtocol):
 
 		self.PATH_LENGTH = 3
 
-		# self.boardPort = 9998
-		# self.boardHost = "127.0.0.1"
-
-		self.EXP_PARAMS_DELAY = (0.005, None)
-		self.EXP_PARAMS_LOOPS = (10, None)
+		self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"]), None)
+		self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"]), None)
 
 		self.processQueue = ProcessQueue()
 

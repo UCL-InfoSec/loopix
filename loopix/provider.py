@@ -78,11 +78,9 @@ class Provider(MixNode):
         print "[%s] > Stop protocol" % self.name
 
     def turnOnProcessing(self):
-        #self.receivedQueue.get().addCallback(self.do_PROCESS)
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
-        #self.receivedQueue.put((data, (host, port)))
         self.bReceived += 1
         try:
             self.processQueue.put((data, (host, port)))
@@ -91,12 +89,9 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         data, (host, port) = obj
-        #self.receivedQueue.get().addCallback(self.do_PROCESS)
 
         self.processMessage(obj)
-
         try:
-            #reactor.callFromThread(self.processQueue.get().addCallback, self.do_PROCESS)
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
@@ -178,7 +173,7 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
-        # print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
+
         try:
             peeledData = self.mix_operate(self.setup, data)
         except Exception, e:
@@ -214,11 +209,6 @@ class Provider(MixNode):
             self.storage[key].append(petlib.pack.encode((value, time.time())))
         else:
             self.storage[key] = [petlib.pack.encode((value, time.time()))]
-        # if key not in self.storage.keys():
-        #    self.storage[key] = set(petlib.pack.encode((value, time.time())))
-        # else:
-        #    self.storage[key].add(petlib.pack.encode((value, time.time())))
-        # print "[%s] > Saved message for User %s in storage" % (self.name, key)
 
     def subscribeClient(self, name, host, port):
         if name not in self.clientList:
@@ -269,9 +259,9 @@ class Provider(MixNode):
         self.bProcessed = 0
         self.gbReceived = 0
         self.bReceived = 0
+        self.pProcessed = 0
         self.hbSent = 0
         self.hbRec = 0
-        self.pProcessed = 0
 
     def save_to_file(self):
         try:

@@ -32,16 +32,13 @@ from twisted.internet.interfaces import IPullProducer
 from zope.interface import implementer
 from processQueue import ProcessQueue
 from sets import Set
+import json
 
 import copy
 
-# import fcntl
 
-# def make_blocking(fd):
-#     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-#     if flags & os.O_NONBLOCK:
-#         fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
-
+with open('config.json') as infile:
+    _PARAMS = json.load(infile)
 
 TIME_PULL = 10
 NOISE_LENGTH = 500
@@ -89,10 +86,10 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (1, None)
-        self.EXP_PARAMS_LOOPS = (1, None)
-        self.EXP_PARAMS_COVER = (1, None)
-        self.EXP_PARAMS_DELAY = (0.005, None)
+        self.EXP_PARAMS_PAYLOAD = (float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"]), None)
+        self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
+        self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
+        self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True
 
         # self.boardHost = "127.0.0.1"
@@ -116,7 +113,6 @@ class Client(DatagramProtocol):
         reactor.callLater(100.0, self.turnOnProcessing)
 
         # reactor.callLater(400.0, self.updateParams)
-
 
     def turnOnProcessing(self):
         self.receivedQueue.get().addCallback(self.do_PROCESS)
