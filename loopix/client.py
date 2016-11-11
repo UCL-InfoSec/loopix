@@ -89,9 +89,9 @@ class Client(DatagramProtocol):
         self.aes = Cipher.aes_128_gcm()
 
         self.PATH_LENGTH = 3
-        self.EXP_PARAMS_PAYLOAD = (5, None)
-        self.EXP_PARAMS_LOOPS = (5, None)
-        self.EXP_PARAMS_COVER = (5, None)
+        self.EXP_PARAMS_PAYLOAD = (1, None)
+        self.EXP_PARAMS_LOOPS = (1, None)
+        self.EXP_PARAMS_COVER = (1, None)
         self.EXP_PARAMS_DELAY = (0.005, None)
         self.TESTMODE = True
 
