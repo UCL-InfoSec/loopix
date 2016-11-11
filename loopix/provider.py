@@ -43,8 +43,6 @@ class Provider(MixNode):
         self.bProcessed = 0
         self.gbSent = 0
         self.gbReceived = 0
-        self.hbSent = 0
-        self.hbRec = 0
 
         self.receivedQueue = DeferredQueue()
 
@@ -252,16 +250,14 @@ class Provider(MixNode):
 
     def saveMeasurments(self):
         lc = task.LoopingCall(self.save_to_file)
-        lc.start(310, False)
+        lc.start(300, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.hbSent, self.hbRec, self.pProcessed])
+        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
         self.bProcessed = 0
         self.gbReceived = 0
         self.bReceived = 0
         self.pProcessed = 0
-        self.hbSent = 0
-        self.hbRec = 0
 
     def save_to_file(self):
         try:
