@@ -329,8 +329,9 @@ class MixNode(DatagramProtocol):
 		if pt.startswith('HT'):
 			hs = hashlib.md5()
 			hs.update(pt[2:])
-			if hs in self.hbSent:
-				self.hbSent[hs.digest()] = True
+			x = hs.digest()
+			if x in self.hbSent:
+				self.hbSent[x] = True
 			if pt.startswith('HTTAG'):
 				self.measureLatency(pt)
 			return None
@@ -477,7 +478,8 @@ class MixNode(DatagramProtocol):
 			# self.savedElements.add(packet[0])
 			hs = hashlib.md5()
 			hs.update(heartMsg)
-			self.hbSent[hs.digest()] = False
+			x = hs.digest()
+			self.hbSent[x] = False
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
@@ -637,7 +639,7 @@ class MixNode(DatagramProtocol):
 		lc.start(60, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
+		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, (len(self.hbSent), sum(self.hbSent.values()))])
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.bReceived = 0
@@ -655,12 +657,12 @@ class MixNode(DatagramProtocol):
 		except Exception, e:
 			print "Error while saving: ", str(e)
 		self.measurments = []
-		try:
-			with open("reliabilityMixnode.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				csvW.writerows([(len(self.hbSent), sum(self.hbSent.values()))])
-		except Exception, e:
-			print "Error while saving: ", str(e)
-		self.hbSent = {}
+		# try:
+		# 	with open("reliabilityMixnode.csv", "ab") as outfile:
+		# 		csvW = csv.writer(outfile, delimiter=',')
+		# 		csvW.writerows([(len(self.hbSent), sum(self.hbSent.values()))])
+		# except Exception, e:
+		# 	print "Error while saving: ", str(e)
+		# self.hbSent = {}
 
 
