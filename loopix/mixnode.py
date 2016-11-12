@@ -637,7 +637,7 @@ class MixNode(DatagramProtocol):
 		lc.start(60, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, (len(self.hbSent), sum(self.hbSent.values()))])
+		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.bReceived = 0
@@ -656,4 +656,12 @@ class MixNode(DatagramProtocol):
 		except Exception, e:
 			print "Error while saving: ", str(e)
 		self.measurments = []
+		try:
+			with open("reliabilityMixnode.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				csvW.writerows([(len(self.hbSent), sum(self.hbSent.values()))])
+		except Exception, e:
+			print "Error while saving: ", str(e)
+		self.hbSent = {}
+
 
