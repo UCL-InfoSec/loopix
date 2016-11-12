@@ -327,10 +327,10 @@ class MixNode(DatagramProtocol):
 		header = petlib.pack.decode(header_en)
 
 		if pt.startswith('HT'):
-			#hs = hashlib.md5()
-			#hs.update(pt[2:])
-			#if hs in self.hbSent:
-			#	self.hbSent[hs] = True
+			hs = hashlib.md5()
+			hs.update(pt[2:])
+			if hs in self.hbSent:
+				self.hbSent[hs] = True
 			if pt.startswith('HTTAG'):
 				self.measureLatency(pt)
 			return None
@@ -475,9 +475,9 @@ class MixNode(DatagramProtocol):
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HTBAR'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
 			# self.savedElements.add(packet[0])
-			#hs = hashlib.md5()
-			#hs.update(heartMsg)
-			#self.hbSent[hs.digest()] = False
+			hs = hashlib.md5()
+			hs.update(heartMsg)
+			self.hbSent[hs.digest()] = False
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
@@ -637,11 +637,12 @@ class MixNode(DatagramProtocol):
 		lc.start(60, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
+		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, (len(self.hbSent), sum(self.hbSent.values()))])
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.bReceived = 0
 		self.pProcessed = 0
+		self.hbSent = []
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
@@ -655,3 +656,4 @@ class MixNode(DatagramProtocol):
 		except Exception, e:
 			print "Error while saving: ", str(e)
 		self.measurments = []
+

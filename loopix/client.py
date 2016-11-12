@@ -112,11 +112,11 @@ class Client(DatagramProtocol):
         print "Provider: ", self.provider
 
         self.sendPing()
-        reactor.callLater(100.0, self.readInData, "example.db")
+        self.readInData("example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
 
         if self.TESTMODE:
-            reactor.callLater(400.0, self.updateParams)
+            reactor.callLater(300.0, self.updateParams)
 
     def turnOnProcessing(self):
         self.receivedQueue.get().addCallback(self.do_PROCESS)
