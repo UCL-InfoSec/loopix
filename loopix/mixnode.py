@@ -473,7 +473,7 @@ class MixNode(DatagramProtocol):
 		try:
 			heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
-			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HTBAR'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
+			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
 			# self.savedElements.add(packet[0])
 			hs = hashlib.md5()
 			hs.update(heartMsg)
