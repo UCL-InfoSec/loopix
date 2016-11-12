@@ -1,9 +1,9 @@
 {
 	"parametersClients":
 		{
-			"EXP_PARAMS_PAYLOAD":"12", 
-			"EXP_PARAMS_LOOPS":"12", 
-			"EXP_PARAMS_COVER":"12", 
+			"EXP_PARAMS_PAYLOAD":"11", 
+			"EXP_PARAMS_LOOPS":"11", 
+			"EXP_PARAMS_COVER":"11", 
 			"EXP_PARAMS_DELAY":"0.005",
 			"TESTMODE":"False"
 		},
