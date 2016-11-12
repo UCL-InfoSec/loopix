@@ -330,7 +330,7 @@ class MixNode(DatagramProtocol):
 			hs = hashlib.md5()
 			hs.update(pt[2:])
 			if hs in self.hbSent:
-				self.hbSent[hs] = True
+				self.hbSent[hs.digest()] = True
 			if pt.startswith('HTTAG'):
 				self.measureLatency(pt)
 			return None
