@@ -642,7 +642,6 @@ class MixNode(DatagramProtocol):
 		self.gbReceived = 0
 		self.bReceived = 0
 		self.pProcessed = 0
-		self.hbSent = {}
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
