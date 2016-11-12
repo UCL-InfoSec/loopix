@@ -639,7 +639,7 @@ class MixNode(DatagramProtocol):
 		lc.start(60, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, (len(self.hbSent), sum(self.hbSent.values()))])
+		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values())])
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.bReceived = 0

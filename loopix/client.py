@@ -45,7 +45,6 @@ NOISE_LENGTH = 500
 
 #log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
-
 class Client(DatagramProtocol):
     def __init__(self, setup, name, port, host, testMode=False,
                  providerId=None, privk=None, pubk=None):
