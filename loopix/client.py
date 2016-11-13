@@ -280,7 +280,7 @@ class Client(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         self.receivedQueue.put((data, (host, port)))
-        # print "[%s] > Received new packet" % self.name
+        print "[%s] > Received new packet" % self.name
         # try:
         #     self.processQueue.put((data, (host, port)))
         # except Exception, e:
