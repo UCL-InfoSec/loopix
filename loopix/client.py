@@ -134,18 +134,19 @@ class Client(DatagramProtocol):
 
 
     def updateParams(self):
+        print "Hello"
         old_payload = self.EXP_PARAMS_PAYLOAD[0]
         old_loops = self.EXP_PARAMS_LOOPS[0]
         old_drop = self.EXP_PARAMS_COVER[0]
 
-        self.EXP_PARAMS_PAYLOAD = (float(180.0/(180.0/old_payload + C)), None)
-        self.EXP_PARAMS_LOOPS = (float(180.0/(180.0/old_loops + C)), None)
-        self.EXP_PARAMS_COVER = (float(180.0/(180.0/old_cover + C)), None)
+        self.EXP_PARAMS_PAYLOAD = (float(180.0/((180.0/old_payload) + C)), None)
+        self.EXP_PARAMS_LOOPS = (float(180.0/((180.0/old_loops) + C)), None)
+        self.EXP_PARAMS_COVER = (float(180.0/((180.0/old_drop) + C)), None)
 
         if old_payload <= 1:
             pass
         else:
-            reactor.callLater(1, self.updateParams)
+            reactor.callLater(60, self.updateParams)
 
     # def announce(self):
     #     resp = "UINF" + petlib.pack.encode([self.name, self.port,
@@ -689,7 +690,7 @@ class Client(DatagramProtocol):
 
     def measureSentMessages(self):
         lc = task.LoopingCall(self.takeMeasurments)
-        lc.start(60, False)
+        lc.start(120, False)
 
     def takeMeasurments(self):
         self.sendMeasurments.append(self.numMessagesSent)
