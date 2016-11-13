@@ -134,7 +134,6 @@ class Client(DatagramProtocol):
 
 
     def updateParams(self):
-        print "Hello"
         old_payload = self.EXP_PARAMS_PAYLOAD[0]
         old_loops = self.EXP_PARAMS_LOOPS[0]
         old_drop = self.EXP_PARAMS_COVER[0]
@@ -309,7 +308,7 @@ class Client(DatagramProtocol):
         #     for element in dataList:
         #         self.mixnet.append(format3.Mix(element[0], element[1], element[2], element[3]))
         if data[:4] == "PMSG":
-            #print "Received message"
+            print "Received message"
             self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
             print "[%s] > Received NOMSG." % self.name
