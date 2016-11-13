@@ -308,7 +308,7 @@ class Client(DatagramProtocol):
         #     for element in dataList:
         #         self.mixnet.append(format3.Mix(element[0], element[1], element[2], element[3]))
         if data[:4] == "PMSG":
-            print "Received message"
+            #print "Received message"
             self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
             print "[%s] > Received NOMSG." % self.name
