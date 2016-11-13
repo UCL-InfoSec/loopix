@@ -42,6 +42,7 @@ with open('config.json') as infile:
 
 TIME_PULL = 10
 NOISE_LENGTH = 500
+C = float(_PARAMS["parametersClients"]["C"])
 
 #log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
@@ -137,9 +138,9 @@ class Client(DatagramProtocol):
         old_loops = self.EXP_PARAMS_LOOPS[0]
         old_drop = self.EXP_PARAMS_COVER[0]
 
-        self.EXP_PARAMS_PAYLOAD = (float(old_payload-0.01), None)
-        self.EXP_PARAMS_LOOPS = (float(old_loops-0.01), None)
-        self.EXP_PARAMS_COVER = (float(old_drop-0.01), None)
+        self.EXP_PARAMS_PAYLOAD = (float(180.0/(180.0/old_payload + C)), None)
+        self.EXP_PARAMS_LOOPS = (float(180.0/(180.0/old_loops + C)), None)
+        self.EXP_PARAMS_COVER = (float(180.0/(180.0/old_cover + C)), None)
 
         if old_payload <= 1:
             pass
