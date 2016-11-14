@@ -1,11 +1,11 @@
 {
 	"parametersClients":
 		{
-			"EXP_PARAMS_PAYLOAD":"18", 
-			"EXP_PARAMS_LOOPS":"18", 
-			"EXP_PARAMS_COVER":"18", 
+			"EXP_PARAMS_PAYLOAD":"5", 
+			"EXP_PARAMS_LOOPS":"5", 
+			"EXP_PARAMS_COVER":"5", 
 			"EXP_PARAMS_DELAY":"0.005",
-			"TESTMODE":"True",
+			"TESTMODE":"False",
 			"C":"5"
 		},
 	"parametersMixnodes": 
