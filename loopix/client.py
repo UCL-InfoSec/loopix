@@ -142,10 +142,10 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (float(180.0/((180.0/old_loops) + C)), None)
         self.EXP_PARAMS_COVER = (float(180.0/((180.0/old_drop) + C)), None)
 
-        if old_payload <= 1:
-            pass
-        else:
-            reactor.callLater(60, self.updateParams)
+        #if old_payload <= 1:
+            # pass
+        # else:
+        reactor.callLater(60, self.updateParams)
 
     # def announce(self):
     #     resp = "UINF" + petlib.pack.encode([self.name, self.port,
