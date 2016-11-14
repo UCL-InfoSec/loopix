@@ -648,7 +648,7 @@ class MixNode(DatagramProtocol):
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
-		lc.start(300, False)
+		lc.start(360, False)
 
 	def save_to_file(self):
 		try:
