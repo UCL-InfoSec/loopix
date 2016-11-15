@@ -47,7 +47,7 @@ C = float(_PARAMS["parametersClients"]["C"])
 #log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testMode=False,
+    def __init__(self, setup, name, port, host, testUser=False,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
@@ -534,19 +534,22 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        #friendsGroup = random.sample(self.usersPubs, 3)
-        friendsGroup = self.usersPubs
+        friendsGroup = random.sample(self.usersPubs, 3)
+        #friendsGroup = self.usersPubs
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
-
-        #r = random.choice(group)
-        for r in group:
-            mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-            msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+        msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        if self._TESTUSER:
+            r = random.choice(group)
+            print "Receiver: ", r.provider
             self.sendMessage(r, mixpath, msgF, msgB)
+        else:
+            for r in group:
+                self.sendMessage(r, mixpath, msgF, msgB)
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, group)
 
@@ -687,7 +690,7 @@ class Client(DatagramProtocol):
 
     def measureSentMessages(self):
         lc = task.LoopingCall(self.takeMeasurments)
-        lc.start(60, False)
+        lc.start(120, False)
 
     def takeMeasurments(self):
         self.sendMeasurments.append(self.numMessagesSent)
@@ -695,7 +698,7 @@ class Client(DatagramProtocol):
 
     def save_measurments(self):
         lc = task.LoopingCall(self.save_to_file)
-        lc.start(300, False)
+        lc.start(360, False)
 
     def save_to_file(self):
         with open('messagesSent.csv', 'ab') as outfile:
