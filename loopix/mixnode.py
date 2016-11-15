@@ -164,7 +164,7 @@ class MixNode(DatagramProtocol):
 
 	def do_PROCESS(self, (data, (host, port))):
 		self.processMessage(data, (host, port))
-
+		self.bProcessed += 1
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
 		except Exception, e:
@@ -174,7 +174,6 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
-		self.bProcessed += 1
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
