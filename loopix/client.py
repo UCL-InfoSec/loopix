@@ -534,7 +534,7 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        friendsGroup = random.sample(self.usersPubs, 3)
+        friendsGroup = random.sample(self.usersPubs, 5)
         #friendsGroup = self.usersPubs
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
@@ -543,13 +543,9 @@ class Client(DatagramProtocol):
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        if self._TESTUSER:
-            r = random.choice(group)
-            print "Receiver: ", r.provider
-            self.sendMessage(r, mixpath, msgF, msgB)
-        else:
-            for r in group:
-                self.sendMessage(r, mixpath, msgF, msgB)
+        r = random.choice(group)
+        self.sendMessage(r, mixpath, msgF, msgB)
+
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, group)
 
