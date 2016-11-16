@@ -95,6 +95,8 @@ class Client(DatagramProtocol):
         else:
             self.TESTMODE = False
 
+        self.TESTUSER = testUser
+
         # self.boardHost = "127.0.0.1"
         # self.boardPort = 9998
 
@@ -187,9 +189,8 @@ class Client(DatagramProtocol):
         """
         # ====== This is generating fake messages to fake reall traffic=====
         self.turnOnFakeMessaging()
-        if self.TESTMODE:
-            self.measureSentMessages()
-            self.save_measurments()
+        self.measureSentMessages()
+        self.save_measurments()
         # ==================================================================
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
@@ -543,7 +544,11 @@ class Client(DatagramProtocol):
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        r = random.choice(group)
+        if self.TESTUSER:
+            r = group[0]
+            print "Client: %s with provider %s" % (r.name, r.provider.name)
+        else:
+            r = random.choice(group)
         self.sendMessage(r, mixpath, msgF, msgB)
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
