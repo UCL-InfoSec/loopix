@@ -66,7 +66,7 @@ class Provider(MixNode):
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
-        self.turnOnReliableUDP()
+        #self.turnOnReliableUDP()
         self.readInData('example.db')
 
         self.turnOnMeasurments()
@@ -86,8 +86,8 @@ class Provider(MixNode):
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
     def do_PROCESS(self, obj):
-        self.bProcessed += 1
         self.processMessage(obj)
+        self.bProcessed += 1
 
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -163,22 +163,19 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
-                def save_or_queue(IPAddrs):
-                    if xtoName in self.clientList:
-                        self.saveInStorage(xtoName, msg_forw)
-                    else:
-                        # self.addToQueue(
-                        #     ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
-                        #print "[%s] > Decryption ended. Message destinated to (%d, %s) " % (self.name, xtoPort, IPAddrs)
-                        try:
-                            if delay > 0:
-                                reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                            else:
-                                self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                            self.expectedACK.add("ACKN"+idt)
-                        except Exception, e:
-                            print "ERROR during ROUT: ", str(e)
-                reactor.resolve(xtoHost).addCallback(save_or_queue)
+                #def save_or_queue(IPAddrs):
+                if xtoName in self.clientList:
+                    self.saveInStorage(xtoName, msg_forw)
+                else:
+                    try:
+                        if delay > 0:
+                            reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        else:
+                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        self.expectedACK.add("ACKN"+idt)
+                    except Exception, e:
+                        print "ERROR during ROUT: ", str(e)
+                #reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.

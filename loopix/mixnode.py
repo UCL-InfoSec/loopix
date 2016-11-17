@@ -94,13 +94,10 @@ class MixNode(DatagramProtocol):
 		reactor.suggestThreadPoolSize(30)
 
 		print "[%s] > Start protocol" % self.name
-		# self.announce()
-		
+		reactor.callLater(10.0, self.turnOnProcessing)
+
 		self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
-
-		reactor.callLater(30.0, self.turnOnProcessing)
-		# self.run()
 
 		# self.turnOnReliableUDP()
 		self.readInData('example.db')
@@ -155,16 +152,16 @@ class MixNode(DatagramProtocol):
 		reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
-		self.bReceived += 1
 
 		try:
 			self.processQueue.put((data, (host, port)))
+			self.bReceived += 1
 		except Exception, e:
 			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
-		self.bProcessed += 1
 		self.processMessage(data, (host, port))
+		self.bProcessed += 1
 
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -227,14 +224,11 @@ class MixNode(DatagramProtocol):
 				if (xtoName is None and xtoPort is None and xtoHost is None):
 					print "[%s] > Message discarded" % self.name
 				else:
-					# print "[%s] > Decryption ended. " % (self.name)
-					packet = petlib.pack.encode((idt, forw_msg))
-					# self.addToQueue(("ROUT" + packet, (xtoHost, xtoPort), idt), delay)
 					try:
 						if delay > 0:
-							reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						else:
-							self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+							self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
