@@ -67,10 +67,7 @@ class MixNode(DatagramProtocol):
 
 		self.heartbeatsSent = set()
 		self.numHeartbeatsReceived = 0
-
-		# self.HBmessages = 0
-		# self.DPmessages = 0
-		# self.GPmessages = 0
+		self.tagedHeartbeat = {}
 
 		self.savedElements = set()
 
@@ -82,13 +79,11 @@ class MixNode(DatagramProtocol):
 		self.measurments = []
 
 		self.PATH_LENGTH = 3
-
 		self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"]), None)
 		self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"]), None)
 
 		self.processQueue = ProcessQueue()
-
-		self.tagedHeartbeat = {}
+		self.resolvedAdrs = {}
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -433,9 +428,13 @@ class MixNode(DatagramProtocol):
 
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
+			self.resolvedAdrs[host] = IPaddrs
 
-		# Resolve and call the send function
-		reactor.resolve(host).addCallback(send_to_ip)
+		if host in self.resolvedAdrs:
+			self.transport.write(data, (self.resolvedAdrs[host], port))
+		else:
+			# Resolve and call the send function
+			reactor.resolve(host).addCallback(send_to_ip)
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.

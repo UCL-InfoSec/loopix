@@ -91,6 +91,7 @@ class Client(DatagramProtocol):
         #self.receivedQueue = DeferredQueue()
         self.processQueue = ProcessQueue()
         self.sendMeasurments = []
+        self.resolvedAdrs = {}
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
@@ -110,9 +111,10 @@ class Client(DatagramProtocol):
 
     def sendPing(self):
 
-        def send_to_ip(IPAddr):
-            self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
-        reactor.resolve(self.provider.host).addCallback(send_to_ip)
+        self.send("PING"+self.name, (self.provider.host, self.provider.port))
+        #def send_to_ip(IPAddr):
+        #    self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
+        #reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
@@ -131,12 +133,14 @@ class Client(DatagramProtocol):
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""
 
-        def send_to_ip(IPAddrs):
-            self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
-            self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
-            self.numMessagesSent += 2
-
-        reactor.resolve(self.provider.host).addCallback(send_to_ip)
+        self.send("PING"+self.name, (self.provider.host, self.provider.port))
+        self.send("PULL_MSG"+self.name, (self.provider.host, self.provider.port))
+        self.numMessagesSent += 2
+        #def send_to_ip(IPAddrs):
+        #    self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
+        #    self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
+        #    self.numMessagesSent += 2
+        #reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
@@ -182,7 +186,6 @@ class Client(DatagramProtocol):
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
         if self.TESTMODE:
-            print "TESTMODE"
             reactor.callLater(interval, self.generateFakeLoopTraffic)
         else:
             reactor.callLater(interval, self.generateLoopTraffic, mixList)
@@ -453,9 +456,14 @@ class Client(DatagramProtocol):
 
         def send_to_ip(IPAddrs):
             self.transport.write(packet, (IPAddrs, port))
+            self.resolvedAdrs[host] = IPAddrs
+            self.numMessagesSent += 1
 
-        reactor.resolve(host).addCallback(send_to_ip)
-        self.numMessagesSent += 1
+        if host in self.resolvedAdrs:
+            self.transport.write(packet, (self.resolvedAdrs[host], port))
+        else:
+            reactor.resolve(host).addCallback(send_to_ip)
+        #print self.resolvedAdrs
 
     def readMessage(self, message, (host, port)):
         """ Function allows to decyrpt and read a received message.

@@ -129,21 +129,35 @@ class Provider(MixNode):
         """
 
         def send_to_ip(IPAddrs):
+            self.flushStorage(name, (IPAddrs, port))
+            self.resolvedAdrs[host] = IPAddrs
+            # if name in self.storage:
+            #     if self.storage[name]:
+            #         for _ in range(self.MAX_RETRIEVE):
+            #            if self.storage[name]:
+            #                message = self.storage[name].pop()
+            #                self.transport.write("PMSG" + message, (IPAddrs, port))
+            #     else:
+            #         self.transport.write("NOMSG", (IPAddrs, port))
 
-            if name in self.storage:
-                if self.storage[name]:
-                    for _ in range(self.MAX_RETRIEVE):
-                       if self.storage[name]:
-                           message = self.storage[name].pop()
-                           self.transport.write("PMSG" + message, (IPAddrs, port))
-                else:
-                    self.transport.write("NOMSG", (IPAddrs, port))
+            # else:
+            #     self.transport.write("NOASG", (IPAddrs, port))
+        if host in self.resolvedAdrs:
+            self.flushStorage(name, (self.resolvedAdrs[host], port))
+        else:
+            reactor.resolve(host).addCallback(send_to_ip)
 
+    def flushStorage(self, name, (ip_host, port)):
+        if name in self.storage:
+            if self.storage[name]:
+                for _ in range(self.MAX_RETRIEVE):
+                    if self.storage[name]:
+                        message = self.storage[name].pop()
+                        self.transport.write("PMSG" + message, (ip_host, port))
             else:
-                self.transport.write("NOASG", (IPAddrs, port))
-
-        reactor.resolve(host).addCallback(send_to_ip)
-
+                self.transport.write("NOMSG", (ip_host, port))
+        else:
+            self.transport.write("NOASG", (ip_host, port))
 
     def do_ROUT(self, data, (host, port), tag=None):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
@@ -163,7 +177,6 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
-                #def save_or_queue(IPAddrs):
                 if xtoName in self.clientList:
                     self.saveInStorage(xtoName, msg_forw)
                 else:
@@ -175,7 +188,6 @@ class Provider(MixNode):
                         self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
                         print "ERROR during ROUT: ", str(e)
-                #reactor.resolve(xtoHost).addCallback(save_or_queue)
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
