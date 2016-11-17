@@ -1,20 +1,20 @@
-import base64
+from provider import Provider
+
+import csv
 import databaseConnect as dc
-from collections import namedtuple
 import format3
 from hashlib import sha512, sha1
 import hmac
-import math
-from mixnode import MixNode
+import io
+import json
 import msgpack
 import numpy
 import os
 from petlib.cipher import Cipher
 from petlib.ec import EcPt, Bn, EcGroup
 import petlib.pack
-from provider import Provider
+from processQueue import ProcessQueue
 import random
-import resource
 import time
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, protocol, task, defer, threads
@@ -24,27 +24,17 @@ import sqlite3
 import string
 import supportFunctions as sf
 import sys
-import uuid
-import io
-from twisted.logger import jsonFileLogObserver, Logger
-import csv
-from twisted.internet.interfaces import IPullProducer
-from zope.interface import implementer
-from processQueue import ProcessQueue
 from sets import Set
-import json
-
-import copy
+import uuid
+import resource
 
 
 with open('config.json') as infile:
     _PARAMS = json.load(infile)
 
-TIME_PULL = 10
-NOISE_LENGTH = 500
+TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
+NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
 C = float(_PARAMS["parametersClients"]["C"])
-
-#log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 class Client(DatagramProtocol):
     def __init__(self, setup, name, port, host, testUser=False,
@@ -72,6 +62,7 @@ class Client(DatagramProtocol):
         self.keys = sha512(self.privk.binary()).digest()
         self.kenc = self.keys[:16]
         self.iv = self.keys[16:32]
+        self.aes = Cipher.aes_128_gcm()
 
         self.d = defer.Deferred()
 
@@ -83,57 +74,48 @@ class Client(DatagramProtocol):
         self.heartbeatsSent = set()
         self.buffer = []
 
-        self.aes = Cipher.aes_128_gcm()
 
-        self.PATH_LENGTH = 3
+        self.PATH_LENGTH = int(_PARAMS["parametersClients"]["PATH_LENGTH"])
         self.EXP_PARAMS_PAYLOAD = (float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"]), None)
         self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
         self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
-        if _PARAMS["parametersClients"]["TESTMODE"] == "True":
-            self.TESTMODE = True
-        else:
-            self.TESTMODE = False
-
+        self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
+        self.UPDATE_PARAMS = _PARAMS["parametersClients"]["UPDATA_PARAMS"]
         self.TESTUSER = testUser
-
-        # self.boardHost = "127.0.0.1"
-        # self.boardPort = 9998
 
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
         self.numMessagesSent = 0
 
-        self.receivedQueue = DeferredQueue()
+        #self.receivedQueue = DeferredQueue()
+        self.processQueue = ProcessQueue()
         self.sendMeasurments = []
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
-
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
         self.sendPing()
+
         self.readInData("example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
-
-        if self.TESTMODE:
+        if self.UPDATE_PARAMS=="True":
             reactor.callLater(300.0, self.updateParams)
 
     def turnOnProcessing(self):
-        self.receivedQueue.get().addCallback(self.do_PROCESS)
-        #self.processQueue.get().addCallback(self.do_PROCESS)
+        #self.receivedQueue.get().addCallback(self.do_PROCESS)
+        self.processQueue.get().addCallback(self.do_PROCESS)
 
     def sendPing(self):
 
         def send_to_ip(IPAddr):
             self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
-
         reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
-
 
     def updateParams(self):
         old_payload = self.EXP_PARAMS_PAYLOAD[0]
@@ -146,24 +128,6 @@ class Client(DatagramProtocol):
 
         reactor.callLater(120, self.updateParams)
 
-    # def announce(self):
-    #     resp = "UINF" + petlib.pack.encode([self.name, self.port,
-    #                                         self.host, self.pubk,
-    #                                         self.provider])
-    #     self.transport.write(resp, (self.boardHost, self.boardPort))
-    #     print "[%s] > announced."
-    #     log.info("[%s] > announced to the board." % self.name)
-
-    # def pullMixnetInformation(self, providerPort, providerHost):
-    #     """ Asking for the mixnodes information """
-    #     self.transport.write("INFO", (providerHost, providerPort))
-    #     log.info("[%s] > pulled mixnet information." % self.name)
-
-    # def pullUserInformation(self, providerPort, providerHost):
-    #     """ Asking for other users public information """
-    #     self.transport.write("UREQ", (providerHost, providerPort))
-    #     log.info("[%s] > pulled users information." % self.name)
-
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""
 
@@ -171,7 +135,6 @@ class Client(DatagramProtocol):
             self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
             self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
             self.numMessagesSent += 2
-            # print "[%s] > Pulled messages from provider %s" % (self.name, str(IPAddrs))
 
         reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
@@ -187,14 +150,14 @@ class Client(DatagramProtocol):
             Args:
                 mixList (list): a list of active mixnodes in the network.
         """
-        # ====== This is generating fake messages to fake reall traffic=====
-        self.turnOnFakeMessaging()
         self.measureSentMessages()
         self.save_measurments()
-        # ==================================================================
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
         self.turnOnBufferChecking(mixList)
+        # ====== This is generating fake messages to fake reall traffic=====
+        self.turnOnFakeMessaging()
+        # ==================================================================
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -205,7 +168,10 @@ class Client(DatagramProtocol):
         """
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
-        reactor.callLater(interval, self.checkBuffer, mixList)
+        if self.TESTMODE:
+            reactor.callLater(interval, self.generateFakePayload)
+        else:
+            reactor.callLater(interval, self.checkBuffer, mixList)
 
     def turnOnCoverLoops(self, mixList):
         """ Function turns on a loop generating a loop cover traffic.
@@ -215,7 +181,11 @@ class Client(DatagramProtocol):
         """
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
-        reactor.callLater(interval, self.generateLoopTraffic, mixList)
+        if self.TESTMODE:
+            print "TESTMODE"
+            reactor.callLater(interval, self.generateFakeLoopTraffic)
+        else:
+            reactor.callLater(interval, self.generateLoopTraffic, mixList)
 
     def turnOnCoverMsg(self, mixList):
         """ Function turns on a loop generating a drop cover traffic.
@@ -225,7 +195,10 @@ class Client(DatagramProtocol):
         """
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
-        reactor.callLater(interval, self.generateCoverTraffic, mixList)
+        if self.TESTMODE:
+            reactor.callLater(interval, self.generateFakeCoverTraffic)
+        else:
+            reactor.callLater(interval, self.generateCoverTraffic, mixList)
 
     def checkBuffer(self, mixList):
         """ Function sends message from buffer or drop messages.
@@ -243,7 +216,7 @@ class Client(DatagramProtocol):
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.checkBuffer, mixList)
         except Exception, e:
-            print "[%s] > ERROR: Something went wrong during buffer checking: %s" % (self.name, str(e))
+                print "[%s] > ERROR: Something went wrong during buffer checking: %s" % (self.name, str(e))
 
     def generateLoopTraffic(self, mixList):
         """ Function sends hearbeat message following the Poisson distribution
@@ -252,7 +225,6 @@ class Client(DatagramProtocol):
             Args:
             mixList (list): a list of active mixnodes in the network.
         """
-
         try:
             self.sendHeartBeat(mixList, time.time())
             interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
@@ -267,7 +239,6 @@ class Client(DatagramProtocol):
             Args:
             mixList (list): a list of active mixnodes in the network.
         """
-
         try:
             self.sendDropMessage(mixList)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
@@ -275,44 +246,68 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "[%s] > ERROR: Drop cover traffic, something went wrong: %s" % (self.name, str(e))
 
+    def generateFakeLoopTraffic(self):
+        try:
+            packet, addr = random.choice(tuple(self.testHeartbeats))
+            self.send("ROUT" + packet, addr)
+            interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+            reactor.callLater(interval, self.generateFakeLoopTraffic)
+        except Exception, e:
+            print "ERROR: ", str(e)
+
+    def generateFakeCoverTraffic(self):
+        try:
+            packet, addr = random.choice(tuple(self.testDrops))
+            self.send("ROUT" + packet, addr)
+            interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
+            reactor.callLater(interval, self.generateFakeCoverTraffic)
+        except Exception, e:
+            print "ERROR", str(e)
+
+    def generateFakePayload(self):
+        try:
+            packet, addr = random.choice(tuple(self.testPayload))
+            self.send("ROUT" + packet, addr)
+            interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
+            reactor.callLater(interval, self.generateFakePayload)
+        except Exception, e:
+            print "ERROR: ", str(e)
+
+
     def datagramReceived(self, data, (host, port)):
-        self.receivedQueue.put((data, (host, port)))
-        #print "[%s] > Received new packet" % self.name
-        # try:
-        #     self.processQueue.put((data, (host, port)))
-        # except Exception, e:
-        #     print "[%s] > ERROR: %s " % (self.name, str(e))
+        #self.receivedQueue.put((data, (host, port)))
+        #print "[%s] > datagram Received" % self.name
+        try:
+            self.processQueue.put((data, (host, port)))
+        except Exception, e:
+            print "[%s] > ERROR: %s " % (self.name, str(e))
 
     def do_PROCESS(self, (data, (host, port))): 
         self.processMessage(data, (host, port))
-        self.receivedQueue.get().addCallback(self.do_PROCESS)
+        #self.receivedQueue.get().addCallback(self.do_PROCESS)
         
-        # try:
-        #     reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
-        # except Exception, e:
-        #     print "[%s] > ERROR: %s" % (self.name, str(e))
+        try:
+            reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
 
     def get_and_addCallback(self, f):
         self.processQueue.get().addCallback(f)
 
     def processMessage(self, data, (host, port)):
-        # data, (host, port) = obj        
+        """ Function starts to processe a received message.
 
-        # if data[:4] == "EMPT":
-        #     print "[%s] > Received information: It seems that mixnet does not have any nodes." % self.name
-        # if data[:4] == "RINF":
-        #     print "[%s] > Received information: about the active mixnodes from %s,  %d." % (self.name, host, port)
-        #     dataList = petlib.pack.decode(data[4:])
-        #     for element in dataList:
-        #         self.mixnet.append(format3.Mix(element[0], element[1], element[2], element[3]))
+            Args:
+            data (str) - a string content of a received packet,
+            host (str) - host of the sender,
+            port (int) - port of the sender
+        """        
         if data[:4] == "PMSG":
-            #print "Received message"
             self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
             print "[%s] > Received NOMSG." % self.name
         if data == "NOASG":
             print "[%s] > Received NOASG from %s" % (self.name, host)
-
 
     def do_PMSG(self, data, host, port):
 
@@ -339,7 +334,6 @@ class Client(DatagramProtocol):
 
         path = [self.provider] + mixnet + [receiver.provider]
         current_time = time.time()
-        # delay = [current_time + sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
         delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
         package = format3.create_mixpacket_format(self, receiver, path, setup, dest_message, return_message, delay, dropFlag, typeFlag)
         self.sentElements.add(package[0])
@@ -445,7 +439,6 @@ class Client(DatagramProtocol):
             else:
                 message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False)
             self.buffer.append(("ROUT" + message, addr))
-            # print "[%s] > Buffered message to client %s" % (self.name, receiver.name)
         except Exception, e:
             print "[%s] > ERROR: Message could not be buffered for send: %s" % (self.name, str(e))
 
@@ -554,6 +547,26 @@ class Client(DatagramProtocol):
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, group)
 
+    def createTestingSet(self):
+        self.testHeartbeats = set()
+        self.testDrops = set()
+        self.testPayload = set()
+            
+        for i in range(30):
+            mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+            timestamp = time.time()
+            self.testHeartbeats.add(self.createHeartbeat(mixpath, timestamp))
+        for i in range(30):
+            mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+            self.testDrops.add(self.createDropMessage(mixpath))
+        for i in range(30):
+            mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+            r = random.choice(self.usersPubs)
+            msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+            msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+            packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
+            self.testPayload.add((packet, addr))
+
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
 
@@ -641,23 +654,12 @@ class Client(DatagramProtocol):
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
-            #if providerId:
             
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
             return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-            
-            #else:
-            #    c.execute("SELECT * FROM %s ORDER BY RANDOM() LIMIT 1" % ("Providers"))
-            #    providersData = c.fetchall()
-            #    providersList = []
-            #    for p in providersData:
-            #        providersList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4]))) 
-            #    return random.choice(providersList)
-            # self.transport.write("PING"+self.name, (self.provider.host, self.provider.port))
-            #print "Provider taken."
-        
+
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
@@ -687,6 +689,8 @@ class Client(DatagramProtocol):
         self.readInUsersPubs(databaseName)
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
+        if self.TESTMODE:
+            self.createTestingSet()
         self.turnOnMessaging(self.mixnet)
 
     def measureSentMessages(self):
