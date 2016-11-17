@@ -178,7 +178,7 @@ class MixNode(DatagramProtocol):
 
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
-		if data[:4] == "ROUT":
+		elif data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
 				self.sendMessage("ACKN"+idt, (host, port))
@@ -186,14 +186,16 @@ class MixNode(DatagramProtocol):
 				self.gbReceived += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
-		if data[:4] == "RINF":
+		elif data[:4] == "RINF":
 			try:
 				self.do_RINF(data[4:])
 			except Exception, e:
 				print "ERROR: ", str(e)
-		if data.startswith("ACKN"):
+		elif data.startswith("ACKN"):
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
+		else:
+			print "Processing Message - message not recognized"
 
 
 	def do_INFO(self, data, (host, port)):

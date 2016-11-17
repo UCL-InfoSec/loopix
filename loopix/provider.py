@@ -102,24 +102,7 @@ class Provider(MixNode):
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
-        # if data[:4] == "RINF":
-        #     dataList = petlib.pack.decode(data[4:])
-        #     for element in dataList:
-        #         self.mixList.append(
-        #             format3.Mix(
-        #                 element[0],
-        #                 element[1],
-        #                 element[2],
-        #                 element[3]))
-        # if data[:4] == "UPUB":
-        #     dataList = petlib.pack.decode(data[4:])
-        #     for element in dataList:
-        #         self.usersPubs.append(format3.User(element[0], element[1], element[2], element[3], element[4]))
-        #     # print "[%s] > Provider received public information of users registered in the system" % self.name
-        # if data[:4] == "INFO":
-        #     self.sendInfoMixnet(host, port)
-        #     # print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
-        if data[:4] == "ROUT":
+        elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
                 self.sendMessage("ACKN"+idt, (host, port))
@@ -127,11 +110,13 @@ class Provider(MixNode):
                 self.gbReceived += 1
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
-        if data[:4] == "ACKN":
+        elif data[:4] == "ACKN":
             if data in self.expectedACK:
                 self.expectedACK.remove(data)
-        if data[:4] == "PING":
+        elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
+        else:
+            print "Processing Message - message not recognized"
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
