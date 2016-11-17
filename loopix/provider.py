@@ -87,7 +87,6 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         self.processMessage(obj)
-        self.bProcessed += 1
 
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -117,6 +116,7 @@ class Provider(MixNode):
             self.subscribeClient(data[4:], host, port)
         else:
             print "Processing Message - message not recognized"
+        self.bProcessed += 1
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 

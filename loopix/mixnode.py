@@ -161,7 +161,6 @@ class MixNode(DatagramProtocol):
 
 	def do_PROCESS(self, (data, (host, port))):
 		self.processMessage(data, (host, port))
-		self.bProcessed += 1
 
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -193,6 +192,7 @@ class MixNode(DatagramProtocol):
 				self.expectedACK.remove(data)
 		else:
 			print "Processing Message - message not recognized"
+		self.bProcessed += 1
 
 
 	def do_INFO(self, data, (host, port)):
@@ -252,8 +252,6 @@ class MixNode(DatagramProtocol):
 				if (xtoPort is None and xtoHost is None and xtoName is None) and forw_msg is None:
 					print "[%s] > Message discarded" % self.name
 				else:
-					# print ("[%s] > Bounce decrypted. ")
-					# self.addToQueue(("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort), idt), delay)
 					try:
 						if delay > 0:
 							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
@@ -609,7 +607,7 @@ class MixNode(DatagramProtocol):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
 		self.d.callback(self.mixList)
-		self.turnOnTagedSending()
+		#self.turnOnTagedSending()
 
 	def takePublicInfo(self):
 		return petlib.pack.encode([self.name, self.port, self.host, self.pubk])
