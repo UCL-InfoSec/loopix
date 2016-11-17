@@ -179,10 +179,10 @@ class MixNode(DatagramProtocol):
 			self.do_INFO(data, (host, port))
 		if data[:4] == "ROUT":
 			try:
-				self.gbReceived += 1
 				idt, msgData = petlib.pack.decode(data[4:])
 				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
+				self.gbReceived += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
 		if data[:4] == "RINF":

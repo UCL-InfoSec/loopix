@@ -79,16 +79,15 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
-        self.bReceived += 1
         try:
             self.processQueue.put((data, (host, port)))
+            self.bReceived += 1
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
     def do_PROCESS(self, obj):
         self.processMessage(obj)
         self.bProcessed += 1
-
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
@@ -121,10 +120,10 @@ class Provider(MixNode):
         #     # print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
         if data[:4] == "ROUT":
             try:
-                self.gbReceived += 1
                 idt, msgData = petlib.pack.decode(data[4:])
                 self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
+                self.gbReceived += 1
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
         if data[:4] == "ACKN":
