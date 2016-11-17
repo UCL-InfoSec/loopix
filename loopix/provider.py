@@ -86,8 +86,9 @@ class Provider(MixNode):
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
     def do_PROCESS(self, obj):
-        self.processMessage(obj)
         self.bProcessed += 1
+        self.processMessage(obj)
+
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
