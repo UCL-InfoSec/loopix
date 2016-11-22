@@ -113,7 +113,7 @@ class MixNode(DatagramProtocol):
 
 	def turnOnTagedSending(self):
 		lc = task.LoopingCall(self.sendTagedMessage)
-		lc.start(60, True)
+		lc.start(30, True)
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
