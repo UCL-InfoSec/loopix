@@ -84,6 +84,7 @@ class MixNode(DatagramProtocol):
 
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
+		self.savedLatency = []
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -113,7 +114,9 @@ class MixNode(DatagramProtocol):
 
 	def turnOnTagedSending(self):
 		lc = task.LoopingCall(self.sendTagedMessage)
-		lc.start(30, True)
+		lc.start(10, True)
+		lc2 = task.LoopingCall(self.saveLatency)
+		lc2.start(360, False)
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
@@ -494,10 +497,20 @@ class MixNode(DatagramProtocol):
 			if msg[2:] in self.tagedHeartbeat:
 				latency = float(time.time()) - float(self.tagedHeartbeat[msg[2:]])
 				del self.tagedHeartbeat[msg[2:]]
-				with open('latency.csv', 'ab') as outfile:
-					csvW = csv.writer(outfile, delimiter=',')
-					data = [[latency]]
-					csvW.writerows(data)
+				self.savedLatency.append(latency)
+				#with open('latency.csv', 'ab') as outfile:
+				#	csvW = csv.writer(outfile, delimiter=',')
+				#	data = [[latency]]
+				#	csvW.writerows(data)
+		except Exception, e:
+			print str(e)
+
+	def saveLatency(self):
+		try:
+			with open('latency.csv', 'ab') as outfile:
+				csvW = csv.writer(outfile, delimiter=',')
+				csvW.writerows(self.savedLatency)
+			self.savedLatency = []
 		except Exception, e:
 			print str(e)
 
