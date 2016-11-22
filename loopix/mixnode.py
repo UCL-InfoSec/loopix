@@ -509,7 +509,7 @@ class MixNode(DatagramProtocol):
 		try:
 			with open('latency.csv', 'ab') as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
-				csvW.writerows(self.savedLatency)
+				csvW.writerows([self.savedLatency])
 			self.savedLatency = []
 		except Exception, e:
 			print str(e)
