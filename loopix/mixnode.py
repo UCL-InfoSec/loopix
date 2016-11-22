@@ -498,18 +498,14 @@ class MixNode(DatagramProtocol):
 				latency = float(time.time()) - float(self.tagedHeartbeat[msg[2:]])
 				del self.tagedHeartbeat[msg[2:]]
 				self.savedLatency.append(latency)
-				#with open('latency.csv', 'ab') as outfile:
-				#	csvW = csv.writer(outfile, delimiter=',')
-				#	data = [[latency]]
-				#	csvW.writerows(data)
 		except Exception, e:
 			print str(e)
 
 	def saveLatency(self):
 		try:
 			with open('latency.csv', 'ab') as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				csvW.writerows([self.savedLatency])
+				csvW = csv.writer(outfile, delimiter='\n')
+				csvW.writerow(self.savedLatency)
 			self.savedLatency = []
 		except Exception, e:
 			print str(e)
