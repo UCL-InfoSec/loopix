@@ -35,6 +35,7 @@ with open('config.json') as infile:
 TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
 C = float(_PARAMS["parametersClients"]["C"])
+FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
 
 class Client(DatagramProtocol):
     def __init__(self, setup, name, port, host, testUser=False,
@@ -102,7 +103,7 @@ class Client(DatagramProtocol):
 
         self.readInData("example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
-        if self.UPDATE_PARAMS=="True":
+        if self.UPDATE_PARAMS=="True" or self.TESTUSER:
             reactor.callLater(300.0, self.updateParams)
 
     def turnOnProcessing(self):
@@ -110,11 +111,7 @@ class Client(DatagramProtocol):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def sendPing(self):
-
         self.send("PING"+self.name, (self.provider.host, self.provider.port))
-        #def send_to_ip(IPAddr):
-        #    self.transport.write("PING"+self.name, (IPAddr, self.provider.port))
-        #reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
@@ -160,7 +157,8 @@ class Client(DatagramProtocol):
         self.turnOnCoverMsg(mixList)
         self.turnOnBufferChecking(mixList)
         # ====== This is generating fake messages to fake reall traffic=====
-        self.turnOnFakeMessaging()
+        if FAKE_MESSAGING:
+            self.turnOnFakeMessaging()
         # ==================================================================
 
     def turnOnBufferChecking(self, mixList):
@@ -317,7 +315,7 @@ class Client(DatagramProtocol):
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
-            #print "[%s] > New message unpacked: " % self.name
+            # print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
