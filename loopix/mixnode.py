@@ -85,6 +85,7 @@ class MixNode(DatagramProtocol):
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
 		self.savedLatency = []
+		self.timeits = []
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -280,6 +281,8 @@ class MixNode(DatagramProtocol):
 			setup (tuple): a setup of a group used in the protocol,
 			message (list): a received message which should be enc/dec.
 		"""
+		ts = time.time()
+
 		G, o, g, o_bytes = setup
 		elem = message[0]
 		forward = message[1]
@@ -381,6 +384,8 @@ class MixNode(DatagramProtocol):
 				new_back = "None"
 
 			new_element = new_element.export()
+			te = time.time()
+			self.timeits.append(te-ts)
 			return (xto, [new_element, new_forw, new_back], idt, delay)
 
 	def checkMac(self, mac):
@@ -657,9 +662,16 @@ class MixNode(DatagramProtocol):
 			with open("performanceMixnode.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter=',')
 				csvW.writerows(self.measurments)
+			self.measurments = []
 		except Exception, e:
 			print "Error while saving: ", str(e)
-		self.measurments = []
+		try:
+			with open("timeit.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter='\n')
+				csvW.writerow(self.timeits)
+			self.timeits = []
+		except Exception, e:
+			print "Error while saving: ", str(e)
 		# try:
 		# 	with open("reliabilityMixnode.csv", "ab") as outfile:
 		# 		csvW = csv.writer(outfile, delimiter=',')
