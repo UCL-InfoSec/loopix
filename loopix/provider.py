@@ -257,8 +257,13 @@ class Provider(MixNode):
             with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
                 csvW.writerows(self.measurments)
+            self.measurments = []
         except Exception, e:
             print "ERROR saving to file: ", str(e)
-        self.measurments = []
-
-
+        try:
+            with open("timeit.csv", "ab") as outfile:
+                csvW = csv.writer(outfile, delimiter='\n')
+                csvW.writerow(self.timeits)
+            self.timeits = []
+        except Exception, e:
+            print str(e)
