@@ -661,7 +661,7 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        def resolve_to_ip(IPAddrs, name, port, pkey):
+        def save_as_ip(IPAddrs, name, port, pkey):
             return format3.Mix(name, port, IPAddrs, pkey)
 
         try:
