@@ -679,7 +679,7 @@ class Client(DatagramProtocol):
             #reactor.resolve(str(pData[3])).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
             IP = yield reactor.resolve(str(pData[3]))
             print IP
-            return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
+            #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
