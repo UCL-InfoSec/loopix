@@ -632,6 +632,10 @@ class Client(DatagramProtocol):
                 database (str) - dir and name of the database.
         """
         usersList = []
+
+        def save_as_ip(IPAddrs, name, port, pkey, provider):
+            usersList.append(format3.User(name, port, IPAddrs, pkey, provider))
+
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
@@ -640,7 +644,8 @@ class Client(DatagramProtocol):
             for u in users:
                 p = self.takeProvidersData("example.db", u[5])
                 if not self.name == u[1]:
-                    usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
+                    #usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
+                    reactor.resolve(u[3]).addCallback(save_as_ip, name=str(u[1]), port=u[2], pubk=petlib.pack.decode(u[4]), provider=p)
             db.close()
             return usersList
         except Exception, e:
@@ -656,7 +661,9 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        providers = []
+        def save_as_ip(IPAddrs, name, port, pkey):
+            return format3.Mix(name, port, IPAddrs, pkey)
+
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
@@ -664,8 +671,8 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
-            return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-
+            #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
+            return reactor.resolve(str(pData[3])).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
@@ -678,13 +685,18 @@ class Client(DatagramProtocol):
                 Args:
                 database (str) - dir and name of the database.
         """
+        def save_as_ip(IPAddrs, name, port, pkey):
+            self.mixnet.append(format3.Mix(name, port, IPAddrs, pkey))
+
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
             c.execute("SELECT * FROM %s" % "Mixnodes")
             mixdata = c.fetchall()
             for m in mixdata:
-                self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+                #self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+                reactor.resolve(m[3]).addCallback(save_as_ip, m[1], m[2], petlib.pack.decode(m[4]))
+            print self.mixnet
         except Exception, e:
             print "ERROR: ", str(e)
 
