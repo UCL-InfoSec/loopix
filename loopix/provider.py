@@ -123,7 +123,10 @@ class Provider(MixNode):
                 host (str): host of the requesting client,
                 port (int): port of the requesting client.
         """
-        self.flushStorage(name, (host, port))
+        try:
+            self.flushStorage(name, (host, port))
+        except Exception, e:
+            print "ERROR during flushing: ", str(e)
         # def send_to_ip(IPAddrs):
         #     self.flushStorage(name, (IPAddrs, port))
         #     self.resolvedAdrs[host] = IPAddrs

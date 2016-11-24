@@ -589,6 +589,7 @@ class MixNode(DatagramProtocol):
 		"""
 		def save_as_ip(IPAddr, name, port, pkey):
 			self.mixList.append(format3.Mix(name, port, IPAddr, pkey))
+			print self.mixList
 
 		try:
 			db = sqlite3.connect(database)
