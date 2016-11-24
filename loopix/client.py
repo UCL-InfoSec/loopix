@@ -651,6 +651,7 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "ERROR: ", str(e)
 
+    @inlineCallBacks
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
@@ -675,7 +676,10 @@ class Client(DatagramProtocol):
             fetchData = c.fetchall()
             pData = fetchData.pop()
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-            reactor.resolve(str(pData[3])).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
+            #reactor.resolve(str(pData[3])).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
+            IP = reactor.resolve(str(pData[3]))
+            print IP
+            return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
