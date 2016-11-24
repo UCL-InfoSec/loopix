@@ -651,7 +651,7 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "ERROR: ", str(e)
 
-    @defer.inlineCallBacks
+    @defer.inlineCallbacks
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
