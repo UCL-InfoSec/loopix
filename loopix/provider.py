@@ -21,10 +21,6 @@ import supportFunctions as sf
 from processQueue import ProcessQueue
 import numpy
 
-
-# from twisted.logger import jsonFileLogObserver, Logger
-# log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
-
 class Provider(MixNode):
 
     def __init__(self, name, port, host, setup, privk=None, pubk=None):
@@ -128,9 +124,9 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
 
-        def send_to_ip(IPAddrs):
-            self.flushStorage(name, (IPAddrs, port))
-            self.resolvedAdrs[host] = IPAddrs
+        # def send_to_ip(IPAddrs):
+        #     self.flushStorage(name, (IPAddrs, port))
+        #     self.resolvedAdrs[host] = IPAddrs
             # if name in self.storage:
             #     if self.storage[name]:
             #         for _ in range(self.MAX_RETRIEVE):
@@ -145,7 +141,11 @@ class Provider(MixNode):
         if host in self.resolvedAdrs:
             self.flushStorage(name, (self.resolvedAdrs[host], port))
         else:
-            reactor.resolve(host).addCallback(send_to_ip)
+            reactor.resolve(host).addCallback(self.send_to_ip, host=host, port=port, name=name)
+
+    def send_to_ip(self, IPAddrs, host, port, name):
+        self.flushStorage(name, (IPAddrs, port))
+        self.resolvedAdrs[host] = IPAddrs
 
     def flushStorage(self, name, (ip_host, port)):
         if name in self.storage:

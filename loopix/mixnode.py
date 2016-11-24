@@ -23,7 +23,6 @@ import csv
 from processQueue import ProcessQueue
 from sets import Set
 import json
-from twisted.logger import jsonFileLogObserver, Logger
 import hashlib
 
 with open('config.json') as infile:
@@ -34,8 +33,6 @@ TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
 TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
 MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
 NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
-
-# log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
 
 class MixNode(DatagramProtocol):
 	"""Class of Mixnode creates an object of a mixnode,
@@ -434,15 +431,19 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		def send_to_ip(IPaddrs):
-			self.transport.write(data, (IPaddrs, port))
-			self.resolvedAdrs[host] = IPaddrs
+		# def send_to_ip(IPaddrs):
+		# 	self.transport.write(data, (IPaddrs, port))
+		# 	self.resolvedAdrs[host] = IPaddrs
 
 		if host in self.resolvedAdrs:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
 		else:
 			# Resolve and call the send function
-			reactor.resolve(host).addCallback(send_to_ip)
+			reactor.resolve(host).addCallback(self.send_to_ip, host=host, port=port, data=data)
+
+	def send_to_ip(self, IPaddrs, host, port, data):
+		self.transport.write(data, (IPaddrs, port))
+		self.resolvedAdrs[host] = IPaddrs
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
