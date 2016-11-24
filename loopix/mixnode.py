@@ -128,24 +128,24 @@ class MixNode(DatagramProtocol):
 	def errbackHeartbeats(self, failure):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
-	def sendRequest(self, rqs):
-		""" Function sends a particular request to the bulletin board
+	# def sendRequest(self, rqs):
+	# 	""" Function sends a particular request to the bulletin board
 
-			Args:
-			rqs (str): the rqs shortcut which should be send.
-		"""
-		def send_to_ip(IPAddrs):
-			self.transport.write(rqs, (IPAddrs, self.boardPort))
-		reactor.resolve(self.boardHost).addCallback(send_to_ip)
+	# 		Args:
+	# 		rqs (str): the rqs shortcut which should be send.
+	# 	"""
+	# 	def send_to_ip(IPAddrs):
+	# 		self.transport.write(rqs, (IPAddrs, self.boardPort))
+	# 	reactor.resolve(self.boardHost).addCallback(send_to_ip)
 
-	def announce(self):
-		""" Mixnode annouces its presence in the network to the bulletin board.
-		"""
-		resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
-		def send_announce(IPAddr):
-			self.transport.write(resp, (IPAddr, self.boardPort))
-			# print "[%s] > Announced itself to the board." % self.name
-		reactor.resolve(self.boardHost).addCallback(send_announce)
+	# def announce(self):
+	# 	""" Mixnode annouces its presence in the network to the bulletin board.
+	# 	"""
+	# 	resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
+	# 	def send_announce(IPAddr):
+	# 		self.transport.write(resp, (IPAddr, self.boardPort))
+	# 		# print "[%s] > Announced itself to the board." % self.name
+	# 	reactor.resolve(self.boardHost).addCallback(send_announce)
 
 	def datagramReceived(self, data, (host, port)):
 
@@ -431,19 +431,16 @@ class MixNode(DatagramProtocol):
 			port (int): port of the destination.
 		"""
 
-		# def send_to_ip(IPaddrs):
-		# 	self.transport.write(data, (IPaddrs, port))
-		# 	self.resolvedAdrs[host] = IPaddrs
+		self.transport.write(data, (host, port))
+		# if host in self.resolvedAdrs:
+		# 	self.transport.write(data, (self.resolvedAdrs[host], port))
+		# else:
+		# 	# Resolve and call the send function
+		# 	reactor.resolve(host).addCallback(self.send_to_ip, host=host, port=port, data=data)
 
-		if host in self.resolvedAdrs:
-			self.transport.write(data, (self.resolvedAdrs[host], port))
-		else:
-			# Resolve and call the send function
-			reactor.resolve(host).addCallback(self.send_to_ip, host=host, port=port, data=data)
-
-	def send_to_ip(self, IPaddrs, host, port, data):
-		self.transport.write(data, (IPaddrs, port))
-		self.resolvedAdrs[host] = IPaddrs
+	# def send_to_ip(self, IPaddrs, host, port, data):
+	# 	self.transport.write(data, (IPaddrs, port))
+	# 	self.resolvedAdrs[host] = IPaddrs
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
@@ -590,13 +587,17 @@ class MixNode(DatagramProtocol):
 				Args:
 				database (str) - dir and name of the database.
 		"""
+		def save_as_ip(IPAddr, name, port, pkey):
+			self.mixList.append(format3.Mix(name, port, IPAddr, pkey))
+
 		try:
 			db = sqlite3.connect(database)
 			c = db.cursor()
 			c.execute("SELECT * FROM Mixnodes")
 			mixnodes = c.fetchall()
 			for m in mixnodes:
-				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+				#self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+				reactor.resolve(m[3]).addCallback(save_as_ip, name=m[1], port=m[2], pkey=petlib.pack.decode(m[4]))
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 
@@ -607,13 +608,17 @@ class MixNode(DatagramProtocol):
 				Args:
 				database (str) - dir and name of the database
 		"""
+		def save_as_ip(IPAddr, name, port, pkey):
+			self.prvList.append(format3.Mix(name, port, IPAddr, pkey))
+
 		try:
 			db = sqlite3.connect(database)
 			c = db.cursor()
 			c.execute("SELECT * FROM Providers")
 			fetched = c.fetchall()
 			for p in fetched:
-				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+				#self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+				reactor.resolve(p[3]).addCallback(save_as_ip, name=p[1], port=p[2], pkey=petlib.pack.decode(p[4]))
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 

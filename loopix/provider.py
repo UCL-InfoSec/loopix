@@ -123,10 +123,10 @@ class Provider(MixNode):
                 host (str): host of the requesting client,
                 port (int): port of the requesting client.
         """
-
-        def send_to_ip(IPAddrs):
-            self.flushStorage(name, (IPAddrs, port))
-            self.resolvedAdrs[host] = IPAddrs
+        self.flushStorage(name, (host, port))
+        # def send_to_ip(IPAddrs):
+        #     self.flushStorage(name, (IPAddrs, port))
+        #     self.resolvedAdrs[host] = IPAddrs
             # if name in self.storage:
             #     if self.storage[name]:
             #         for _ in range(self.MAX_RETRIEVE):
@@ -138,10 +138,10 @@ class Provider(MixNode):
 
             # else:
             #     self.transport.write("NOASG", (IPAddrs, port))
-        if host in self.resolvedAdrs:
-            self.flushStorage(name, (self.resolvedAdrs[host], port))
-        else:
-            reactor.resolve(host).addCallback(send_to_ip)
+        # if host in self.resolvedAdrs:
+        #     self.flushStorage(name, (self.resolvedAdrs[host], port))
+        # else:
+        #     reactor.resolve(host).addCallback(send_to_ip)
 
     def flushStorage(self, name, (ip_host, port)):
         if name in self.storage:
