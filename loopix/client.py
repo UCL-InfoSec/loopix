@@ -99,12 +99,12 @@ class Client(DatagramProtocol):
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
-        self.sendPing()
+        # self.sendPing()
 
-        self.readInData("example.db")
-        reactor.callLater(100.0, self.turnOnProcessing)
-        if self.UPDATE_PARAMS=="True" or self.TESTUSER:
-            reactor.callLater(300.0, self.updateParams)
+        # self.readInData("example.db")
+        # reactor.callLater(100.0, self.turnOnProcessing)
+        # if self.UPDATE_PARAMS=="True" or self.TESTUSER:
+        #     reactor.callLater(300.0, self.updateParams)
 
     def turnOnProcessing(self):
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
