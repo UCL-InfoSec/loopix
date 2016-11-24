@@ -662,7 +662,7 @@ class Client(DatagramProtocol):
                                     we want to pull.
         """
         def save_as_ip(IPAddrs, name, port, pkey):
-            return ormat3.Mix(name, port, IPAddrs, pkey)
+            return format3.Mix(name, port, IPAddrs, pkey)
 
         try:
             db = sqlite3.connect(database)
