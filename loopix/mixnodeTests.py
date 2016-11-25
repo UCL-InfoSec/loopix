@@ -77,21 +77,21 @@ def testMessage(testSender, testParticipantsPubs):
 	
 	return message
 
-def testAnnouce(testMixes):
-	mix, _ = testMixes
-	mix.announce()
-	announceMsg, addr = mix.transport.written[0]
-	assert addr == ("127.0.0.1", 9998)
-	assert announceMsg[:4] == "MINF"
-	plainMsg = petlib.pack.decode(announceMsg[4:])
-	assert plainMsg[0] ==  mix.name and plainMsg[1] == mix.port and plainMsg[2] == mix.host and plainMsg[3].pt_eq(mix.pubk)
+# def testAnnouce(testMixes):
+# 	mix, _ = testMixes
+# 	mix.announce()
+# 	announceMsg, addr = mix.transport.written[0]
+# 	assert addr == ("127.0.0.1", 9998)
+# 	assert announceMsg[:4] == "MINF"
+# 	plainMsg = petlib.pack.decode(announceMsg[4:])
+# 	assert plainMsg[0] ==  mix.name and plainMsg[1] == mix.port and plainMsg[2] == mix.host and plainMsg[3].pt_eq(mix.pubk)
 
-def testSendRequest(testMixes):
-	mix, _ = testMixes
-	mix.sendRequest("REQUEST")
-	msg, addr = mix.transport.written[0]
-	assert msg == "REQUEST"
-	assert addr == ("127.0.0.1", 9998)
+# def testSendRequest(testMixes):
+# 	mix, _ = testMixes
+# 	mix.sendRequest("REQUEST")
+# 	msg, addr = mix.transport.written[0]
+# 	assert msg == "REQUEST"
+# 	assert addr == ("127.0.0.1", 9998)
 
 def testDo_INFO(testMixes):
 	mix, mix2 = testMixes
@@ -146,24 +146,31 @@ def testDo_RINF(testMixes):
 def testSendHeartbeat(testMixes):
 	mix1, mix2 = testMixes
 	mix3 = MixNode("M3", 8003, "127.0.0.1", setup)
+	provider = Provider("P1", 8000, "127.0.0.1", setup)
 	mix3.transport = proto_helpers.FakeDatagramTransport()
+	provider.transport = proto_helpers.FakeDatagramTransport()
+
+	mix1.prvList.append(provider)
+	predefinedPath = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
+	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), format3.Mix(provider.name, provider.port, provider.host, provider.pubk)]
 	mix1.sendHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
-	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)])
-	assert len(mix1.heartbeatsSent) == 1
+	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)], predefinedPath)
+	assert len(mix1.transport.written) == 1
 
 	msg, addr = mix1.transport.written[0]
 	assert addr == (mix2.host, mix2.port)
 
-	mix2.datagramReceived(msg, addr)
-	timestamp, packet = mix2.Queue.pop()
-	assert packet[1] == (mix3.host, mix3.port)
+	xto, packet, idt, delay = mix2.mix_operate(mix2.setup, petlib.pack.decode(msg[4:])[1])
+	assert xto == [mix3.port, mix3.host, mix3.name]
 
-	mix3.datagramReceived(packet[0], packet[1])
-	timestamp2, packet2 = mix3.Queue.pop()
-	assert packet2[1] == (mix1.host, mix1.port)
 
-	mix1.datagramReceived(packet2[0], packet2[1])
-	assert len(mix1.heartbeatsSent) == 0	
+	xto, packet, idt, delay = mix3.mix_operate(mix1.setup, packet)
+	assert xto == [provider.port, provider.host, provider.name]
+
+	xto, packet, idt, delay = provider.mix_operate(provider.setup, packet)
+	assert xto == [mix1.port, mix1.host, mix1.name]
+
+	assert mix1.mix_operate(mix1.setup, packet)	== None
 
 
 def testAES_ENC_DEC(testMixes):
@@ -194,7 +201,7 @@ def testCheckSeenMAC(testMixes):
 	mix1, mix2 = testMixes
 	fake_mac = '0x23'
 	fake_mac_2 = '0x32'
-	mix1.seenMacs.append(fake_mac)
+	mix1.seenMacs.add(fake_mac)
 	assert mix1.checkMac(fake_mac) == True and mix1.checkMac(fake_mac_2) == False
 
 

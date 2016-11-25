@@ -48,6 +48,9 @@ def testParticipants():
 
     return setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver
 
+def testStartClient(testParticipants):
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    sender.startProtocol()
 
 def testInitClient(testParticipants):
     setup = format3.setup()
@@ -186,13 +189,16 @@ def test_readMessage(testParticipants):
         receiver.host, receiver.pubk, receiver.provider), [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)],
     "MSGFORW", "MSGBACK")
     msg, addr = sender.buffer.pop()
-    provider_s.do_PROCESS((msg, addr))
-    time, packet = provider_s.Queue.pop()
-    mix1.do_PROCESS((packet[0], packet[1]))
-    time2, packet2 = mix1.Queue.pop()
-    provider_r.do_PROCESS((packet2[0], packet2[1]))
-    msg, latency = petlib.pack.decode(provider_r.storage[receiver.name].pop())
-    assert receiver.readMessage(msg, (provider_r.host, provider_r.port)).startswith("MSGFORW")
+    #provider_s.do_PROCESS((msg, addr))
+    u = petlib.pack.decode(msg[4:])
+    xto1, msg1, idt1, delay1 = provider_s.mix_operate(provider_s.setup, u[1])
+    
+    # time, packet = provider_s.Queue.pop()
+    xto2, msg2, idt2, delay2 = mix1.mix_operate(mix1.setup, msg1)
+    # time2, packet2 = mix1.Queue.pop()
+    xto3, msg3, idt3, delay3 = provider_r.mix_operate(provider_r.setup, msg2)
+    # msg, latency = petlib.pack.decode(provider_r.storage[receiver.name].pop())
+    assert receiver.readMessage(msg3, (provider_r.host, provider_r.port)).startswith("MSGFORW")
 
 
 def test_send(testParticipants):

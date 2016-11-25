@@ -301,7 +301,6 @@ def paddString(input, length):
 
 def aes_enc_dec(key, iv, input):
 		"""A helper function which implements the AES-128 encryption in counter mode CTR"""
-
 		aes = Cipher("AES-128-CTR")
 		enc = aes.enc(key, iv)
 		output = enc.update(input)
@@ -380,5 +379,4 @@ def test_createPacket():
 	xto3, message3, idt3, delay3 = mix2.mix_operate(s, message2)
 	pt = receiver.readMessage(message3, ("127.0.0.1",9000))
 	assert pt == "Hello"
-
 

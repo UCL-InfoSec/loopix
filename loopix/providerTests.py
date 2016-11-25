@@ -83,22 +83,22 @@ def test_do_PULL(testProvider):
 		assert msg, (TH_3, TP_3) == "PMSG" + petlib.pack.encode("TestMessage%d"%i)
 	assert len(provider.storage[TN_3]) == old_len-provider.MAX_RETRIEVE
 
-def testProviderRINFRequest(testProvider):
-	setup, provider = testProvider
-	testMix = MixNode("M8001", 8001, "127.0.0.1", setup)
-	mixInfo = format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk)
-	provider.do_PROCESS(("RINF"+petlib.pack.encode([mixInfo]), ("127.0.0.1", 9000)))
-	assert format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk) in provider.mixList
+# def testProviderRINFRequest(testProvider):
+# 	setup, provider = testProvider
+# 	testMix = MixNode("M8001", 8001, "127.0.0.1", setup)
+# 	mixInfo = format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk)
+# 	provider.do_PROCESS(("RINF"+petlib.pack.encode([mixInfo]), ("127.0.0.1", 9000)))
+# 	assert format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk) in provider.mixList
 
-def testProviderUPUBRequest(testProvider):
-	setup, provider = testProvider
-	client = Client(setup, "test@mail.com", 7000, "127.0.0.1")
-	client.provider = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
-	reqrsp = "UPUB" + petlib.pack.encode([[client.name, client.port, client.host, client.pubk, client.provider]])
-	provider.do_PROCESS((reqrsp, ("127.0.0.1", 9999)))
-	assert format3.User(client.name, client.port, client.host, client.pubk, 
-		[client.provider.name, client.provider.port,
-		client.provider.host, client.provider.pubk]) in provider.usersPubs 
+# def testProviderUPUBRequest(testProvider):
+# 	setup, provider = testProvider
+# 	client = Client(setup, "test@mail.com", 7000, "127.0.0.1")
+# 	client.provider = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
+# 	reqrsp = "UPUB" + petlib.pack.encode([[client.name, client.port, client.host, client.pubk, client.provider]])
+# 	provider.do_PROCESS((reqrsp, ("127.0.0.1", 9999)))
+# 	assert format3.User(client.name, client.port, client.host, client.pubk, 
+# 		[client.provider.name, client.provider.port,
+# 		client.provider.host, client.provider.pubk]) in provider.usersPubs 
 
 def test_do_ROUT(testProvider, testMessage, testParticipants):
 	setup, provider = testProvider
@@ -165,8 +165,8 @@ def testProviderACKNBack(testProvider):
 	setup, provider = testProvider
 	_fakeACK = "ACKN67194593"
 	_fakeACK_2 = "ACKN67194594"
-	provider.expectedACK.append(_fakeACK)
-	provider.expectedACK.append(_fakeACK_2)
+	provider.expectedACK.add(_fakeACK)
+	provider.expectedACK.add(_fakeACK_2)
 	provider.do_PROCESS((_fakeACK, ("127.0.0.1", 9999)))
 	assert _fakeACK not in provider.expectedACK
 	assert _fakeACK_2 in provider.expectedACK

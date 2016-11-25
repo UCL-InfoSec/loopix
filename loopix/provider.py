@@ -18,10 +18,8 @@ import io
 import csv
 from twisted.internet.defer import DeferredQueue
 import supportFunctions as sf
-
-
-from twisted.logger import jsonFileLogObserver, Logger
-log = Logger(observer=jsonFileLogObserver(io.open("log.json", "a")))
+from processQueue import ProcessQueue
+import numpy
 
 class Provider(MixNode):
 
@@ -33,11 +31,9 @@ class Provider(MixNode):
         self.usersPubs = []
         self.storage = {}
         self.replyBlocks = {}
-        self.MAX_RETRIEVE = 100
-        self.Queue = []
+        self.MAX_RETRIEVE = 500
+        # self.Queue = []
 
-        self.numMsgReceived = 0
-        self.numMsgClients = 0
         self.bSent = 0
         self.bReceived = 0
         self.bProcessed = 0
@@ -51,96 +47,73 @@ class Provider(MixNode):
 
         self.testQueueSize = 0
 
+        self.processQueue = ProcessQueue()
+
+        self.measurments = []
+
     def startProtocol(self):
+        reactor.suggestThreadPoolSize(30)
+
         print "[%s] > Start protocol." % self.name
-        log.info("[%s] > Start protocol." % self.name)
         
-        # self.transport.write("INFO", ("127.0.0.1", 9998))
-        #print "[%s] > Request for network info sent." % self.name
-        #log.info("[%s] > Request for network info sent." % self.name)
+        reactor.callLater(10.0, self.turnOnProcessing)
 
-        self.turnOnProcessing()
+        # self.run()
 
-        self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
-        self.turnOnReliableUDP()
+        #self.turnOnReliableUDP()
         self.readInData('example.db')
 
-        self.measureMsgReceived()
-        self.measureBandwidth()
-        #self.saveInDB('example.db')
+        self.turnOnMeasurments()
+        self.saveMeasurments()
 
     def stopProtocol(self):
         print "[%s] > Stop protocol" % self.name
-        log.info("[%s] > Stop protocol" % self.name)
+
+    def turnOnProcessing(self):
+        self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
-        self.testReceived += 1
-        print "[%s] > received data from %s" % (self.name, host)
-        log.info("[%s] > received data" % self.name)
+        try:
+            self.processQueue.put((data, (host, port)))
+            self.bReceived += 1
+        except Exception, e:
+            print "[%s] > ERROR: %s " % (self.name, str(e))
 
-        self.testQueueSize += 1
-        #self.receivedQueue.put((data, (host, port)))
-        reactor.callLater(0.0, self.receivedQueue.put, (data, (host, port)))
-        print "Queue size put: ", self.testQueueSize
+    def do_PROCESS(self, obj):
+        self.processMessage(obj)
 
+        try:
+            reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
+        except Exception, e:
+            print "[%s] > ERROR: %s" % (self.name, str(e))
 
-    def do_PROCESS(self, (data, (host, port))):
-        self.testQueueSize -= 1
-        self.receivedQueue.get().addCallback(self.do_PROCESS)
-        print "Queue size get : ", self.testQueueSize
+    def get_and_addCallback(self, f):
+        self.processQueue.get().addCallback(f)
 
-        if data[:4] == "ROUT" and (host, port) in self.clientList.values():
-            self.numMsgClients += 1
+    def processMessage(self, obj):
+        data, (host, port) = obj
+
         if data[:8] == "PULL_MSG":
-            print "[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port)
-            log.info("[%s] > Provider received pull messages request from (%s, %d)" % (self.name, host, port))
             self.do_PULL(data[8:], (host, port))
-        if data[:4] == "RINF":
-            print "[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port)
-            log.info("[%s] > Provider received mixnode metadata informations from bulletin board %s, %d" % (self.name, host, port))
-            dataList = petlib.pack.decode(data[4:])
-            for element in dataList:
-                self.mixList.append(
-                    format3.Mix(
-                        element[0],
-                        element[1],
-                        element[2],
-                        element[3]))
-        if data[:4] == "UPUB":
-            dataList = petlib.pack.decode(data[4:])
-            for element in dataList:
-                self.usersPubs.append(format3.User(element[0], element[1], element[2], element[3], element[4]))
-            print "[%s] > Provider received public information of users registered in the system" % self.name
-            log.info("[%s] > Provider received public information of users registered in the system" % self.name)
-        if data[:4] == "INFO":
-            self.sendInfoMixnet(host, port)
-            print "[%s] > Provider received request for information from %s, %d " % (self.name, host, port)
-            log.info("[%s] > Provider received request for information from %s, %d " % (self.name, host, port))
-        if data[:4] == "ROUT":
-            if (host, port) not in self.clientList.values():
-                self.numMsgReceived += 1
-            else:
-                #self.numMsgClients += 1
-                pass
+        elif data[:4] == "ROUT":
             try:
-                self.bReceived += sys.getsizeof(data[4:])
                 idt, msgData = petlib.pack.decode(data[4:])
                 self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
+                self.gbReceived += 1
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
-                log.error("[%s] > Error during ROUT received: %s" % (self.name, str(e)))
-        if data[:4] == "ACKN":
+        elif data[:4] == "ACKN":
             if data in self.expectedACK:
                 self.expectedACK.remove(data)
-        if data[:4] == "PING":
-            print "[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port)
-            log.info("[%s] > provider received assign message from client (%s, %d)" % (self.name, host, port))
+        elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
-
+        else:
+            print "Processing Message - message not recognized"
+        self.bProcessed += 1
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -151,23 +124,40 @@ class Provider(MixNode):
                 host (str): host of the requesting client,
                 port (int): port of the requesting client.
         """
-        def send_to_ip(IPAddrs):
-            if name in self.storage.keys():
-                if self.storage[name]:
-                    for _ in range(self.MAX_RETRIEVE):
-                        if self.storage[name]:
-                            message = self.storage[name].pop(0)
-                            self.transport.write("PMSG" + message, (IPAddrs, port))
-                            print "[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port)
-                            log.info("[%s] > Message fetched for user (%s, %s, %d)." % (self.name, name, host, port))
-                else:
-                    self.transport.write("NOMSG", (IPAddrs, port))
+        try:
+            self.flushStorage(name, (host, port))
+        except Exception, e:
+            print "ERROR during flushing: ", str(e)
+        # def send_to_ip(IPAddrs):
+        #     self.flushStorage(name, (IPAddrs, port))
+        #     self.resolvedAdrs[host] = IPAddrs
+            # if name in self.storage:
+            #     if self.storage[name]:
+            #         for _ in range(self.MAX_RETRIEVE):
+            #            if self.storage[name]:
+            #                message = self.storage[name].pop()
+            #                self.transport.write("PMSG" + message, (IPAddrs, port))
+            #     else:
+            #         self.transport.write("NOMSG", (IPAddrs, port))
 
+            # else:
+            #     self.transport.write("NOASG", (IPAddrs, port))
+        # if host in self.resolvedAdrs:
+        #     self.flushStorage(name, (self.resolvedAdrs[host], port))
+        # else:
+        #     reactor.resolve(host).addCallback(send_to_ip)
+
+    def flushStorage(self, name, (ip_host, port)):
+        if name in self.storage:
+            if self.storage[name]:
+                for _ in range(self.MAX_RETRIEVE):
+                    if self.storage[name]:
+                        message = self.storage[name].pop()
+                        self.transport.write("PMSG" + message, (ip_host, port))
             else:
-                self.transport.write("NOASG", (IPAddrs, port))
-
-        reactor.resolve(host).addCallback(send_to_ip)
-
+                self.transport.write("NOMSG", (ip_host, port))
+        else:
+            self.transport.write("NOASG", (ip_host, port))
 
     def do_ROUT(self, data, (host, port), tag=None):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
@@ -179,34 +169,26 @@ class Provider(MixNode):
                 host (str): host of the sender of the packet
                 port (int): port of the sender of the packet
         """
-        print "LEN: ", len(reactor.getDelayedCalls())
-        print reactor.getDelayedCalls()
-        print "[%s] > Received ROUT message from %s, %d " % (self.name, host, port)
-        log.info("[%s] > Received ROUT message from %s, %d " % (self.name, host, port))
+
         try:
             peeledData = self.mix_operate(self.setup, data)
         except Exception, e:
-            log.info("[%s] > error during packet processing." % self.name)
+            print "[%s] > ERROR during packet processing." % self.name
         else:
             if peeledData:
                 (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
-                def save_or_queue(IPAddrs):
-                    if xtoName in self.clientList.keys():
-                        self.saveInStorage(xtoName, msg_forw)
-                    else:
-                        self.addToQueue(
-                           ("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort), idt), delay)
-                        #===========DIFFERENT TECHQNIUE OF FLUSHING=================
-                        # try:
-                        #     dtmp = delay - sf.epoch()
-                        #     if dtmp > 0:
-                        #         reactor.callLater(dtmp, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                        #     else:
-                        #         self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (IPAddrs, xtoPort))
-                        #     self.expectedACK.append("ACKN"+idt)
-                        # except Exception, e:
-                        #     print "ERROR: ", str(e)
-                reactor.resolve(xtoHost).addCallback(save_or_queue)
+
+                if xtoName in self.clientList:
+                    self.saveInStorage(xtoName, msg_forw)
+                else:
+                    try:
+                        if delay > 0:
+                            reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        else:
+                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        self.expectedACK.add("ACKN"+idt)
+                    except Exception, e:
+                        print "ERROR during ROUT: ", str(e)
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
@@ -215,21 +197,16 @@ class Provider(MixNode):
                 key (int): clients key,
                 value (str): message (encrypted) stored for the client.
         """
-        if key not in self.storage.keys():
-            self.storage[key] = [petlib.pack.encode((value, time.time()))]
-        else:
+        if key in self.storage:
             self.storage[key].append(petlib.pack.encode((value, time.time())))
-        print "[%s] > Saved message for User %s in storage" % (self.name, key)
-        log.info("[%s] > Saved message for User %s in storage" % (self.name, key))
+        else:
+            self.storage[key] = [petlib.pack.encode((value, time.time()))]
 
     def subscribeClient(self, name, host, port):
-        if name not in self.clientList.keys():
+        if name not in self.clientList:
             self.clientList[name] = (host, port)
-            print "[%s] > A new client subscribed to the provider. Current list: %s" % (self.name, str(self.clientList.keys()))
-        else:
-            self.clientList[name] = (host, port)
-            print "[%s] > Client %s already subscribed to provider" % (self.name, name)
-            
+        #else:
+        #    self.clientList[name] = (host, port)
 
     def sendInfoMixnet(self, host, port):
         """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
@@ -241,15 +218,12 @@ class Provider(MixNode):
         if not self.mixList:
             self.transport.write("EMPT", (host, port))
         else:
-            print "> Sending Mixnet Public Info."
             self.transport.write("RINF" + petlib.pack.encode(self.mixList), (host, port))
 
     def sendInfoUsers(self, host, port):
-        print "Sending users info."
         if not self.usersPubs:
             self.transport.write("EMPT", (host, port))
         else:
-            print "> Sending Users Public Info."
             self.transport.write("UINF" + petlib.pack.encode(self.usersPubs), (host, port))
 
     def saveInDB(self, databaseName):
@@ -262,36 +236,35 @@ class Provider(MixNode):
         db.commit()
         db.close()
         print "[%s] > Provider public information saved in database." % self.name
-        log.info("[%s] > Provider public information saved in database." % self.name)
 
 
-    def measureMsgReceived(self):
-        lc = task.LoopingCall(self.saveNumbers)
-        lc.start(60)
+    def turnOnMeasurments(self):
+        lc = task.LoopingCall(self.takeMeasurments)
+        lc.start(120, False)
 
-    def saveNumbers(self):
-        print "----MEASURING MESSAGES RECEIVED--------"
-        msgsR = self.numMsgReceived
-        msgsClients = self.numMsgClients
-        msgsSent = self.nMsgSent
-        testR = self.testReceived
-        print "RECEIVED: ", msgsR
-        self.numMsgReceived = 0
-        self.numMsgClients = 0
-        self.nMsgSent = 0
-        self.testReceived = 0
+    def saveMeasurments(self):
+        lc = task.LoopingCall(self.save_to_file)
+        lc.start(360, False)
+
+    def takeMeasurments(self):
+        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
+        self.bProcessed = 0
+        self.gbReceived = 0
+        self.bReceived = 0
+        self.pProcessed = 0
+
+    def save_to_file(self):
         try:
-            with open('messagesReceivedSend.csv', 'ab') as outfile:
+            with open("performanceProvider.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter=',')
-                data = [[testR, msgsR, msgsSent, msgsClients]]
-                csvW.writerows(data)
-            with open('messagesFromClients.csv', 'ab') as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                data = [[msgsClients]]
-                csvW.writerows(data)
+                csvW.writerows(self.measurments)
+            self.measurments = []
         except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
-
-
-
-
+            print "ERROR saving to file: ", str(e)
+        try:
+            with open("timeit.csv", "ab") as outfile:
+                csvW = csv.writer(outfile, delimiter='\n')
+                csvW.writerow(self.timeits)
+            self.timeits = []
+        except Exception, e:
+            print str(e)
