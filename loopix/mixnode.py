@@ -225,7 +225,7 @@ class MixNode(DatagramProtocol):
 						# 	reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						# else:
 						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
-						reactor.callFromThread(self.send_or_delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
+						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
