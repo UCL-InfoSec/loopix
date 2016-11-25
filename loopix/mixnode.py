@@ -250,10 +250,12 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					try:
-						if delay > 0:
-							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						else:
-							self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						# if delay > 0:
+						# 	reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						# else:
+						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						# self.expectedACK.add("ACKN"+idt)
+						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during bounce processing: ", str(e)

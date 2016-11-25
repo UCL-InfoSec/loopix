@@ -180,10 +180,11 @@ class Provider(MixNode):
                     self.saveInStorage(xtoName, msg_forw)
                 else:
                     try:
-                        if delay > 0:
-                            reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
-                        else:
-                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        # if delay > 0:
+                        #     reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        # else:
+                        #     self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, msg_forw)), (xtoHost, xtoPort))
                         self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
                         print "ERROR during ROUT: ", str(e)
