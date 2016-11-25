@@ -675,7 +675,7 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
-            IP = inlineCallbacks(resolve_address(str(pData[3])))
+            IP = defer.inlineCallbacks(resolve_address(str(pData[3])))
             print type(IP)
             print IP
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
