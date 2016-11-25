@@ -99,8 +99,8 @@ class Client(DatagramProtocol):
         print "[%s] > Start Protocol" % self.name
         self.takeProvidersData("example.db")
         print self.prvList
-        self.provider = self.takeProviderById(self.providerId)
-        print "Provider: ", self.provider
+        # self.provider = self.takeProviderById(self.providerId)
+        # print "Provider: ", self.provider
 
         # self.sendPing()
 
