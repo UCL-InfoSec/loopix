@@ -221,10 +221,11 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					try:
-						if delay > 0:
-							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
-						else:
-							self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
+						# if delay > 0:
+						# 	reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
+						# else:
+						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
+						reactor.callFromThread(self.send_or_delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
@@ -256,6 +257,12 @@ class MixNode(DatagramProtocol):
 						self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during bounce processing: ", str(e)
+
+	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
+		if delay > 0:
+			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+		else:
+			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))	
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
