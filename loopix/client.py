@@ -670,6 +670,9 @@ class Client(DatagramProtocol):
             else:
                 raise Exception('Resolving to IP - something went wrong')
 
+        def take_provider(IP, name, port, pkey):
+            return format3.Mix(name, port, IP, pkey)
+
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
@@ -678,9 +681,9 @@ class Client(DatagramProtocol):
             fetchData = c.fetchall()
             pData = fetchData.pop()
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-            IP = defer.inlineCallbacks(resolve_address(str(pData[3])))
-            print IP
-            print type(IP)
+            d = resolve_address(str(pData[3]))
+            x = d.addCallback(take_provider, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
+            print x
             print "====================="
             #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
