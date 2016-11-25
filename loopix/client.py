@@ -662,12 +662,11 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        self.tmpPrv = None
-        def save_as_ip(IPAddrs, name, port, pkey):
-            self.tmpPrv = format3.Mix(name, port, IPAddrs, pkey)
-            self.tmpPrv
-            return self.tmpPrv
-
+        # self.tmpPrv = None
+        # def save_as_ip(IPAddrs, name, port, pkey):
+        #     self.tmpPrv = format3.Mix(name, port, IPAddrs, pkey)
+        #     self.tmpPrv
+        #     return self.tmpPrv
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
@@ -678,10 +677,10 @@ class Client(DatagramProtocol):
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
             #reactor.resolve(str(pData[3])).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
             vals = yield reactor.resolve(str(pData[3]))
-            IP = defer.returnValue(vals)
-            print IP
-            print type(IP)
-            return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
+            defer.returnValue(vals)
+            #print IP
+            #print type(IP)
+            #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
