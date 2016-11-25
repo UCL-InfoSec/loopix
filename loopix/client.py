@@ -68,7 +68,6 @@ class Client(DatagramProtocol):
         self.d = defer.Deferred()
 
         # Information about active mixnodes and other users in the network
-        self.prvList = {}
         self.mixnet = []
         self.usersPubs = []
 
@@ -97,17 +96,15 @@ class Client(DatagramProtocol):
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
-        self.prvList = self.takeProvidersData("example.db")
-        print "PRVList: ", self.prvList
-        # self.provider = self.takeProviderById(self.providerId)
-        # print "Provider: ", self.provider
+        self.provider = self.takeProvidersData("example.db", self.providerId)
+        print "Provider: ", self.provider
 
-        # self.sendPing()
+        self.sendPing()
 
-        # self.readInData("example.db")
-        # reactor.callLater(100.0, self.turnOnProcessing)
-        # if self.UPDATE_PARAMS=="True" or self.TESTUSER:
-        #     reactor.callLater(300.0, self.updateParams)
+        self.readInData("example.db")
+        reactor.callLater(100.0, self.turnOnProcessing)
+        if self.UPDATE_PARAMS=="True" or self.TESTUSER:
+            reactor.callLater(300.0, self.updateParams)
 
     def turnOnProcessing(self):
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
@@ -635,26 +632,21 @@ class Client(DatagramProtocol):
                 database (str) - dir and name of the database.
         """
         usersList = []
-
-        def save_as_ip(IPAddrs, name, port, pkey, provider):
-            usersList.append(format3.User(name, port, IPAddrs, pkey, provider))
-
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
             c.execute("SELECT * FROM %s" % "Users")
             users = c.fetchall()
             for u in users:
-                p = self.takeProviderById(u[5])
+                p = self.takeProvidersData("example.db", u[5])
                 if not self.name == u[1]:
-                    #usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
-                    reactor.resolve(u[3]).addCallback(save_as_ip, name=str(u[1]), port=u[2], pubk=petlib.pack.decode(u[4]), provider=p)
+                    usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
             db.close()
             return usersList
         except Exception, e:
             print "ERROR: ", str(e)
 
-    def takeProvidersData(self, database):
+    def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
             from the database. 
@@ -664,24 +656,20 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        prvList = {}
-        def save_as_ip(IP, name, port, pkey):
-            prvList[name] = format3.Mix(name, port, IP, pkey)
+        providers = []
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
-            #c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
-            c.execute("SELECT * FROM %s" % "Providers")
+            
+            c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
-            for pData in fetchData:
-                reactor.resolve(pData[3]).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
-            db.close()
-            return prvList
+            pData = fetchData.pop()
+            return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
+
         except Exception, e:
             print "ERROR: ", str(e)
-
-    def takeProviderById(self, providerId):
-        return self.prvList[unicode(providerId)]
+        finally:
+            db.close()
 
     def takeMixnodesData(self, database):
         """ Function takes public information about all registered mixnodes
@@ -690,18 +678,13 @@ class Client(DatagramProtocol):
                 Args:
                 database (str) - dir and name of the database.
         """
-        def save_as_ip(IPAddrs, name, port, pkey):
-            self.mixnet.append(format3.Mix(name, port, IPAddrs, pkey))
-
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
             c.execute("SELECT * FROM %s" % "Mixnodes")
             mixdata = c.fetchall()
             for m in mixdata:
-                #self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-                reactor.resolve(m[3]).addCallback(save_as_ip, name=m[1], port=m[2], pkey=petlib.pack.decode(m[4]))
-            print self.mixnet
+                self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
         except Exception, e:
             print "ERROR: ", str(e)
 
