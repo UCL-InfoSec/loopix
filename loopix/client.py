@@ -651,7 +651,6 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "ERROR: ", str(e)
 
-    #@defer.inlineCallbacks
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
@@ -662,7 +661,7 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        @defer.inlineCallbacks
+        #@defer.inlineCallbacks
         def resolve_address(host):
             g = yield reactor.resolve(host)
             IP = ''.join(g)
@@ -679,7 +678,7 @@ class Client(DatagramProtocol):
             fetchData = c.fetchall()
             pData = fetchData.pop()
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-            IP = resolve_address(str(pData[3]))
+            IP = defer.inlineCallbacks(resolve_address(str(pData[3])))
             print IP
             print type(IP)
             print "====================="
