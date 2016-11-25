@@ -678,7 +678,7 @@ class Client(DatagramProtocol):
                 IP = i
                 print IP
                 print type(IP)
-            return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
+            #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
