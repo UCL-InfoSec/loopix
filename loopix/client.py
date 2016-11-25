@@ -651,7 +651,7 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "ERROR: ", str(e)
 
-    #@defer.inlineCallbacks
+    @defer.inlineCallbacks
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
@@ -662,17 +662,6 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        def resolve_address(host):
-            val = yield reactor.resolve(host)
-            print "==========="
-            vals = []
-            for i in val:
-                vals.append(i)
-            print "==========="
-            print vals
-            print "==========="
-            defer.returnValue(val)
-
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
@@ -680,16 +669,16 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
-            IP = defer.inlineCallbacks(resolve_address(str(pData[3])))
-            print type(IP)
-            print IP
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
             #reactor.resolve(str(pData[3])).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
-            # vals = yield reactor.resolve(str(pData[3]))
-            # defer.returnValue(vals)
-            #print IP
-            #print type(IP)
-            #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
+            vals = yield reactor.resolve(str(pData[3]))
+            print type(vals)
+            print vals
+            for i in vals:
+                IP = i
+                print IP
+                print type(IP)
+            return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
