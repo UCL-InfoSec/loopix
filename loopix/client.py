@@ -661,18 +661,19 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        provider = None
         @defer.inlineCallbacks
         def resolve_address(host):
             g = yield reactor.resolve(host)
             IP = ''.join(g)
             if IP:
-                defer.returnValue(IP)
+                defer.returnValue(take_IP(IP))
             else:
                 raise Exception('Resolving to IP - something went wrong')
 
-        def take_provider(IP, name, port, pkey):
-            provider = format3.Mix(name, port, IP, pkey)
+        def take_IP(IP):
+            print IP
+            print "======="
+            return IP
 
         try:
             db = sqlite3.connect(database)
@@ -681,10 +682,7 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
-            #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
             d = resolve_address(str(pData[3]))
-            d.addCallback(take_provider, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
-            print provider
             print "====================="
             #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
