@@ -97,7 +97,7 @@ class Client(DatagramProtocol):
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
-        self.takeProvidersData("example.db")
+        self.prvList = self.takeProvidersData("example.db")
         print "PRVList: ", self.prvList
         # self.provider = self.takeProviderById(self.providerId)
         # print "Provider: ", self.provider
@@ -664,13 +664,9 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
+        prvList = {}
         def save_as_ip(IP, name, port, pkey):
-            print IP
-            print name
-            print port
-            print pkey
-            self.prvList[name] = format3.Mix(name, port, IP, pkey)
-            print self.prvList
+            prvList[name] = format3.Mix(name, port, IP, pkey)
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
@@ -679,10 +675,10 @@ class Client(DatagramProtocol):
             fetchData = c.fetchall()
             for pData in fetchData:
                 reactor.resolve(pData[3]).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
+            db.close()
+            return prvList
         except Exception, e:
             print "ERROR: ", str(e)
-        finally:
-            db.close()
 
     def takeProviderById(self, providerId):
         return self.prvList[unicode(providerId)]
