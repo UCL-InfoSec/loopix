@@ -673,14 +673,14 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Providers")
             fetchData = c.fetchall()
             for pData in fetchData:
-                reactor.resolve(pData[3]).addCallback(save_as_ip, name=pData[1], port=pData[2], pkey=petlib.pack.decode(pData[4]))
+                reactor.resolve(pData[3]).addCallback(save_as_ip, name=str(pData[1]), port=pData[2], pkey=petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
             db.close()
 
     def takeProviderById(self, providerId):
-        return self.prvList[providerId]
+        return self.prvList[unicode(providerId)]
 
     def takeMixnodesData(self, database):
         """ Function takes public information about all registered mixnodes
