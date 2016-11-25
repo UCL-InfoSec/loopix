@@ -68,6 +68,7 @@ class Client(DatagramProtocol):
         self.d = defer.Deferred()
 
         # Information about active mixnodes and other users in the network
+        self.prvList = {}
         self.mixnet = []
         self.usersPubs = []
 
@@ -96,7 +97,9 @@ class Client(DatagramProtocol):
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
-        self.provider = self.takeProvidersData("example.db", self.providerId)
+        self.takeProvidersData("example.db")
+        print self.prvList
+        self.provider = self.takeProviderById(self.providerId)
         print "Provider: ", self.provider
 
         # self.sendPing()
@@ -642,7 +645,7 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Users")
             users = c.fetchall()
             for u in users:
-                p = self.takeProvidersData("example.db", u[5])
+                p = self.takeProviderById(u[5])
                 if not self.name == u[1]:
                     #usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
                     reactor.resolve(u[3]).addCallback(save_as_ip, name=str(u[1]), port=u[2], pubk=petlib.pack.decode(u[4]), provider=p)
@@ -651,7 +654,7 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "ERROR: ", str(e)
 
-    def takeProvidersData(self, database, providerId):
+    def takeProvidersData(self, database):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
             from the database. 
@@ -661,36 +664,23 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        @defer.inlineCallbacks
-        def resolve_address(host):
-            g = yield reactor.resolve(host)
-            IP = ''.join(g)
-            if IP:
-                defer.returnValue(take_IP(IP))
-            else:
-                raise Exception('Resolving to IP - something went wrong')
-
-        def take_IP(IP):
-            print IP
-            print "======="
-            return IP
-
+        def save_as_ip(IP, name, port, pkey):
+            self.prvList[name] = format3.Mix(name, port, IP, pkey)
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
-            
-            c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
+            #c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
+            c.execute("SELECT * FROM %s" % "Providers")
             fetchData = c.fetchall()
-            pData = fetchData.pop()
-            #d = resolve_address(str(pData[3]))
-            #print d
-            #print "====================="
-            return "TEST"
-            #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
+            for pData in fetchData:
+                reactor.resolve(pData[3]).addCallback(save_as_ip, name=pData[1], port=pData[2], pkey=petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
         finally:
             db.close()
+
+    def takeProviderById(self, providerId):
+        return self.prvList[providerId]
 
     def takeMixnodesData(self, database):
         """ Function takes public information about all registered mixnodes
@@ -709,7 +699,7 @@ class Client(DatagramProtocol):
             mixdata = c.fetchall()
             for m in mixdata:
                 #self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-                reactor.resolve(m[3]).addCallback(save_as_ip, m[1], m[2], petlib.pack.decode(m[4]))
+                reactor.resolve(m[3]).addCallback(save_as_ip, name=m[1], port=m[2], pkey=petlib.pack.decode(m[4]))
             print self.mixnet
         except Exception, e:
             print "ERROR: ", str(e)
