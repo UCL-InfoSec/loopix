@@ -679,6 +679,8 @@ class Client(DatagramProtocol):
             #g = yield reactor.resolve(str(pData[3]))
             #IP = ''.join(g)
             IP = resolve_address(str(pData[3]))
+            print IP
+            print type(IP)
             print "====================="
             #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
