@@ -301,7 +301,6 @@ def paddString(input, length):
 
 def aes_enc_dec(key, iv, input):
 		"""A helper function which implements the AES-128 encryption in counter mode CTR"""
-
 		aes = Cipher("AES-128-CTR")
 		enc = aes.enc(key, iv)
 		output = enc.update(input)

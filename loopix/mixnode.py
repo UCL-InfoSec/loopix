@@ -404,23 +404,23 @@ class MixNode(DatagramProtocol):
 		print "> Errback of mix Reliable UDP took care of ", failure
 
 
-	def flushQueue(self):
-		""" The function sends the messages queued in the mixnode pool.
-		If the delay with which the message was suppose to be send exceeded
-		MAX_DELAY_TIME, the message is dropped."""
+	# def flushQueue(self):
+	# 	""" The function sends the messages queued in the mixnode pool.
+	# 	If the delay with which the message was suppose to be send exceeded
+	# 	MAX_DELAY_TIME, the message is dropped."""
 
-		if self.Queue:
-			timeToSend, element = self.Queue[0]
-			#element contains: packet, destination address, idt
-			while self.Queue and timeToSend - sf.epoch() < 0:
-				if timeToSend - sf.epoch() < MAX_DELAY_TIME:
-					print "[%s] > Time elapsed - message droped" % self.name
-				else:
-					self.sendMessage(element[0], element[1])
-					self.expectedACK.add("ACKN"+element[2])
-				heapq.heappop(self.Queue)
-				if self.Queue:
-					timeToSend, element = self.Queue[0]
+	# 	if self.Queue:
+	# 		timeToSend, element = self.Queue[0]
+	# 		#element contains: packet, destination address, idt
+	# 		while self.Queue and timeToSend - sf.epoch() < 0:
+	# 			if timeToSend - sf.epoch() < MAX_DELAY_TIME:
+	# 				print "[%s] > Time elapsed - message droped" % self.name
+	# 			else:
+	# 				self.sendMessage(element[0], element[1])
+	# 				self.expectedACK.add("ACKN"+element[2])
+	# 			heapq.heappop(self.Queue)
+	# 			if self.Queue:
+	# 				timeToSend, element = self.Queue[0]
 
 	def sendMessage(self, data, (host, port)):
 		""" Function sends the message to the specified place in the network.

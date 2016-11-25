@@ -48,6 +48,9 @@ def testParticipants():
 
     return setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver
 
+def testStartClient(testParticipants):
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    sender.startProtocol()
 
 def testInitClient(testParticipants):
     setup = format3.setup()
