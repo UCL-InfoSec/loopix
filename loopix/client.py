@@ -664,7 +664,10 @@ class Client(DatagramProtocol):
         """
         def resolve_address(host):
             val = yield reactor.resolve(host)
-            return van
+            vals = []
+            for i in val:
+                vals.append(i)
+            print vals
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
