@@ -661,7 +661,7 @@ class Client(DatagramProtocol):
                 providerId (int) - identifier of a provider whoes information
                                     we want to pull.
         """
-        #@defer.inlineCallbacks
+        @defer.inlineCallbacks
         def resolve_address(host):
             g = yield reactor.resolve(host)
             IP = ''.join(g)
