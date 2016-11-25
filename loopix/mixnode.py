@@ -328,11 +328,11 @@ class MixNode(DatagramProtocol):
 		header = petlib.pack.decode(header_en)
 
 		if pt.startswith('HT'):
-			hs = hashlib.md5()
-			hs.update(pt[2:])
-			x = hs.digest()
-			if x in self.hbSent:
-				self.hbSent[x] = True
+			#hs = hashlib.md5()
+			#hs.update(pt[2:])
+			#x = hs.digest()
+			if pt[2:] in self.hbSent:
+				self.hbSent[pt[2:]] = True
 			if pt.startswith('HTTAG'):
 				self.measureLatency(pt)
 			return None
@@ -487,10 +487,10 @@ class MixNode(DatagramProtocol):
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
 			# self.savedElements.add(packet[0])
-			hs = hashlib.md5()
-			hs.update(heartMsg)
-			x = hs.digest()
-			self.hbSent[x] = False
+			#hs = hashlib.md5()
+			#hs.update(heartMsg)
+			#x = hs.digest()
+			self.hbSent[heartMsg] = False
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
