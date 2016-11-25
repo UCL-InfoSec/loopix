@@ -665,7 +665,12 @@ class Client(DatagramProtocol):
                                     we want to pull.
         """
         def save_as_ip(IP, name, port, pkey):
+            print IP
+            print name
+            print port
+            print pkey
             self.prvList[name] = format3.Mix(name, port, IP, pkey)
+            print self.prvList
         try:
             db = sqlite3.connect(database)
             c = db.cursor()
