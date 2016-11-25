@@ -666,7 +666,10 @@ class Client(DatagramProtocol):
         def resolve_address(host):
             g = yield reactor.resolve(host)
             IP = ''.join(g)
-            defer.returnValue(IP)
+            if IP:
+                defer.returnValue(IP)
+            else:
+                raise Exception('Resolving to IP - something went wrong')
 
         try:
             db = sqlite3.connect(database)
@@ -676,8 +679,6 @@ class Client(DatagramProtocol):
             fetchData = c.fetchall()
             pData = fetchData.pop()
             #return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
-            #g = yield reactor.resolve(str(pData[3]))
-            #IP = ''.join(g)
             IP = resolve_address(str(pData[3]))
             print IP
             print type(IP)
