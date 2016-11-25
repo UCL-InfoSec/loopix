@@ -663,9 +663,10 @@ class Client(DatagramProtocol):
                                     we want to pull.
         """
         def resolve_address(host):
-            g = yield reactor.resolve(host)
-            IP = ''.join(g)
-            defer.returnValue(IP)
+            print "Test print"
+            #g = yield reactor.resolve(host)
+            #IP = ''.join(g)
+            #defer.returnValue(IP)
 
         try:
             db = sqlite3.connect(database)
