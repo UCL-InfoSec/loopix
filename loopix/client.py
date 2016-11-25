@@ -683,7 +683,9 @@ class Client(DatagramProtocol):
             fetchData = c.fetchall()
             pData = fetchData.pop()
             d = resolve_address(str(pData[3]))
+            print d
             print "====================="
+            return None
             #return format3.Mix(str(pData[1]), pData[2], IP, petlib.pack.decode(pData[4]))
         except Exception, e:
             print "ERROR: ", str(e)
