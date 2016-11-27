@@ -78,6 +78,7 @@ class Provider(MixNode):
             print "[%s] > ERROR: %s " % (self.name, str(e))
 
     def do_PROCESS(self, obj):
+        self.bProcessed += 1
         self.processMessage(obj)
 
         try:
@@ -108,7 +109,6 @@ class Provider(MixNode):
             self.subscribeClient(data[4:], host, port)
         else:
             print "Processing Message - message not recognized"
-        self.bProcessed += 1
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 

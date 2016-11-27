@@ -156,6 +156,7 @@ class MixNode(DatagramProtocol):
 			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
+		self.bProcessed += 1
 		self.processMessage(data, (host, port))
 
 		try:
@@ -188,7 +189,6 @@ class MixNode(DatagramProtocol):
 				self.expectedACK.remove(data)
 		else:
 			print "Processing Message - message not recognized"
-		self.bProcessed += 1
 		te = time.time()
 		self.timeits.append(te-ts)
 
