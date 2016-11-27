@@ -167,7 +167,7 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
-
+		ts = time.time()
 		if data[:4] == "MINF":
 			self.do_INFO(data, (host, port))
 		elif data[:4] == "ROUT":
@@ -189,6 +189,8 @@ class MixNode(DatagramProtocol):
 		else:
 			print "Processing Message - message not recognized"
 		self.bProcessed += 1
+		te = time.time()
+		self.timeits.append(te-ts)
 
 
 	def do_INFO(self, data, (host, port)):
@@ -287,7 +289,6 @@ class MixNode(DatagramProtocol):
 			setup (tuple): a setup of a group used in the protocol,
 			message (list): a received message which should be enc/dec.
 		"""
-		ts = time.time()
 
 		G, o, g, o_bytes = setup
 		elem = message[0]
@@ -328,9 +329,6 @@ class MixNode(DatagramProtocol):
 		header = petlib.pack.decode(header_en)
 
 		if pt.startswith('HT'):
-			#hs = hashlib.md5()
-			#hs.update(pt[2:])
-			#x = hs.digest()
 			if pt[2:] in self.hbSent:
 				self.hbSent[pt[2:]] = True
 			if pt.startswith('HTTAG'):
@@ -346,6 +344,7 @@ class MixNode(DatagramProtocol):
 			typeFlag = header[2]
 			if typeFlag == "P":
 				self.pProcessed += 1
+
 			# delay - message delay
 			delay = header[3]
 
@@ -390,8 +389,6 @@ class MixNode(DatagramProtocol):
 				new_back = "None"
 
 			new_element = new_element.export()
-			te = time.time()
-			self.timeits.append(te-ts)
 			return (xto, [new_element, new_forw, new_back], idt, delay)
 
 	def checkMac(self, mac):
@@ -439,14 +436,9 @@ class MixNode(DatagramProtocol):
 			host (str): host of the destination,
 			port (int): port of the destination.
 		"""
-
-		# def send_to_ip(IPaddrs):
-		# 	self.transport.write(data, (IPaddrs, port))
-		# 	self.resolvedAdrs[host] = IPaddrs
-
-		if host in self.resolvedAdrs:
+		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-		else:
+		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(self.send_to_ip, host=host, port=port, data=data)
 
@@ -486,10 +478,6 @@ class MixNode(DatagramProtocol):
 			heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
-			# self.savedElements.add(packet[0])
-			#hs = hashlib.md5()
-			#hs.update(heartMsg)
-			#x = hs.digest()
 			self.hbSent[heartMsg] = False
 			return packet[1:]
 		except Exception, e:

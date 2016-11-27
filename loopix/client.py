@@ -133,11 +133,6 @@ class Client(DatagramProtocol):
         self.send("PING"+self.name, (self.provider.host, self.provider.port))
         self.send("PULL_MSG"+self.name, (self.provider.host, self.provider.port))
         self.numMessagesSent += 2
-        #def send_to_ip(IPAddrs):
-        #    self.transport.write("PING"+self.name, (IPAddrs, self.provider.port))
-        #    self.transport.write("PULL_MSG"+self.name, (IPAddrs, self.provider.port))
-        #    self.numMessagesSent += 2
-        #reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
@@ -277,7 +272,7 @@ class Client(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         #self.receivedQueue.put((data, (host, port)))
-        #print "[%s] > datagram Received" % self.name
+        # print "[%s] > datagram Received" % self.name
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
@@ -315,7 +310,7 @@ class Client(DatagramProtocol):
         try:
             encMsg, timestamp = petlib.pack.decode(data)
             msg = self.readMessage(encMsg, (host, port))
-            # print "[%s] > New message unpacked: " % self.name
+            print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
@@ -457,11 +452,14 @@ class Client(DatagramProtocol):
             self.resolvedAdrs[host] = IPAddrs
             self.numMessagesSent += 1
 
-        if host in self.resolvedAdrs:
+        try:
             self.transport.write(packet, (self.resolvedAdrs[host], port))
-        else:
+        except KeyError, e:
             reactor.resolve(host).addCallback(send_to_ip)
-        #print self.resolvedAdrs
+        #if host in self.resolvedAdrs:
+        #    self.transport.write(packet, (self.resolvedAdrs[host], port))
+        #else:
+        #    reactor.resolve(host).addCallback(send_to_ip)
 
     def readMessage(self, message, (host, port)):
         """ Function allows to decyrpt and read a received message.

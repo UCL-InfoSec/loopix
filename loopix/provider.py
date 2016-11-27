@@ -40,16 +40,12 @@ class Provider(MixNode):
         self.gbSent = 0
         self.gbReceived = 0
 
-        self.receivedQueue = DeferredQueue()
-
         self.nMsgSent = 0
         self.testReceived = 0
-
+        self.measurments = []
         self.testQueueSize = 0
 
         self.processQueue = ProcessQueue()
-
-        self.measurments = []
 
     def startProtocol(self):
         reactor.suggestThreadPoolSize(30)
