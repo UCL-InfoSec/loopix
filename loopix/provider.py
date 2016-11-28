@@ -88,8 +88,7 @@ class Provider(MixNode):
     def get_and_addCallback(self, f):
         self.processQueue.get().addCallback(f)
 
-    def processMessage(self, obj):
-        data, (host, port) = obj
+    def processMessage(self, (data, (host, port))):
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
@@ -97,7 +96,7 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
-                self.sendMessage("ACKN"+idt, (host, port))
+                #self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
                 self.gbReceived += 1
             except Exception, e:
@@ -125,24 +124,6 @@ class Provider(MixNode):
             self.flushStorage(name, (host, port))
         except Exception, e:
             print "ERROR during flushing: ", str(e)
-        # def send_to_ip(IPAddrs):
-        #     self.flushStorage(name, (IPAddrs, port))
-        #     self.resolvedAdrs[host] = IPAddrs
-            # if name in self.storage:
-            #     if self.storage[name]:
-            #         for _ in range(self.MAX_RETRIEVE):
-            #            if self.storage[name]:
-            #                message = self.storage[name].pop()
-            #                self.transport.write("PMSG" + message, (IPAddrs, port))
-            #     else:
-            #         self.transport.write("NOMSG", (IPAddrs, port))
-
-            # else:
-            #     self.transport.write("NOASG", (IPAddrs, port))
-        # if host in self.resolvedAdrs:
-        #     self.flushStorage(name, (self.resolvedAdrs[host], port))
-        # else:
-        #     reactor.resolve(host).addCallback(send_to_ip)
 
     def flushStorage(self, name, (ip_host, port)):
         if name in self.storage:
@@ -150,11 +131,11 @@ class Provider(MixNode):
                 for _ in range(self.MAX_RETRIEVE):
                     if self.storage[name]:
                         message = self.storage[name].pop()
-                        self.transport.write("PMSG" + message, (ip_host, port))
+                        self.sendMessage("PMSG" + message, (ip_host, port))
             else:
-                self.transport.write("NOMSG", (ip_host, port))
+                self.sendMessage("NOMSG", (ip_host, port))
         else:
-            self.transport.write("NOASG", (ip_host, port))
+            self.sendMessage("NOASG", (ip_host, port))
 
     def do_ROUT(self, data, (host, port), tag=None):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 

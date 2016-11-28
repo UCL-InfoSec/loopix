@@ -147,7 +147,7 @@ class MixNode(DatagramProtocol):
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				self.sendMessage("ACKN"+idt, (host, port))
+				#self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbReceived += 1
 			except Exception, e:
@@ -192,10 +192,6 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					try:
-						# if delay > 0:
-						# 	reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
-						# else:
-						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						#self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
@@ -221,11 +217,6 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					try:
-						# if delay > 0:
-						# 	reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						# else:
-						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						# self.expectedACK.add("ACKN"+idt)
 						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						# self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
