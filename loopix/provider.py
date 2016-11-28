@@ -32,7 +32,6 @@ class Provider(MixNode):
         self.storage = {}
         self.replyBlocks = {}
         self.MAX_RETRIEVE = 500
-        # self.Queue = []
 
         self.bSent = 0
         self.bReceived = 0
@@ -55,7 +54,6 @@ class Provider(MixNode):
         
         reactor.callLater(10.0, self.turnOnProcessing)
 
-        # self.run()
         self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
@@ -99,14 +97,14 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
-                # self.sendMessage("ACKN"+idt, (host, port))
+                self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
                 self.gbReceived += 1
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
         elif data[:4] == "ACKN":
-            if data in self.expectedACK:
-                self.expectedACK.remove(data)
+            #if data in self.expectedACK:
+            #    self.expectedACK.remove(data)
             self.otherProc += 1
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)

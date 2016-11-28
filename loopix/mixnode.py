@@ -55,7 +55,6 @@ class MixNode(DatagramProtocol):
 
 		self.mixList = []
 		self.prvList = []
-		self.Queue = []
 
 		self.seenMacs = set()
 		self.seenElements = set()
@@ -104,12 +103,6 @@ class MixNode(DatagramProtocol):
 
 	def turnOnProcessing(self):
 		self.processQueue.get().addCallback(self.do_PROCESS)
-
-	def run(self):
-		"""A loop function responsible for flushing the queue"""
-
-		lc = task.LoopingCall(self.flushQueue)
-		lc.start(TIME_FLUSH, False)
 
 	def turnOnTagedSending(self):
 		lc = task.LoopingCall(self.sendTagedMessage)
@@ -173,14 +166,14 @@ class MixNode(DatagramProtocol):
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				#self.sendMessage("ACKN"+idt, (host, port))
+				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbReceived += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
 		elif data.startswith("ACKN"):
-			if data in self.expectedACK:
-				self.expectedACK.remove(data)
+			#if data in self.expectedACK:
+			#	self.expectedACK.remove(data)
 			self.otherProc += 1
 		else:
 			print "Processing Message - message not recognized"
@@ -274,7 +267,6 @@ class MixNode(DatagramProtocol):
 			self.mixList.append(format3.Mix(element[0], element[1], element[2], element[3]))
 		if format3.Mix(self.name, self.port, self.host, self.pubk) in self.mixList:
 			self.mixList.remove(format3.Mix(self.name, self.port, self.host, self.pubk))
-		#self.d.callback(self.mixList)
 
 	def mix_operate(self, setup, message):
 		""" Mixnode operates on the received packet. It removes the encryption layer of the forward header, builts up the
@@ -405,24 +397,6 @@ class MixNode(DatagramProtocol):
 		print "> Errback of mix Reliable UDP took care of ", failure
 
 
-	# def flushQueue(self):
-	# 	""" The function sends the messages queued in the mixnode pool.
-	# 	If the delay with which the message was suppose to be send exceeded
-	# 	MAX_DELAY_TIME, the message is dropped."""
-
-	# 	if self.Queue:
-	# 		timeToSend, element = self.Queue[0]
-	# 		#element contains: packet, destination address, idt
-	# 		while self.Queue and timeToSend - sf.epoch() < 0:
-	# 			if timeToSend - sf.epoch() < MAX_DELAY_TIME:
-	# 				print "[%s] > Time elapsed - message droped" % self.name
-	# 			else:
-	# 				self.sendMessage(element[0], element[1])
-	# 				self.expectedACK.add("ACKN"+element[2])
-	# 			heapq.heappop(self.Queue)
-	# 			if self.Queue:
-	# 				timeToSend, element = self.Queue[0]
-
 	def sendMessage(self, data, (host, port)):
 		""" Function sends the message to the specified place in the network.
 
@@ -524,15 +498,6 @@ class MixNode(DatagramProtocol):
 	def printMixData(self):
 		"""Function prints the keypair information of a mixnode."""
 		print "OPERATED MIXNODE: Name: %s, address: (%d, %s), PubKey: %s" % (self.name, self.port, self.host, self.pubk)
-
-	def addToQueue(self, data, delay=0):
-		""" Function adds the packet data to the priority queue of the pooled messages.
-
-			Args:
-			data (str): packet data.
-		"""
-		#data contains (packet, (host, poty), idt)
-		heapq.heappush(self.Queue, (delay, data))
 
 	def ackListener(self):
 		""" Function checks if mixnode received the acknowledgments for the sent packets. """
