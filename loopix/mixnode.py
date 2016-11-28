@@ -72,6 +72,7 @@ class MixNode(DatagramProtocol):
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.pProcessed = 0
+		self.otherProc = 0
 		self.hbSent = {}
 		self.measurments = []
 
@@ -169,9 +170,10 @@ class MixNode(DatagramProtocol):
 
 	def processMessage(self, data, (host, port)):
 		ts = time.time()
-		if data[:4] == "MINF":
-			self.do_INFO(data, (host, port))
-		elif data[:4] == "ROUT":
+		# if data[:4] == "MINF":
+		# 	self.do_INFO(data, (host, port))
+		# 	self.otherProc += 1
+		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
 				self.sendMessage("ACKN"+idt, (host, port))
@@ -179,14 +181,16 @@ class MixNode(DatagramProtocol):
 				self.gbReceived += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
-		elif data[:4] == "RINF":
-			try:
-				self.do_RINF(data[4:])
-			except Exception, e:
-				print "ERROR: ", str(e)
+		# elif data[:4] == "RINF":
+		# 	try:
+		# 		self.do_RINF(data[4:])
+		# 		self.otherProc += 1
+		# 	except Exception, e:
+		# 		print "ERROR: ", str(e)
 		elif data.startswith("ACKN"):
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
+			self.otherProc += 1
 		else:
 			print "Processing Message - message not recognized"
 		te = time.time()
@@ -644,11 +648,12 @@ class MixNode(DatagramProtocol):
 		lc.start(120, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values())])
+		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc])
 		self.bProcessed = 0
 		self.gbReceived = 0
 		self.bReceived = 0
 		self.pProcessed = 0
+		self.otherProc = 0
 		self.hbSent = {}
 
 	def saveMeasurments(self):

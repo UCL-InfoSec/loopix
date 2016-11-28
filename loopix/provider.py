@@ -39,6 +39,7 @@ class Provider(MixNode):
         self.bProcessed = 0
         self.gbSent = 0
         self.gbReceived = 0
+        self.otherProc = 0
 
         self.nMsgSent = 0
         self.testReceived = 0
@@ -94,6 +95,7 @@ class Provider(MixNode):
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
+            self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
@@ -105,8 +107,10 @@ class Provider(MixNode):
         elif data[:4] == "ACKN":
             if data in self.expectedACK:
                 self.expectedACK.remove(data)
+            self.otherProc += 1
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
+            self.otherProc += 1
         else:
             print "Processing Message - message not recognized"
 
@@ -242,11 +246,12 @@ class Provider(MixNode):
         lc.start(360, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
+        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, self.otherProc])
         self.bProcessed = 0
         self.gbReceived = 0
         self.bReceived = 0
         self.pProcessed = 0
+        self.otherProc = 0
 
     def save_to_file(self):
         try:
