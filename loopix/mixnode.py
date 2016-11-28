@@ -170,23 +170,14 @@ class MixNode(DatagramProtocol):
 
 	def processMessage(self, data, (host, port)):
 		ts = time.time()
-		# if data[:4] == "MINF":
-		# 	self.do_INFO(data, (host, port))
-		# 	self.otherProc += 1
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				self.sendMessage("ACKN"+idt, (host, port))
+				#self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbReceived += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
-		# elif data[:4] == "RINF":
-		# 	try:
-		# 		self.do_RINF(data[4:])
-		# 		self.otherProc += 1
-		# 	except Exception, e:
-		# 		print "ERROR: ", str(e)
 		elif data.startswith("ACKN"):
 			if data in self.expectedACK:
 				self.expectedACK.remove(data)
@@ -232,7 +223,7 @@ class MixNode(DatagramProtocol):
 						# else:
 						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
-						self.expectedACK.add("ACKN"+idt)
+						#self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
 
@@ -262,7 +253,7 @@ class MixNode(DatagramProtocol):
 						# 	self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
 						# self.expectedACK.add("ACKN"+idt)
 						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						self.expectedACK.add("ACKN"+idt)
+						# self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during bounce processing: ", str(e)
 

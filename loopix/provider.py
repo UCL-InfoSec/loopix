@@ -99,7 +99,7 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
-                self.sendMessage("ACKN"+idt, (host, port))
+                # self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
                 self.gbReceived += 1
             except Exception, e:
@@ -185,7 +185,7 @@ class Provider(MixNode):
                         # else:
                         #     self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
                         reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, msg_forw)), (xtoHost, xtoPort))
-                        self.expectedACK.add("ACKN"+idt)
+                        # self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
                         print "ERROR during ROUT: ", str(e)
 
