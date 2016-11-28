@@ -69,7 +69,7 @@ class MixNode(DatagramProtocol):
 
 		self.bReceived = 0
 		self.bProcessed = 0
-		self.gbReceived = 0
+		self.gbProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
 		self.hbSent = {}
@@ -149,7 +149,8 @@ class MixNode(DatagramProtocol):
 				idt, msgData = petlib.pack.decode(data[4:])
 				#self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
-				self.gbReceived += 1
+				self.gbProcessed += 1
+				reactor.callFromThread(self.acknowledge, "ACKN"+idt, (host, port))
 			except Exception, e:
 				print "ERROR: ", str(e)
 		elif data.startswith("ACKN"):
@@ -161,6 +162,8 @@ class MixNode(DatagramProtocol):
 		te = time.time()
 		self.timeits.append(te-ts)
 
+	def acknowledge(self, ack, addr):
+		self.sendMessage(ack, addr)
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -576,9 +579,9 @@ class MixNode(DatagramProtocol):
 		lc.start(120, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc])
+		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc])
 		self.bProcessed = 0
-		self.gbReceived = 0
+		self.gbProcessed = 0
 		self.bReceived = 0
 		self.pProcessed = 0
 		self.otherProc = 0

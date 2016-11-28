@@ -37,7 +37,7 @@ class Provider(MixNode):
         self.bReceived = 0
         self.bProcessed = 0
         self.gbSent = 0
-        self.gbReceived = 0
+        self.gbProcessed = 0
         self.otherProc = 0
 
         self.nMsgSent = 0
@@ -89,7 +89,7 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(f)
 
     def processMessage(self, (data, (host, port))):
-
+        ts = time.time()
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
             self.otherProc += 1
@@ -98,7 +98,8 @@ class Provider(MixNode):
                 idt, msgData = petlib.pack.decode(data[4:])
                 #self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
-                self.gbReceived += 1
+                self.gbProcessed += 1
+                reactor.callFromThread(self.acknowledge, "ACKN"+idt, (host, port))
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
         elif data[:4] == "ACKN":
@@ -110,6 +111,8 @@ class Provider(MixNode):
             self.otherProc += 1
         else:
             print "Processing Message - message not recognized"
+        te = time.time()
+        self.timeits.append(te-ts)
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -225,9 +228,9 @@ class Provider(MixNode):
         lc.start(360, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, self.otherProc])
+        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc])
         self.bProcessed = 0
-        self.gbReceived = 0
+        self.gbProcessed = 0
         self.bReceived = 0
         self.pProcessed = 0
         self.otherProc = 0
