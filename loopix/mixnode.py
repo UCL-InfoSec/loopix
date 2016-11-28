@@ -122,25 +122,6 @@ class MixNode(DatagramProtocol):
 	def errbackHeartbeats(self, failure):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
-	# def sendRequest(self, rqs):
-	# 	""" Function sends a particular request to the bulletin board
-
-	# 		Args:
-	# 		rqs (str): the rqs shortcut which should be send.
-	# 	"""
-	# 	def send_to_ip(IPAddrs):
-	# 		self.transport.write(rqs, (IPAddrs, self.boardPort))
-	# 	reactor.resolve(self.boardHost).addCallback(send_to_ip)
-
-	# def announce(self):
-	# 	""" Mixnode annouces its presence in the network to the bulletin board.
-	# 	"""
-	# 	resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
-	# 	def send_announce(IPAddr):
-	# 		self.transport.write(resp, (IPAddr, self.boardPort))
-	# 		# print "[%s] > Announced itself to the board." % self.name
-	# 	reactor.resolve(self.boardHost).addCallback(send_announce)
-
 	def datagramReceived(self, data, (host, port)):
 
 		try:
@@ -150,8 +131,8 @@ class MixNode(DatagramProtocol):
 			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
-		self.bProcessed += 1
 		self.processMessage(data, (host, port))
+		self.bProcessed += 1
 
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
