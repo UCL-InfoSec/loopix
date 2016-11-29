@@ -230,8 +230,8 @@ class MixNode(DatagramProtocol):
 						print "ERROR during bounce processing: ", str(e)
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
-		self.sendMessage("ACKN", (xtoHost, xtoPort))
-		if delay > 0:
+		#self.sendMessage("ACKN", (xtoHost, xtoPort))
+		if delay < 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
 			reactor.callLater(0.0, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
