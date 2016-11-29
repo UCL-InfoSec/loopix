@@ -147,7 +147,8 @@ class MixNode(DatagramProtocol):
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				reactor.callLater(0, self.sendMessage, "ACKN"+idt, (host, port))
+				#self.sendMessage("ACKN"+idt, (host, port))
+				reactor.callFromThread(self.send_ack, "ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
 			except Exception, e:
@@ -161,6 +162,8 @@ class MixNode(DatagramProtocol):
 		#te = time.time()
 		#self.timeits.append(te-ts)
 
+	def send_ack(self, msg, (host, port)):
+		reactor.callLater(self.sendMessage, msg, (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -224,9 +227,10 @@ class MixNode(DatagramProtocol):
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		if delay > 0:
+			print "DELAYED"
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
-			print "Here"
+			print "NOW"
 			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
 
 	def do_RINF(self, data):
@@ -597,13 +601,13 @@ class MixNode(DatagramProtocol):
 			self.measurments = []
 		except Exception, e:
 			print "Error while saving: ", str(e)
-		try:
-			with open("timeit.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter='\n')
-				csvW.writerow(self.timeits)
-			self.timeits = []
-		except Exception, e:
-			print "Error while saving: ", str(e)
+		# try:
+		# 	with open("timeit.csv", "ab") as outfile:
+		# 		csvW = csv.writer(outfile, delimiter='\n')
+		# 		csvW.writerow(self.timeits)
+		# 	self.timeits = []
+		# except Exception, e:
+		# 	print "Error while saving: ", str(e)
 		# try:
 		# 	with open("reliabilityMixnode.csv", "ab") as outfile:
 		# 		csvW = csv.writer(outfile, delimiter=',')

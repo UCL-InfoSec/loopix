@@ -92,7 +92,6 @@ class Provider(MixNode):
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
-            self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
