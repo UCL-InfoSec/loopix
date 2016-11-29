@@ -199,7 +199,7 @@ class MixNode(DatagramProtocol):
 						print "ERROR during ROUT processing: ", str(e)
 
 	def sendACK(self, (host, port)):
-		self.transport.write("ACKN", (host, port))
+		self.transport.write("HELLO", (host, port))
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
