@@ -92,6 +92,7 @@ class Provider(MixNode):
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
+            self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
@@ -103,7 +104,6 @@ class Provider(MixNode):
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)
-            self.otherProc += 1
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
             self.otherProc += 1
@@ -158,10 +158,6 @@ class Provider(MixNode):
                     self.saveInStorage(xtoName, msg_forw)
                 else:
                     try:
-                        # if delay > 0:
-                        #     reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
-                        # else:
-                        #     self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
                         reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, msg_forw)), (xtoHost, xtoPort))
                         # self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
