@@ -163,7 +163,7 @@ class MixNode(DatagramProtocol):
 		#self.timeits.append(te-ts)
 
 	def send_ack(self, msg, (host, port)):
-		reactor.callLater(self.sendMessage, msg, (host, port))
+		reactor.callLater(0.0, self.sendMessage, msg, (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
