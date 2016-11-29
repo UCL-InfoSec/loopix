@@ -148,7 +148,7 @@ class MixNode(DatagramProtocol):
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
 				#self.sendMessage("ACKN"+idt, (host, port))
-				self.send_ack("ACKN", (host, port))
+				#self.send_ack("ACKN", (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
 			except Exception, e:
@@ -230,6 +230,7 @@ class MixNode(DatagramProtocol):
 						print "ERROR during bounce processing: ", str(e)
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
+		self.sendMessage("ACKN", (xtoHost, xtoPort))
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
