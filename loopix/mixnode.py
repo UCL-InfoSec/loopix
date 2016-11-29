@@ -133,7 +133,6 @@ class MixNode(DatagramProtocol):
 	def do_PROCESS(self, (data, (host, port))):
 		self.processMessage(data, (host, port))
 		self.bProcessed += 1
-		self.send_ack("ACKN", (host, port))
 
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -149,6 +148,7 @@ class MixNode(DatagramProtocol):
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
 				#self.sendMessage("ACKN"+idt, (host, port))
+				self.send_ack("ACKN", (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
 			except Exception, e:
