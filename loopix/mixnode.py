@@ -123,9 +123,9 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
-
 		try:
 			self.processQueue.put((data, (host, port)))
+			self.sendMessage("ACKN", (host, port))
 			self.bReceived += 1
 		except Exception, e:
 			print "[%s] > ERROR: %s " % (self.name, str(e))
@@ -150,7 +150,6 @@ class MixNode(DatagramProtocol):
 				#self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
-				reactor.callFromThread(self.acknowledge, "ACKN"+idt, (host, port))
 			except Exception, e:
 				print "ERROR: ", str(e)
 		elif data.startswith("ACKN"):
@@ -161,9 +160,6 @@ class MixNode(DatagramProtocol):
 			print "Processing Message - message not recognized"
 		te = time.time()
 		self.timeits.append(te-ts)
-
-	def acknowledge(self, ack, addr):
-		self.sendMessage(ack, addr)
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request

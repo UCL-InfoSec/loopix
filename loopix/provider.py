@@ -72,6 +72,7 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         try:
             self.processQueue.put((data, (host, port)))
+            self.sendMessage("ACKN", (host, port))
             self.bReceived += 1
         except Exception, e:
             print "[%s] > ERROR: %s " % (self.name, str(e))
@@ -99,7 +100,6 @@ class Provider(MixNode):
                 #self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
                 self.gbProcessed += 1
-                reactor.callFromThread(self.acknowledge, "ACKN"+idt, (host, port))
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
         elif data[:4] == "ACKN":
