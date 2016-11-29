@@ -182,6 +182,7 @@ class MixNode(DatagramProtocol):
 			(host, port): a tuple of string and int representing the address of the sender of the rqs
 		"""
 		try:
+			reactor.callFromThread(self.sendACK, (host, port))
 			peeledData = self.mix_operate(self.setup, data)
 		except Exception, e:
 			print "ERROR: ", str(e)
@@ -196,6 +197,9 @@ class MixNode(DatagramProtocol):
 						#self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
+
+	def sendACK(self, (host, port)):
+		self.transport.write("ACKN", (host, port))
 
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
