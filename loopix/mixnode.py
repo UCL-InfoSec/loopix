@@ -144,7 +144,6 @@ class MixNode(DatagramProtocol):
 
 	def processMessage(self, data, (host, port)):
 		#ts = time.time()
-		reactor.callFromThread(self.sendACK, (host, port))
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
@@ -198,9 +197,6 @@ class MixNode(DatagramProtocol):
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
 
-	def sendACK(self, (host, port)):
-		self.transport.write("HELLO", (host, port))
-
 	def do_BOUNCE(self, data):
 		"""	Mixnode processes the BOUNCE message. This function is called, when the mixnode did not receive the ACK for
 		a particular transported packet.
@@ -230,7 +226,8 @@ class MixNode(DatagramProtocol):
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
-			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))	
+			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+		self.sendMessage("ACKN", (xtoHost, xtoPort))	
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
