@@ -149,7 +149,6 @@ class MixNode(DatagramProtocol):
 				idt, msgData = petlib.pack.decode(data[4:])
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
-				#self.sendMessage("ACKN"+idt, (host, port))
 			except Exception, e:
 				print "ERROR: ", str(e)
 		elif data[:4] == "ACKN":
@@ -162,8 +161,8 @@ class MixNode(DatagramProtocol):
 		#self.timeits.append(te-ts)
 
 	def send_ack(self, msg, (host, port)):
-		#reactor.callLater(0.0, self.sendMessage, msg, (host, port))
-		reactor.callFromThread(self.tmp_fun, msg, (host, port))
+		reactor.callLater(0.0, self.sendMessage, msg, (host, port))
+		#reactor.callFromThread(self.tmp_fun, msg, (host, port))
 
 	def tmp_fun(self, msg, (host, port)):
 		self.sendMessage("ACKN", (host, port))
