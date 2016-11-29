@@ -124,8 +124,8 @@ class MixNode(DatagramProtocol):
 
 	def datagramReceived(self, data, (host, port)):
 		try:
-			self.processQueue.put((data, (host, port)))
 			self.sendMessage("ACKN", (host, port))
+			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
 		except Exception, e:
 			print "[%s] > ERROR: %s " % (self.name, str(e))
