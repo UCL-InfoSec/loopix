@@ -131,7 +131,7 @@ class MixNode(DatagramProtocol):
 			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
-		reactor.callFromThread(self.sendMessage, "HELLO", (host, port))
+		reactor.callFromThread(self.sendMessage, "ACKN", (host, port))
 		self.processMessage(data, (host, port))
 		self.bProcessed += 1
 
@@ -153,7 +153,7 @@ class MixNode(DatagramProtocol):
 				self.gbProcessed += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
-		elif data.startswith("ACKN"):
+		elif data[:4] == "ACKN":
 			#if data in self.expectedACK:
 			#	self.expectedACK.remove(data)
 			self.otherProc += 1

@@ -88,13 +88,13 @@ class ProcessQueue():
 
 			tmp = np.random.poisson(self.drop)
 			q_len = len(self.queue)
-			del self.queue[:int(tmp)]
+			#del self.queue[:int(tmp)]
 
 
 		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 		
-			dataTmp = [drop_tmp, P, I, D, q_len, start_time - inserted_time]
+			dataTmp = [tmp, P, I, D, q_len, start_time - inserted_time]
 			self.log(dataTmp)
 
 
