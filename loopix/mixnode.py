@@ -386,6 +386,7 @@ class MixNode(DatagramProtocol):
 	def send_to_ip(self, IPaddrs, host, port, data):
 		self.transport.write(data, (IPaddrs, port))
 		self.resolvedAdrs[host] = IPaddrs
+		print self.resolvedAdrs
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
