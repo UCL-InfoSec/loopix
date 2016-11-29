@@ -104,6 +104,7 @@ class Provider(MixNode):
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)
+            pass
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
             self.otherProc += 1
