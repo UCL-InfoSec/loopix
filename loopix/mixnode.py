@@ -167,7 +167,7 @@ class MixNode(DatagramProtocol):
 		reactor.callFromThread(self.tmp_fun, msg, (host, port))
 
 	def tmp_fun(self, msg, (host, port)):
-		reactor.callLater(0.0, self.sendMessage, "ACKN", (host, port))
+		self.sendMessage("ACKN", (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
