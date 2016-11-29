@@ -133,6 +133,7 @@ class MixNode(DatagramProtocol):
 	def do_PROCESS(self, (data, (host, port))):
 		self.processMessage(data, (host, port))
 		self.bProcessed += 1
+		self.send_ack("ACKN", (host, port))
 
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -148,7 +149,6 @@ class MixNode(DatagramProtocol):
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
 				#self.sendMessage("ACKN"+idt, (host, port))
-				reactor.callFromThread(self.send_ack, "ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
 			except Exception, e:
@@ -163,7 +163,11 @@ class MixNode(DatagramProtocol):
 		#self.timeits.append(te-ts)
 
 	def send_ack(self, msg, (host, port)):
-		reactor.callLater(0.0, self.sendMessage, msg, (host, port))
+		#reactor.callLater(0.0, self.sendMessage, msg, (host, port))
+		reactor.callFromThread(self.tmp_fun, msg, (host, port))
+
+	def tmp_fun(self, msg, (host, port)):
+		reactor.callLater(0.0, self.sendMessage, "ACKN", (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -227,11 +231,9 @@ class MixNode(DatagramProtocol):
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		if delay > 0:
-			print "DELAYED"
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
-			print "NOW"
-			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
+			reactor.callLater(0.0, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
