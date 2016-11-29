@@ -89,7 +89,7 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(f)
 
     def processMessage(self, (data, (host, port))):
-        ts = time.time()
+
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
             self.otherProc += 1
@@ -110,8 +110,6 @@ class Provider(MixNode):
             self.otherProc += 1
         else:
             print "Processing Message - message not recognized"
-        te = time.time()
-        self.timeits.append(te-ts)
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -161,6 +159,10 @@ class Provider(MixNode):
                     self.saveInStorage(xtoName, msg_forw)
                 else:
                     try:
+                        # if delay > 0:
+                        #     reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
+                        # else:
+                        #     self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
                         reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, msg_forw)), (xtoHost, xtoPort))
                         # self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
@@ -238,10 +240,3 @@ class Provider(MixNode):
             self.measurments = []
         except Exception, e:
             print "ERROR saving to file: ", str(e)
-        try:
-            with open("timeit.csv", "ab") as outfile:
-                csvW = csv.writer(outfile, delimiter='\n')
-                csvW.writerow(self.timeits)
-            self.timeits = []
-        except Exception, e:
-            print str(e)

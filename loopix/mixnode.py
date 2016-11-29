@@ -82,7 +82,7 @@ class MixNode(DatagramProtocol):
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
 		self.savedLatency = []
-		self.timeits = []
+		#self.timeits = []
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -123,6 +123,7 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
+
 		try:
 			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
@@ -142,7 +143,7 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
-		ts = time.time()
+		#ts = time.time()
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
@@ -157,8 +158,9 @@ class MixNode(DatagramProtocol):
 			self.otherProc += 1
 		else:
 			print "Processing Message - message not recognized"
-		te = time.time()
-		self.timeits.append(te-ts)
+		#te = time.time()
+		#self.timeits.append(te-ts)
+
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -224,8 +226,7 @@ class MixNode(DatagramProtocol):
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
-			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
-		self.sendMessage("ACKN"+idt, (xtoHost, xtoPort))	
+			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))	
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
