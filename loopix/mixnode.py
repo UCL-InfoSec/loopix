@@ -224,7 +224,7 @@ class MixNode(DatagramProtocol):
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
-			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort)
+			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
 		self.sendMessage("ACKN"+idt, (xtoHost, xtoPort))	
 
 	def do_RINF(self, data):
