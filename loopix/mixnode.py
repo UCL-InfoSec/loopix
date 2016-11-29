@@ -147,7 +147,7 @@ class MixNode(DatagramProtocol):
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				self.sendMessage("ACKN"+idt, (host, port))
+				reactor.callLater(0, self.sendMessage, "ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
 				self.gbProcessed += 1
 			except Exception, e:
@@ -226,6 +226,7 @@ class MixNode(DatagramProtocol):
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
+			print "Here"
 			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))
 
 	def do_RINF(self, data):
@@ -386,8 +387,6 @@ class MixNode(DatagramProtocol):
 	def send_to_ip(self, IPaddrs, host, port, data):
 		self.transport.write(data, (IPaddrs, port))
 		self.resolvedAdrs[host] = IPaddrs
-		print "Resolving host: ", host
-		print self.resolvedAdrs
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
