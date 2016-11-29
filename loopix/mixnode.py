@@ -144,6 +144,7 @@ class MixNode(DatagramProtocol):
 
 	def processMessage(self, data, (host, port)):
 		#ts = time.time()
+		reactor.callFromThread(self.sendACK, (host, port))
 		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
@@ -182,7 +183,6 @@ class MixNode(DatagramProtocol):
 			(host, port): a tuple of string and int representing the address of the sender of the rqs
 		"""
 		try:
-			reactor.callFromThread(self.sendACK, (host, port))
 			peeledData = self.mix_operate(self.setup, data)
 		except Exception, e:
 			print "ERROR: ", str(e)
