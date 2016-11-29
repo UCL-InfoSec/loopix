@@ -131,7 +131,7 @@ class MixNode(DatagramProtocol):
 			print "[%s] > ERROR: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
-		self.sendMessage("HELLO", (host, port))
+		reactor.callFromThread(self.sendMessage, "HELLO", (host, port))
 		self.processMessage(data, (host, port))
 		self.bProcessed += 1
 
