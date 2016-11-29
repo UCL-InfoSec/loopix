@@ -162,10 +162,6 @@ class MixNode(DatagramProtocol):
 
 	def send_ack(self, msg, (host, port)):
 		reactor.callLater(0.0, self.sendMessage, msg, (host, port))
-		#reactor.callFromThread(self.tmp_fun, msg, (host, port))
-
-	def tmp_fun(self, msg, (host, port)):
-		self.sendMessage("ACKN", (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -391,7 +387,7 @@ class MixNode(DatagramProtocol):
 
 	def send_to_ip(self, IPaddrs, host, port, data):
 		self.transport.write(data, (IPaddrs, port))
-		self.resolvedAdrs[host] = IPaddrs
+		#self.resolvedAdrs[host] = IPaddrs
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
