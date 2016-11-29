@@ -124,7 +124,6 @@ class MixNode(DatagramProtocol):
 
 	def datagramReceived(self, data, (host, port)):
 		try:
-			self.sendMessage("ACKN", (host, port))
 			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
 		except Exception, e:
@@ -225,7 +224,8 @@ class MixNode(DatagramProtocol):
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
-			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort))	
+			self.sendMessage("ROUT" + packet, (xtoHost, xtoPort)
+		self.sendMessage("ACKN"+idt, (xtoHost, xtoPort))	
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
