@@ -132,7 +132,6 @@ class Client(DatagramProtocol):
 
         self.send("PING"+self.name, (self.provider.host, self.provider.port))
         self.send("PULL_MSG"+self.name, (self.provider.host, self.provider.port))
-        self.numMessagesSent += 2
 
     def turnOnMessagePulling(self):
         """ Function turns on a loop which pulls messages from the provider every timestamp."""
@@ -454,6 +453,7 @@ class Client(DatagramProtocol):
 
         try:
             self.transport.write(packet, (self.resolvedAdrs[host], port))
+            self.numMessagesSent += 1
         except KeyError, e:
             reactor.resolve(host).addCallback(send_to_ip)
         #if host in self.resolvedAdrs:
