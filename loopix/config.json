@@ -1,17 +1,17 @@
 {
 	"parametersClients":
 		{
-			"EXP_PARAMS_PAYLOAD":"18.0", 
-			"EXP_PARAMS_LOOPS":"18.0", 
-			"EXP_PARAMS_COVER":"18.0", 
+			"EXP_PARAMS_PAYLOAD":"3", 
+			"EXP_PARAMS_LOOPS":"3", 
+			"EXP_PARAMS_COVER":"3", 
 			"EXP_PARAMS_DELAY":"0.005",
-			"TESTMODE":"True",
+			"TESTMODE":"False",
 			"C":"5",
-			"UPDATA_PARAMS":"True",
+			"UPDATA_PARAMS":"False",
 			"NOISE_LENGTH":"500",
 			"TIME_PULL":"10",
 			"PATH_LENGTH":"3",
-			"FAKE_MESSAGING":"False"
+			"FAKE_MESSAGING":"True"
 		},
 	"parametersMixnodes": 
 		{
