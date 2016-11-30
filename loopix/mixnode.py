@@ -385,7 +385,8 @@ class MixNode(DatagramProtocol):
 			self.transport.write(data, (self.resolvedAdrs[host], port))
 		except KeyError, e:
 			# Resolve and call the send function
-			reactor.resolve(host).addCallback(send_to_ip, host=host, port=port, data=data)
+			reactor.resolve(host).addCallback(send_to_ip)
+			#reactor.resolve(host).addCallback(send_to_ip, host=host, port=port, data=data)
 
 	def send_to_ip(self, IPaddrs, host, port, data):
 		self.transport.write(data, (IPaddrs, port))
