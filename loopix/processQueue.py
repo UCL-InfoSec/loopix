@@ -49,8 +49,8 @@ class ProcessQueue():
 			while self.consumers != [] and self.queue != []:
 				d = self.consumers.pop(0)
 				obj = self.queue.pop(0)
-				#dt = threads.deferToThread(self._process_in_thread, d, obj)
-				reactor.callInThread(self._process_in_thread, d, obj)
+				dt = threads.deferToThread(self._process_in_thread, d, obj)
+				#reactor.callInThread(self._process_in_thread, d, obj)
 		except Exception, e:
 			print str(e)
 

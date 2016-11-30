@@ -96,7 +96,6 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
-                #self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
                 self.gbProcessed += 1
             except Exception, e:
