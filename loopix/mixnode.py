@@ -59,7 +59,7 @@ class MixNode(DatagramProtocol):
 		self.seenMacs = set()
 		self.seenElements = set()
 		self.bounceInformation = {}
-		self.expectedACK = set()
+		# self.expectedACK = set()
 
 		self.heartbeatsSent = set()
 		self.numHeartbeatsReceived = 0
@@ -195,7 +195,7 @@ class MixNode(DatagramProtocol):
 					try:
 						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						#self.expectedACK.add("ACKN"+idt)
-						reactor.callFromThread(self.send_ack, "ACKN", (host, port))
+						reactor.callFromThread(self.send_ack, "ACKN", (xtoHost, xtoPort))
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
 
@@ -473,18 +473,18 @@ class MixNode(DatagramProtocol):
 		"""Function prints the keypair information of a mixnode."""
 		print "OPERATED MIXNODE: Name: %s, address: (%d, %s), PubKey: %s" % (self.name, self.port, self.host, self.pubk)
 
-	def ackListener(self):
-		""" Function checks if mixnode received the acknowledgments for the sent packets. """
+	# def ackListener(self):
+	# 	""" Function checks if mixnode received the acknowledgments for the sent packets. """
 
-		if self.expectedACK:
-			ack = self.expectedACK.pop()
-			if ack in self.bounceInformation:
-				try:
-					self.do_BOUNCE(self.bounceInformation[ack])
-				except Exception, e:
-					print "ERROR during ACK checking: ", str(e)
-			else:
-				print "> For this ACK there is no bounce message."
+	# 	if self.expectedACK:
+	# 		ack = self.expectedACK.pop()
+	# 		if ack in self.bounceInformation:
+	# 			try:
+	# 				self.do_BOUNCE(self.bounceInformation[ack])
+	# 			except Exception, e:
+	# 				print "ERROR during ACK checking: ", str(e)
+	# 		else:
+	# 			print "> For this ACK there is no bounce message."
 
 	def heartbeatListener(self, heartbeat):
 		""" Function checks the incoming heartbeat messages if and when this heartbeat was sent.
