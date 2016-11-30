@@ -195,7 +195,7 @@ class MixNode(DatagramProtocol):
 					try:
 						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
 						#self.expectedACK.add("ACKN"+idt)
-						reactor.callFromThread(self.send_ack, "ACKN", (xtoHost, xtoPort))
+						#reactor.callFromThread(self.send_ack, "ACKN", (host, port))
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
 
@@ -387,7 +387,6 @@ class MixNode(DatagramProtocol):
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
-			#reactor.resolve(host).addCallback(send_to_ip, host=host, port=port, data=data)
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
