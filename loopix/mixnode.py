@@ -92,9 +92,9 @@ class MixNode(DatagramProtocol):
 		reactor.callLater(10.0, self.turnOnProcessing)
 
 		if self.TAGED_HEARTBEATS == "True":
-			self.d.addCallback(self.turnOnHeartbeats)
-		else:
 			self.d.addCallback(self.turnOnTagedHeartbeats)
+		else:
+			self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 
 		# self.turnOnReliableUDP()
