@@ -78,6 +78,7 @@ class MixNode(DatagramProtocol):
 		self.PATH_LENGTH = 3
 		self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"]), None)
 		self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"]), None)
+		self.TAGED_HEARTBEATS = _PARAMS["parametersMixnodes"]["TAGED_HEARTBEATS"]
 
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
@@ -90,7 +91,10 @@ class MixNode(DatagramProtocol):
 		print "[%s] > Start protocol" % self.name
 		reactor.callLater(10.0, self.turnOnProcessing)
 
-		self.d.addCallback(self.turnOnHeartbeats)
+		if self.TAGED_HEARTBEATS == "True":
+			self.d.addCallback(self.turnOnHeartbeats)
+		else:
+			self.d.addCallback(self.turnOnTagedHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 
 		# self.turnOnReliableUDP()
@@ -104,11 +108,11 @@ class MixNode(DatagramProtocol):
 	def turnOnProcessing(self):
 		self.processQueue.get().addCallback(self.do_PROCESS)
 
-	def turnOnTagedSending(self):
-		lc = task.LoopingCall(self.sendTagedMessage)
-		lc.start(10, True)
+	def turnOnTagedHeartbeats(self):
+		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+		reactor.callLater(interval, self.sendTagedMessage)
 		lc2 = task.LoopingCall(self.saveLatency)
-		lc2.start(600, False)
+		lc2.start(300, False)
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
@@ -431,9 +435,11 @@ class MixNode(DatagramProtocol):
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
-			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
-			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
+			self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:])), (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
+
+			interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+			reactor.callLater(interval, self.sendTagedMessage)
 		except Exception, e:
 			print "ERROR: Send tagged message: ", str(e)
 
@@ -551,7 +557,6 @@ class MixNode(DatagramProtocol):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
 		self.d.callback(self.mixList)
-		self.turnOnTagedSending()
 
 	def takePublicInfo(self):
 		return petlib.pack.encode([self.name, self.port, self.host, self.pubk])
