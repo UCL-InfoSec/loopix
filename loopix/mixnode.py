@@ -108,7 +108,7 @@ class MixNode(DatagramProtocol):
 	def turnOnProcessing(self):
 		self.processQueue.get().addCallback(self.do_PROCESS)
 
-	def turnOnTagedHeartbeats(self):
+	def turnOnTagedHeartbeats(self, mixnet):
 		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 		reactor.callLater(interval, self.sendTagedMessage)
 		lc2 = task.LoopingCall(self.saveLatency)
