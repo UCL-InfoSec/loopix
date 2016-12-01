@@ -36,6 +36,7 @@ TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
 C = float(_PARAMS["parametersClients"]["C"])
 FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
+UPDATE_TIME = float(_PARAMS["parametersClients"]["UPDATE_TIME"])
 
 class Client(DatagramProtocol):
     def __init__(self, setup, name, port, host, testUser=False,
@@ -125,7 +126,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_LOOPS = (float(180.0/((180.0/old_loops) + C)), None)
         self.EXP_PARAMS_COVER = (float(180.0/((180.0/old_drop) + C)), None)
 
-        reactor.callLater(120, self.updateParams)
+        reactor.callLater(UPDATE_TIME, self.updateParams)
 
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""
