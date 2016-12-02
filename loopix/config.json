@@ -6,9 +6,9 @@
 			"EXP_PARAMS_COVER":"18", 
 			"EXP_PARAMS_DELAY":"0.005",
 			"TESTMODE":"True",
-			"C":"10",
+			"C":"5",
 			"UPDATA_PARAMS":"True",
-			"UPDATE_TIME":"300",
+			"UPDATE_TIME":"120",
 			"NOISE_LENGTH":"500",
 			"TIME_PULL":"10",
 			"PATH_LENGTH":"3",
@@ -23,6 +23,6 @@
 			"TIME_CLEAN":"1600",
 			"MAX_DELAY_TIME":"-432000",
 			"NOISE_LENGTH":"500",
-			"TAGED_HEARTBEATS":"True"
+			"TAGED_HEARTBEATS":"False"
 		}
 }
