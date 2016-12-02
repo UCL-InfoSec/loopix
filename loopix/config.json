@@ -7,12 +7,12 @@
 			"EXP_PARAMS_DELAY":"0.005",
 			"TESTMODE":"True",
 			"C":"5",
-			"UPDATA_PARAMS":"False",
+			"UPDATA_PARAMS":"True",
 			"UPDATE_TIME":"120",
 			"NOISE_LENGTH":"500",
 			"TIME_PULL":"10",
 			"PATH_LENGTH":"3",
-			"FAKE_MESSAGING":"True"
+			"FAKE_MESSAGING":"False"
 		},
 	"parametersMixnodes": 
 		{
