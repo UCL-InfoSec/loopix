@@ -694,7 +694,7 @@ class Client(DatagramProtocol):
         self.readInUsersPubs(databaseName)
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
-        if self.TESTMODE:
+        if self.TESTMODE or self.TESTUSER:
             self.createTestingSet()
         self.turnOnMessaging(self.mixnet)
 
