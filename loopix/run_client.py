@@ -72,8 +72,8 @@ secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 try:
 	data = file("publicClient.bin", "rb").read()
 	_, name, port, host, _, prvname = petlib.pack.decode(data)
-	# options.parseOptions()
-	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
+	options.parseOptions()
+	client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=options['test'])
 	
 	# reactor.listenUDP(port, client)
 	# reactor.run()
