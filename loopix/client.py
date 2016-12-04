@@ -572,7 +572,7 @@ class Client(DatagramProtocol):
                 print "Client: %s with provider %s" % (r.name, r.provider.name)
             else:
                 # r = random.choice(self.usersPubs)
-                r = random.choice(self.friendsGroup)
+                r = random.choice(friendsGroup)
             msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
