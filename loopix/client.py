@@ -97,6 +97,7 @@ class Client(DatagramProtocol):
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
+        print "TEST USER MODE: ", self.TESTUSER
         self.provider = self.takeProvidersData("example.db", self.providerId)
         print "Provider: ", self.provider
 
