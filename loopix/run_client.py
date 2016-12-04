@@ -13,9 +13,11 @@ import petlib
 from twisted.internet import stdio
 from twisted.protocols import basic
 from twisted.application import service, internet
+from twisted.python import usage
 
 import sqlite3
 import databaseConnect as dc
+
 
 def readAllUsersFromDB(database):
         usersList = []
@@ -30,11 +32,15 @@ def readAllUsersFromDB(database):
         db.close()
         return usersList
 
+class Options(usage.options):
+	optParameters = [["test", "t", False, "The client test mode"]]
+
 
 class ClientEcho(basic.LineReceiver):
 	from os import linesep as delimiter
 	def __init__(self, client):
 		self.client = client
+		self.config = Options
 
 	def connectionMade(self):
 		self.transport.write('>>> ')
@@ -65,11 +71,8 @@ secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 try:
 	data = file("publicClient.bin", "rb").read()
 	_, name, port, host, _, prvname = petlib.pack.decode(data)
-	if "--test" in sys.argv:
-		client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=True)
-	else:
- 		client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=False)
- 	
+	client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=options["test"])
+	
 	# reactor.listenUDP(port, client)
 	# reactor.run()
 
