@@ -84,7 +84,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
         self.UPDATE_PARAMS = _PARAMS["parametersClients"]["UPDATA_PARAMS"]
-        self.TESTUSER = testUser
+        self.TESTUSER = True if testUser == "True" else False
 
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
