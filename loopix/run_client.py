@@ -32,7 +32,7 @@ def readAllUsersFromDB(database):
         db.close()
         return usersList
 
-class Options(usage.options):
+class Options(usage.Options):
 	optParameters = [["test", "t", False, "The client test mode"]]
 
 
