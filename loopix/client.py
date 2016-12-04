@@ -556,7 +556,8 @@ class Client(DatagramProtocol):
         self.testHeartbeats = set()
         self.testDrops = set()
         self.testPayload = set()
-            
+        friendsGroup = random.sample(self.usersPubs, 5)
+
         for i in range(30):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             timestamp = time.time()
@@ -566,7 +567,12 @@ class Client(DatagramProtocol):
             self.testDrops.add(self.createDropMessage(mixpath))
         for i in range(30):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            r = random.choice(self.usersPubs)
+            if self.TESTUSER:
+                r = friendsGroup[0]
+                print "Client: %s with provider %s" % (r.name, r.provider.name)
+            else:
+                # r = random.choice(self.usersPubs)
+                r = random.choice(self.friendsGroup)
             msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
