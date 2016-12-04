@@ -62,7 +62,7 @@ class ClientEcho(basic.LineReceiver):
 if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin")):
 	raise Exception("Key parameter files not found")
 
-config = Options
+options = Options
 setup = format3.setup()
 G, o, g, o_bytes = setup
 
@@ -71,7 +71,7 @@ secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 try:
 	data = file("publicClient.bin", "rb").read()
 	_, name, port, host, _, prvname = petlib.pack.decode(data)
-	client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=config["test"])
+	client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=options["test"])
 	
 	# reactor.listenUDP(port, client)
 	# reactor.run()
