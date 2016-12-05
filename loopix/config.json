@@ -1,13 +1,13 @@
 {
 	"parametersClients":
 		{
-			"EXP_PARAMS_PAYLOAD":"3", 
-			"EXP_PARAMS_LOOPS":"3", 
-			"EXP_PARAMS_COVER":"3", 
+			"EXP_PARAMS_PAYLOAD":"18", 
+			"EXP_PARAMS_LOOPS":"18", 
+			"EXP_PARAMS_COVER":"18", 
 			"EXP_PARAMS_DELAY":"0.005",
 			"TESTMODE":"True",
 			"C":"5",
-			"UPDATA_PARAMS":"False",
+			"UPDATA_PARAMS":"True",
 			"UPDATE_TIME":"120",
 			"NOISE_LENGTH":"500",
 			"TIME_PULL":"10",
