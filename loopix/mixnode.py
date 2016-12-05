@@ -84,6 +84,7 @@ class MixNode(DatagramProtocol):
 		self.resolvedAdrs = {}
 		self.savedLatency = []
 		#self.timeits = []
+		self.mixedTogether = 0
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(30)
@@ -234,6 +235,7 @@ class MixNode(DatagramProtocol):
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
 			reactor.callLater(0.0, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+		self.mixedTogether += 1
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
@@ -389,6 +391,7 @@ class MixNode(DatagramProtocol):
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
+			self.mixedTogether -= 1
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -583,13 +586,14 @@ class MixNode(DatagramProtocol):
 		lc.start(120, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc])
+		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether])
 		self.bProcessed = 0
 		self.gbProcessed = 0
 		self.bReceived = 0
 		self.pProcessed = 0
 		self.otherProc = 0
 		self.hbSent = {}
+		self.mixedTogether = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
