@@ -4,7 +4,7 @@
 			"EXP_PARAMS_PAYLOAD":"18", 
 			"EXP_PARAMS_LOOPS":"18", 
 			"EXP_PARAMS_COVER":"18", 
-			"EXP_PARAMS_DELAY":"0.005",
+			"EXP_PARAMS_DELAY":"0.5",
 			"TESTMODE":"True",
 			"C":"5",
 			"UPDATA_PARAMS":"True",
@@ -17,7 +17,7 @@
 	"parametersMixnodes": 
 		{
 			"EXP_PARAMS_LOOPS":"10",
-			"EXP_PARAMS_DELAY":"0.005",
+			"EXP_PARAMS_DELAY":"0.5",
 			"TIME_ACK":"1600",
 			"TIME_FLUSH":"0.01",
 			"TIME_CLEAN":"1600",
