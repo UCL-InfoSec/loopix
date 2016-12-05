@@ -389,9 +389,9 @@ class MixNode(DatagramProtocol):
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
 			self.resolvedAdrs[host] = IPaddrs
+			self.mixedTogether -= 1
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-			self.mixedTogether -= 1
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -593,7 +593,6 @@ class MixNode(DatagramProtocol):
 		self.pProcessed = 0
 		self.otherProc = 0
 		self.hbSent = {}
-		self.mixedTogether = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
