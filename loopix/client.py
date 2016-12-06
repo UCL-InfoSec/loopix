@@ -707,7 +707,7 @@ class Client(DatagramProtocol):
 
     def measureSentMessages(self):
         lc = task.LoopingCall(self.takeMeasurments)
-        lc.start(120, False)
+        lc.start(60, False)
 
     def takeMeasurments(self):
         self.sendMeasurments.append(self.numMessagesSent)
@@ -719,7 +719,7 @@ class Client(DatagramProtocol):
 
     def save_to_file(self):
         with open('messagesSent.csv', 'ab') as outfile:
-            csvW = csv.writer(outfile, delimiter=',')
-            csvW.writerows([self.sendMeasurments])
+            csvW = csv.writer(outfile, delimiter='\n')
+            csvW.writerow(self.sendMeasurments)
         self.sendMeasurments = []
 
