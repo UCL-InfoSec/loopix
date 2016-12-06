@@ -123,9 +123,9 @@ class Client(DatagramProtocol):
         old_loops = self.EXP_PARAMS_LOOPS[0]
         old_drop = self.EXP_PARAMS_COVER[0]
 
-        self.EXP_PARAMS_PAYLOAD = (float(180.0/((180.0/old_payload) + C)), None)
-        self.EXP_PARAMS_LOOPS = (float(180.0/((180.0/old_loops) + C)), None)
-        self.EXP_PARAMS_COVER = (float(180.0/((180.0/old_drop) + C)), None)
+        self.EXP_PARAMS_PAYLOAD = (float(60.0/((60.0/old_payload) + C)), None)
+        self.EXP_PARAMS_LOOPS = (float(60.0/((60.0/old_loops) + C)), None)
+        self.EXP_PARAMS_COVER = (float(60.0/((60.0/old_drop) + C)), None)
 
         reactor.callLater(UPDATE_TIME, self.updateParams)
 
