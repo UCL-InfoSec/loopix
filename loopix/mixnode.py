@@ -392,6 +392,7 @@ class MixNode(DatagramProtocol):
 			self.mixedTogether -= 1
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
+			self.mixedTogether -= 1
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
