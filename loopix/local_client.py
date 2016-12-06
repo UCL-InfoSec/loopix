@@ -9,6 +9,10 @@ from twisted.internet import stdio
 import time
 import supportFunctions as sf
 import random
+from twisted.python import usage
+from twisted.application import service, internet
+from twisted.python import usage
+from twisted.plugin import IPlugin
 
 class ClientEcho(basic.LineReceiver):
 	from os import linesep as delimiter
@@ -55,12 +59,15 @@ class ClientEcho(basic.LineReceiver):
 		except Exception, e:
 			print str(e)
 
+class Options(usage.Options):
+	optParameters = [["test", "t", False, "The client test mode"]]
 
 if __name__ == "__main__":
 
 	if not (os.path.exists('secretClient.prv') and os.path.exists("publicClient.bin")):
 		raise Exception("Key parameter files not found")
 
+	options = Options()
 	setup = format3.setup()
 	G, o, g, o_bytes = setup
 
@@ -69,15 +76,34 @@ if __name__ == "__main__":
 	try:
 		data = file("publicClient.bin", "rb").read()
 		_, name, port, host, _, prvname = petlib.pack.decode(data)
+		
 		if "--test" in sys.argv:
 			client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=True)
 		else:
 			client = Client(setup, name, port, host, privk = secret, providerId=prvname, testUser=False)
 
-
 		if "--mock" not in sys.argv:
 			stdio.StandardIO(ClientEcho(client))
 			reactor.run()
 
-	except Exception, e :
+	except Exception, e:
 		print str(e)
+
+else:
+	setup = format3.setup()
+	G, o, g, o_bytes = setup
+
+	secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
+
+	data = file("publicClient.bin", "rb").read()
+	_, name, port, host, _, prvname = petlib.pack.decode(data)
+
+
+	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
+
+	udp_server = internet.UDPServer(port, client)
+	application = service.Application("Client")
+	udp_server.setServiceParent(application)
+
+	# except Exception, e :
+	# 	print str(e)
