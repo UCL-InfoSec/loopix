@@ -231,11 +231,11 @@ class MixNode(DatagramProtocol):
 						print "ERROR during bounce processing: ", str(e)
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
+		self.mixedTogether += 1
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
 			reactor.callLater(0.0, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
-		self.mixedTogether += 1
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
