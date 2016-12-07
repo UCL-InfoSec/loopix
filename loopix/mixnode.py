@@ -63,6 +63,7 @@ class MixNode(DatagramProtocol):
 
 		self.heartbeatsSent = set()
 		self.numHeartbeatsReceived = 0
+		self.hbProcessed = 0
 		self.tagedHeartbeat = {}
 
 		self.savedElements = set()
@@ -301,6 +302,7 @@ class MixNode(DatagramProtocol):
 				self.hbSent[pt[2:]] = True
 			if pt.startswith('HTTAG'):
 				self.measureLatency(pt)
+			self.hbProcessed += 1
 			return None
 		else:
 			dropMessage = header[1]
@@ -587,13 +589,14 @@ class MixNode(DatagramProtocol):
 		lc.start(120, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether])
+		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether, self.hbProcessed])
 		self.bProcessed = 0
 		self.gbProcessed = 0
 		self.bReceived = 0
 		self.pProcessed = 0
 		self.otherProc = 0
 		self.hbSent = {}
+		self.hbProcessed = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
