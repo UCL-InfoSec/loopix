@@ -586,7 +586,7 @@ class MixNode(DatagramProtocol):
 
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.takeMeasurments)
-		lc.start(120, False)
+		lc.start(60, False)
 
 	def takeMeasurments(self):
 		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether, self.hbProcessed])
@@ -600,7 +600,7 @@ class MixNode(DatagramProtocol):
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
-		lc.start(360, False)
+		lc.start(300, False)
 
 	def save_to_file(self):
 		try:
