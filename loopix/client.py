@@ -36,7 +36,6 @@ TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
 C = float(_PARAMS["parametersClients"]["C"])
 FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
-UPDATE_TIME = float(_PARAMS["parametersClients"]["UPDATE_TIME"])
 
 class Client(DatagramProtocol):
     def __init__(self, setup, name, port, host, testUser=False,
@@ -83,7 +82,6 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
-        self.UPDATE_PARAMS = _PARAMS["parametersClients"]["UPDATA_PARAMS"]
         self.TESTUSER = True if testUser == "True" else False
 
         self.numHeartbeatsSent = 0
@@ -105,8 +103,6 @@ class Client(DatagramProtocol):
 
         self.readInData("example.db")
         reactor.callLater(100.0, self.turnOnProcessing)
-        # if self.UPDATE_PARAMS=="True" or self.TESTUSER:
-        #     reactor.callLater(300.0, self.updateParams)
 
     def turnOnProcessing(self):
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
@@ -117,17 +113,6 @@ class Client(DatagramProtocol):
 
     def stopProtocol(self):
         print "[%s] > Stop Protocol" % self.name
-
-    # def updateParams(self):
-    #     old_payload = self.EXP_PARAMS_PAYLOAD[0]
-    #     old_loops = self.EXP_PARAMS_LOOPS[0]
-    #     old_drop = self.EXP_PARAMS_COVER[0]
-
-    #     self.EXP_PARAMS_PAYLOAD = (float(60.0/((60.0/old_payload) + C)), None)
-    #     self.EXP_PARAMS_LOOPS = (float(60.0/((60.0/old_loops) + C)), None)
-    #     self.EXP_PARAMS_COVER = (float(60.0/((60.0/old_drop) + C)), None)
-
-    #     reactor.callLater(UPDATE_TIME, self.updateParams)
 
     def pullMessages(self):
         """ Sends a request to pull messages from the provider."""

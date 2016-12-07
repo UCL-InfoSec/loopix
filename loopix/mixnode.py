@@ -167,8 +167,8 @@ class MixNode(DatagramProtocol):
 		#te = time.time()
 		#self.timeits.append(te-ts)
 
-	def send_ack(self, msg, (host, port)):
-		reactor.callLater(0.0, self.sendMessage, msg, (host, port))
+	# def send_ack(self, msg, (host, port)):
+	# 	reactor.callLater(0.0, self.sendMessage, msg, (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -416,6 +416,7 @@ class MixNode(DatagramProtocol):
 				print "ERROR: ", str(e)
 			else:
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
+				self.mixedTogether += 1
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
@@ -442,6 +443,7 @@ class MixNode(DatagramProtocol):
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
+			self.mixedTogether += 1
 			self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:])), (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
 
