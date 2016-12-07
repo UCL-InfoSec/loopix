@@ -2,16 +2,16 @@
     "parametersClients": {
         "NOISE_LENGTH": "500", 
         "C": "2", 
-        "EXP_PARAMS_COVER": "1", 
+        "EXP_PARAMS_COVER": "6", 
         "PATH_LENGTH": "3", 
-        "EXP_PARAMS_LOOPS": "1", 
-        "UPDATE_TIME": "120", 
+        "EXP_PARAMS_LOOPS": "6", 
+        "UPDATE_TIME": "300", 
         "EXP_PARAMS_DELAY": "0.005", 
         "FAKE_MESSAGING": "False", 
         "TESTMODE": "True", 
         "UPDATA_PARAMS": "False", 
         "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "1"
+        "EXP_PARAMS_PAYLOAD": "6"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
