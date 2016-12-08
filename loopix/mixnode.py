@@ -88,7 +88,7 @@ class MixNode(DatagramProtocol):
 		self.mixedTogether = 0
 
 	def startProtocol(self):
-		reactor.suggestThreadPoolSize(30)
+		reactor.suggestThreadPoolSize(50)
 
 		print "[%s] > Start protocol" % self.name
 		reactor.callLater(10.0, self.turnOnProcessing)
