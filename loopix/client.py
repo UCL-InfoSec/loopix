@@ -34,7 +34,6 @@ with open('config.json') as infile:
 
 TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
-C = float(_PARAMS["parametersClients"]["C"])
 FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
 
 class Client(DatagramProtocol):
