@@ -86,7 +86,6 @@ class MixNode(DatagramProtocol):
 		self.savedLatency = []
 		#self.timeits = []
 		self.mixedTogether = 0
-		self.anonSetSize = 0
 		self.anonSetSizeAll = []
 
 	def startProtocol(self):
@@ -235,7 +234,6 @@ class MixNode(DatagramProtocol):
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		self.mixedTogether += 1
-		self.anonSetSize += 1
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
@@ -394,14 +392,12 @@ class MixNode(DatagramProtocol):
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
 			self.mixedTogether -= 1
-			self.anonSetSizeAll.append(self.anonSetSize)
-			self.anonSetSize = 0
+			self.anonSetSizeAll.append(self.mixedTogether)
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
 			self.mixedTogether -= 1
-			self.anonSetSizeAll.append(self.anonSetSize)
-			self.anonSetSize = 0
+			self.anonSetSizeAll.append(self.mixedTogether)
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
