@@ -86,6 +86,8 @@ class MixNode(DatagramProtocol):
 		self.savedLatency = []
 		#self.timeits = []
 		self.mixedTogether = 0
+		self.anonSetSize = 0
+		self.anonSetSizeAll = []
 
 	def startProtocol(self):
 		reactor.suggestThreadPoolSize(50)
@@ -233,6 +235,7 @@ class MixNode(DatagramProtocol):
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		self.mixedTogether += 1
+		self.anonSetSize += 1
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
@@ -390,11 +393,15 @@ class MixNode(DatagramProtocol):
 		"""
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.resolvedAdrs[host] = IPaddrs
 			self.mixedTogether -= 1
+			self.anonSetSizeAll.append(self.anonSetSize)
+			self.anonSetSize = 0
+			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
 			self.mixedTogether -= 1
+			self.anonSetSizeAll.append(self.anonSetSize)
+			self.anonSetSize = 0
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -612,19 +619,11 @@ class MixNode(DatagramProtocol):
 			self.measurments = []
 		except Exception, e:
 			print "Error while saving: ", str(e)
-		# try:
-		# 	with open("timeit.csv", "ab") as outfile:
-		# 		csvW = csv.writer(outfile, delimiter='\n')
-		# 		csvW.writerow(self.timeits)
-		# 	self.timeits = []
-		# except Exception, e:
-		# 	print "Error while saving: ", str(e)
-		# try:
-		# 	with open("reliabilityMixnode.csv", "ab") as outfile:
-		# 		csvW = csv.writer(outfile, delimiter=',')
-		# 		csvW.writerows([(len(self.hbSent), sum(self.hbSent.values()))])
-		# except Exception, e:
-		# 	print "Error while saving: ", str(e)
-		# self.hbSent = {}
-
+		try:
+			with open("anonSet.csv", "ab") as outfile:
+				csvW = csv.writer(outfile, delimiter='\n')
+				csvW.writerow(self.anonSetSizeAll)
+			self.anonSetSizeAll = []
+		except Exception, e:
+			print "Error while saving: ", str(e)
 
