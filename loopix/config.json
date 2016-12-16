@@ -3,19 +3,19 @@
         "NOISE_LENGTH": "500", 
         "C": "2", 
         "TEST_USER": "False", 
-        "EXP_PARAMS_COVER": "10", 
+        "EXP_PARAMS_COVER": "6", 
         "PATH_LENGTH": "3", 
-        "EXP_PARAMS_LOOPS": "10", 
+        "EXP_PARAMS_LOOPS": "6", 
         "EXP_PARAMS_DELAY": "0.005", 
         "FAKE_MESSAGING": "False", 
         "TESTMODE": "True", 
         "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "10"
+        "EXP_PARAMS_PAYLOAD": "6"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
         "TAGED_HEARTBEATS": "True", 
-        "EXP_PARAMS_LOOPS": "10", 
+        "EXP_PARAMS_LOOPS": "6", 
         "TIME_ACK": "1600", 
         "EXP_PARAMS_DELAY": "0.005", 
         "TIME_FLUSH": "0.01", 
