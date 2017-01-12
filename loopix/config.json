@@ -3,14 +3,16 @@
         "NOISE_LENGTH": "500", 
         "C": "2", 
         "TEST_USER": "False", 
-        "EXP_PARAMS_COVER": "15", 
+        "EXP_PARAMS_COVER": "0.731707317073", 
         "PATH_LENGTH": "3", 
-        "EXP_PARAMS_LOOPS": "15", 
+        "EXP_PARAMS_LOOPS": "0.731707317073", 
         "EXP_PARAMS_DELAY": "0.05", 
         "FAKE_MESSAGING": "False", 
         "TESTMODE": "True", 
         "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "15"
+        "EXP_PARAMS_PAYLOAD": "0.731707317073",
+        "MEASURE_TIME": "60",
+        "SAVE_MEASURMENTS_TIME" : "360"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
@@ -20,6 +22,8 @@
         "EXP_PARAMS_DELAY": "0.05", 
         "TIME_FLUSH": "0.01", 
         "MAX_DELAY_TIME": "-432000", 
-        "TIME_CLEAN": "1600"
+        "TIME_CLEAN": "1600",
+        "MEASURE_TIME": "60",
+        "SAVE_MEASURMENTS_TIME" : "360"
     }
 }

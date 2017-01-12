@@ -216,11 +216,11 @@ class Provider(MixNode):
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.takeMeasurments)
-        lc.start(120, False)
+        lc.start(MEASURE_TIME, False)
 
     def saveMeasurments(self):
         lc = task.LoopingCall(self.save_to_file)
-        lc.start(360, False)
+        lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
         self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc, self.mixedTogether])

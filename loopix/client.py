@@ -35,6 +35,8 @@ with open('config.json') as infile:
 TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
 FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
+MEASURE_TIME = float(_PARAMS["parametersClients"]["MEASURE_TIME"])
+SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersClients"]["SAVE_MEASURMENTS_TIME"])
 
 class Client(DatagramProtocol):
     def __init__(self, setup, name, port, host, testUser=False,
@@ -543,14 +545,14 @@ class Client(DatagramProtocol):
         self.testPayload = set()
         friendsGroup = random.sample(self.usersPubs, 5)
 
-        for i in range(30):
+        for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             timestamp = time.time()
             self.testHeartbeats.add(self.createHeartbeat(mixpath, timestamp))
-        for i in range(30):
+        for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             self.testDrops.add(self.createDropMessage(mixpath))
-        for i in range(30):
+        for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             if self.TESTUSER:
                 r = friendsGroup[0]
@@ -691,7 +693,7 @@ class Client(DatagramProtocol):
 
     def measureSentMessages(self):
         lc = task.LoopingCall(self.takeMeasurments)
-        lc.start(60, False)
+        lc.start(MEASURE_TIME, False)
 
     def takeMeasurments(self):
         self.sendMeasurments.append(self.numMessagesSent)
@@ -699,7 +701,7 @@ class Client(DatagramProtocol):
 
     def save_measurments(self):
         lc = task.LoopingCall(self.save_to_file)
-        lc.start(300, False)
+        lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def save_to_file(self):
         with open('messagesSent.csv', 'ab') as outfile:

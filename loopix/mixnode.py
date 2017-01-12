@@ -33,6 +33,8 @@ TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
 TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
 MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
 NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
+MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
+SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersMixnodes"]["SAVE_MEASURMENTS_TIME"])
 
 class MixNode(DatagramProtocol):
 	"""Class of Mixnode creates an object of a mixnode,
@@ -116,7 +118,7 @@ class MixNode(DatagramProtocol):
 		reactor.callLater(interval, self.sendTagedMessage)
 
 		lc2 = task.LoopingCall(self.saveLatency)
-		lc2.start(300, False)
+		lc2.start(SAVE_MEASURMENTS_TIME, False)
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
@@ -591,7 +593,7 @@ class MixNode(DatagramProtocol):
 
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.takeMeasurments)
-		lc.start(60, False)
+		lc.start(MEASURE_TIME, False)
 
 	def takeMeasurments(self):
 		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether, self.hbProcessed])
@@ -605,7 +607,7 @@ class MixNode(DatagramProtocol):
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
-		lc.start(300, False)
+		lc.start(SAVE_MEASURMENTS_TIME, False)
 
 	def save_to_file(self):
 		try:
