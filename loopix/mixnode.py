@@ -133,7 +133,7 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
-
+		self.mixedTogether += 1
 		try:
 			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
@@ -235,7 +235,7 @@ class MixNode(DatagramProtocol):
 						print "ERROR during bounce processing: ", str(e)
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
-		self.mixedTogether += 1
+		# self.mixedTogether += 1
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
