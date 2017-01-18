@@ -20,6 +20,18 @@ from twisted.internet.defer import DeferredQueue
 import supportFunctions as sf
 from processQueue import ProcessQueue
 import numpy
+import json
+
+with open('config.json') as infile:
+    _PARAMS = json.load(infile)
+
+TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
+TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
+TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
+MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
+NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
+MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
+SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersMixnodes"]["SAVE_MEASURMENTS_TIME"])
 
 class Provider(MixNode):
 
