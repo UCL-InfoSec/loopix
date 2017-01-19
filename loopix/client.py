@@ -542,7 +542,7 @@ class Client(DatagramProtocol):
                 r = random.choice(friendsGroup)
             msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             
-            header, addr = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
+            header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
             self.testPayload.add((petlib.pack.encode(header, body), (self.provider.host, self.provider.port)))
             #packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
             #self.testPayload.add((packet, addr))
