@@ -73,105 +73,62 @@ def testMessage(testSender, testParticipantsPubs):
 	sender = testSender
 
 	_, receiver, mix1, mix2, provider = testParticipantsPubs
-	message, (host, port) = sender.makePacket(receiver, [mix1, mix2], sender.setup, "DEST_MSG", "BOUNCE_MSG")
-	
+
+	sender.receiver = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
+	sender.mixnet = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk), 
+	format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
+
+	mixpath = sender.mixnet
+	message = sender.makeSphinxPacket(sender.receiver, mixpath, "Hello World")
 	return message
 
-# def testAnnouce(testMixes):
-# 	mix, _ = testMixes
-# 	mix.announce()
-# 	announceMsg, addr = mix.transport.written[0]
-# 	assert addr == ("127.0.0.1", 9998)
-# 	assert announceMsg[:4] == "MINF"
-# 	plainMsg = petlib.pack.decode(announceMsg[4:])
-# 	assert plainMsg[0] ==  mix.name and plainMsg[1] == mix.port and plainMsg[2] == mix.host and plainMsg[3].pt_eq(mix.pubk)
 
-# def testSendRequest(testMixes):
-# 	mix, _ = testMixes
-# 	mix.sendRequest("REQUEST")
-# 	msg, addr = mix.transport.written[0]
-# 	assert msg == "REQUEST"
-# 	assert addr == ("127.0.0.1", 9998)
+def test_processMessage(testProvider, testMixes, testMessage):
+	from sphinxmix.SphinxNode import sphinx_process
 
-def testDo_INFO(testMixes):
-	mix, mix2 = testMixes
-	mix.do_INFO('', ("127.0.0.1", 1234))
-	msg, addr = mix.transport.written[0]
-	assert addr == ("127.0.0.1", 1234)
-	assert msg == "RINF" + petlib.pack.encode([mix.name, mix.port, mix.host, mix.pubk])
-
-def testDo_ROUT(testProvider, testMixes, testMessage):
 	provider = testProvider
 	(mix1, mix2) = testMixes
-	message = testMessage
+	(header, body) = testMessage
 	
-	provider.do_ROUT(petlib.pack.decode(message)[1], ("127.0.0.1", 7000))
-	time, queuePacket = provider.Queue.pop()
-	decodedPacket = petlib.pack.decode(queuePacket[0][4:])
+	expected = sphinx_process(provider.params, provider.privk, header, body)
 
-	expectedMsg = mix1.mix_operate(setup, decodedPacket[1])
-	mix1.seenMacs = []
-	mix1.seenElements = []
+	ret_val = provider.process_sphinx_packet(testMessage)
 
-	mix1.do_ROUT(decodedPacket[1], (provider.host, provider.port))
-	time, queuePacket = mix1.Queue.pop()
-	decodedPacket = petlib.pack.decode(queuePacket[0][4:])
-	assert expectedMsg[1] == decodedPacket[1]
+	assert expected == ret_val
 
-def testDo_BOUNCE(testSender, testProvider, testMixes, testMessage):
- 	mix1, mix2 = testMixes
- 	message = testMessage
- 	xto1, msg1, idt1, delay1 = testProvider.mix_operate(setup, petlib.pack.decode(message)[1])
- 	mix1.do_ROUT(msg1, (testProvider.host, testProvider.port))
- 	time, queuePacket = mix1.Queue.pop()
- 	mix1.sendMessage(queuePacket[0], queuePacket[1])
- 	mix1.expectedACK.append("ACKN"+queuePacket[2])
- 	[mix1.Queue.pop() for element in mix1.Queue]
- 	mix1.do_BOUNCE(mix1.bounceInformation[mix1.expectedACK.pop()])
- 	bounce_packet = mix1.Queue.pop()[1]
- 	assert bounce_packet[1] == (testProvider.host, testProvider.port)
- 	idt, msg = petlib.pack.decode(bounce_packet[0][4:])
- 	xto_bnc, msg_bnc, idt_bnc, delay_bnc = testProvider.mix_operate(setup, msg)
- 	
- 	assert xto_bnc == [testSender.port, testSender.host, testSender.name]
- 	assert testSender.readMessage(msg_bnc, (testProvider.host, testProvider.port)) == "BOUNCE_MSG"
+def test_createSphinxHeartbeat(testMixes):
+	from sphinxmix.SphinxClient import Nenc, PFdecode, Dest_flag, receive_forward
 
-
-def testDo_RINF(testMixes):
-	mix1, mix2 = testMixes
-	mix1.do_RINF(petlib.pack.encode([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]))
-	assert format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk) in mix1.mixList
-
-
-def testSendHeartbeat(testMixes):
 	mix1, mix2 = testMixes
 	mix3 = MixNode("M3", 8003, "127.0.0.1", setup)
 	provider = Provider("P1", 8000, "127.0.0.1", setup)
 	mix3.transport = proto_helpers.FakeDatagramTransport()
 	provider.transport = proto_helpers.FakeDatagramTransport()
 
-	mix1.prvList.append(provider)
-	predefinedPath = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
-	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), format3.Mix(provider.name, provider.port, provider.host, provider.pubk)]
-	mix1.sendHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk),
-	 format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)], predefinedPath)
-	assert len(mix1.transport.written) == 1
+	(header, body) = mix1.createSphinxHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk), 
+		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), 
+		format3.Mix(provider.name, provider.port, provider.host, provider.pubk)], time.time())
 
-	msg, addr = mix1.transport.written[0]
-	assert addr == (mix2.host, mix2.port)
+	ret_val = mix2.process_sphinx_packet((header, body))
+	(tag1, info1, (header1, body1)) = ret_val
 
-	xto, packet, idt, delay = mix2.mix_operate(mix2.setup, petlib.pack.decode(msg[4:])[1])
-	assert xto == [mix3.port, mix3.host, mix3.name]
+	ret_val1 = mix3.process_sphinx_packet((header1, body1))
+	(tag2, info2, (header2, body2)) = ret_val1
 
+	ret_val2 = provider.process_sphinx_packet((header2, body2))
+	(tag3, info3, (header3, body3)) = ret_val2
 
-	xto, packet, idt, delay = mix3.mix_operate(mix1.setup, packet)
-	assert xto == [provider.port, provider.host, provider.name]
+	ret_val3 = mix1.process_sphinx_packet((header3, body3))
+	(tag4, info4, (header4, body4)) = ret_val3
 
-	xto, packet, idt, delay = provider.mix_operate(provider.setup, packet)
-	assert xto == [mix1.port, mix1.host, mix1.name]
+	rounting = PFdecode(mix1.params, info4)
+	if rounting[0] == Dest_flag:
+		dest, message = receive_forward(mix1.params, body4)
+	assert dest == [mix1.host, mix1.port, mix1.name]
+	assert message.startswith('HT')
 
-	assert mix1.mix_operate(mix1.setup, packet)	== None
-
+def test_sendTagedMessage(testMixes):
+	pass
 
 def testAES_ENC_DEC(testMixes):
 	mix, _ = testMixes
@@ -186,37 +143,3 @@ def testAES_ENC_DEC(testMixes):
 	cipher += enc.finalize()
 	
 	assert cipher == mix.aes_enc_dec(key, iv, plaintext)
-
-def testmix_operate(testProvider, testMixes, testMessage, testReceiver):
- 	mix1, mix2 = testMixes
- 	message = testMessage
- 	xtoP, msgP, idtP, delayP = testProvider.mix_operate(setup, petlib.pack.decode(message)[1])
- 	xto1, msg1, idt1, delay1 = mix1.mix_operate(setup, msgP)
- 	xto2, msg2, idt2, delay2 = mix2.mix_operate(setup, msg1)
- 	xtoP, msgP, idtP, delayP = testProvider.mix_operate(setup, msg2)
- 	assert testReceiver.readMessage(msgP, (testProvider.host, testProvider.port)) == "DEST_MSG"
-
-
-def testCheckSeenMAC(testMixes):
-	mix1, mix2 = testMixes
-	fake_mac = '0x23'
-	fake_mac_2 = '0x32'
-	mix1.seenMacs.add(fake_mac)
-	assert mix1.checkMac(fake_mac) == True and mix1.checkMac(fake_mac_2) == False
-
-
-def testAddToQueue(testMixes):
-	mix1, mix2 = testMixes
-	delay = 20
-	current_epoch = sf.epoch()
-	mix1.addToQueue(("Message", (mix2.host, mix2.port)), current_epoch + delay)
-	assert (current_epoch + delay, ("Message", (mix2.host, mix2.port))) in mix1.Queue
-
-def testSendMessage(testMixes):
-	mix1, mix2 = testMixes
-	mix1.sendMessage("Message", (mix2.host, mix2.port))
-	msg, addr = mix1.transport.written[0]
-	assert addr ==  (mix2.host, mix2.port)
-	assert msg == "Message"
-
-

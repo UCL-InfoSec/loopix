@@ -20,18 +20,10 @@ from twisted.internet.defer import DeferredQueue
 import supportFunctions as sf
 from processQueue import ProcessQueue
 import numpy
-import json
 
-with open('config.json') as infile:
-    _PARAMS = json.load(infile)
-
-TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
-TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
-TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
-MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
-NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
-MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
-SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersMixnodes"]["SAVE_MEASURMENTS_TIME"])
+from sphinxmix.SphinxParams import SphinxParams
+from sphinxmix.SphinxNode import sphinx_process
+from sphinxmix.SphinxClient import PFdecode, Relay_flag, Dest_flag, Surb_flag, receive_forward, Nenc, create_forward_message
 
 class Provider(MixNode):
 
@@ -85,10 +77,6 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
-        #if (host, port) in self.clientList.values():
-        #    self.mixedTogether += 1
-        self.totalCounter += 1
-        self.partialCounter += 1
         try:
             self.processQueue.put((data, (host, port)))
             self.bReceived += 1
@@ -114,8 +102,8 @@ class Provider(MixNode):
             self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
-                idt, msgData = petlib.pack.decode(data[4:])
-                self.do_ROUT(msgData, (host, port))
+                header, body = petlib.pack.decode(data[4:])
+                self.do_ROUT((header, body), (host, port))
                 self.gbProcessed += 1
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
@@ -155,7 +143,7 @@ class Provider(MixNode):
         else:
             self.sendMessage("NOASG", (ip_host, port))
 
-    def do_ROUT(self, data, (host, port), tag=None):
+    def do_ROUT(self, data, (host, port)):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
         it is a forward message adds it to the queue. If it is a message destinated to one of the providers clients, the message 
         is saved in the storage, where it awaits for the client to fetch it.
@@ -167,20 +155,26 @@ class Provider(MixNode):
         """
 
         try:
-            peeledData = self.mix_operate(self.setup, data)
+            peeledData = self.process_sphinx_packet(data)
         except Exception, e:
             print "[%s] > ERROR during packet processing." % self.name
         else:
             if peeledData:
-                (xtoPort, xtoHost, xtoName), msg_forw, idt, delay = peeledData
-                if xtoName in self.clientList:
-                    self.saveInStorage(xtoName, msg_forw)
-                else:
-                    try:
-                        reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, msg_forw)), (xtoHost, xtoPort))
-                        # self.expectedACK.add("ACKN"+idt)
-                    except Exception, e:
-                        print "ERROR during ROUT: ", str(e)
+                (tag, info, (header, body)) = peeledData
+                routing_flag, meta_info = PFdecode(self.params, info)
+                if routing_flag == Relay_flag:
+                    next_addr, dropFlag, typeFlag, delay, next_name = meta_info
+                    if next_name in self.clientList:
+                        assert self.clientList[next_name] == (next_addr[0], next_addr[1])
+                        self.saveInStorage(next_name, (header, body))
+                    else:
+                        try:
+                            reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
+                        except Exception, e:
+                            print "ERROR during message processing", str(e)
+                elif routing_flag == Dest_flag:
+                    dest, message = receive_forward(self.params, body)
+                    assert dest == [self.host, self.port, self.name]
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
@@ -239,25 +233,19 @@ class Provider(MixNode):
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc])
+        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc, self.mixedTogether])
         self.bProcessed = 0
         self.gbProcessed = 0
         self.bReceived = 0
         self.pProcessed = 0
         self.otherProc = 0
+        self.mixedTogether = 0
 
     def save_to_file(self):
-        # try:
-        #     with open("performanceProvider.csv", "ab") as outfile:
-        #         csvW = csv.writer(outfile, delimiter=',')
-        #         csvW.writerows(self.measurments)
-        #     self.measurments = []
-        # except Exception, e:
-        #     print "ERROR saving to file: ", str(e)
         try:
-            with open("anonSet.csv", "ab") as outfile:
-                csvW = csv.writer(outfile, delimiter='\n')
-                csvW.writerow(self.anonSetSizeAll)
-            self.anonSetSizeAll = []
+            with open("performanceProvider.csv", "ab") as outfile:
+                csvW = csv.writer(outfile, delimiter=',')
+                csvW.writerows(self.measurments)
+            self.measurments = []
         except Exception, e:
-            print "Error while saving: ", str(e)
+            print "ERROR saving to file: ", str(e)

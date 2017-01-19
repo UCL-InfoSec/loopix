@@ -28,6 +28,10 @@ from sets import Set
 import uuid
 import resource
 
+from sphinxmix.SphinxClient import pki_entry, Nenc, create_forward_message, rand_subset, PFdecode, Relay_flag, Dest_flag, Surb_flag, receive_forward
+from sphinxmix.SphinxParams import SphinxParams
+from sphinxmix.SphinxNode import sphinx_process
+
 
 with open('config.json') as infile:
     _PARAMS = json.load(infile)
@@ -57,6 +61,8 @@ class Client(DatagramProtocol):
         self.G, self.o, self.g, self.o_bytes = setup
         self.setup = setup
 
+        self.params = SphinxParams(header_len=1024)
+
         self.privk = privk or self.o.random()
         self.pubk = pubk or (self.privk * self.g)
 
@@ -83,7 +89,8 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
-        self.TESTUSER = True if _PARAMS["parametersClients"]["TEST_USER"] == "True" else False
+        self.TESTUSER = True if testUser == "True" else False
+        self.DATABASE = "example.db"
 
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
@@ -97,12 +104,13 @@ class Client(DatagramProtocol):
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
         print "TEST USER MODE: ", self.TESTUSER
-        self.provider = self.takeProvidersData("example.db", self.providerId)
+
+        self.provider = self.takeProvidersData(self.DATABASE, self.providerId)
         print "Provider: ", self.provider
 
         self.sendPing()
 
-        self.readInData("example.db")
+        self.readInData(self.DATABASE)
         reactor.callLater(100.0, self.turnOnProcessing)
 
     def turnOnProcessing(self):
@@ -164,12 +172,11 @@ class Client(DatagramProtocol):
                 mixList (list): a list of active mixnodes in the network.
         """
 
-        if self.EXP_PARAMS_LOOPS > 0.0:
-            interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
-            if self.TESTMODE:
-                reactor.callLater(interval, self.generateFakeLoopTraffic)
-            else:
-                reactor.callLater(interval, self.generateLoopTraffic, mixList)
+        interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+        if self.TESTMODE:
+            reactor.callLater(interval, self.generateFakeLoopTraffic)
+        else:
+            reactor.callLater(interval, self.generateLoopTraffic, mixList)
 
     def turnOnCoverMsg(self, mixList):
         """ Function turns on a loop generating a drop cover traffic.
@@ -177,14 +184,12 @@ class Client(DatagramProtocol):
             Args:
                 mixList (list): a list of active mixnodes in the network.
         """
-        if self.EXP_PARAMS_COVER > 0.0:
-            interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
-            if self.TESTMODE:
-                reactor.callLater(interval, self.generateFakeCoverTraffic)
-            else:
-                reactor.callLater(interval, self.generateCoverTraffic, mixList)
+
+        interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
+        if self.TESTMODE:
+            reactor.callLater(interval, self.generateFakeCoverTraffic)
         else:
-            pass
+            reactor.callLater(interval, self.generateCoverTraffic, mixList)
 
     def checkBuffer(self, mixList):
         """ Function sends message from buffer or drop messages.
@@ -298,32 +303,48 @@ class Client(DatagramProtocol):
     def do_PMSG(self, data, host, port):
 
         try:
-            encMsg, timestamp = petlib.pack.decode(data)
-            msg = self.readMessage(encMsg, (host, port))
+            #encMsg, timestamp = petlib.pack.decode(data)
+            message = petlib.pack.decode(data)
+            msg = self.readMessage(message, (host, port))
             #print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
 
-    def makePacket(self, receiver, mixnet, setup, dest_message='', return_message='', dropFlag=False, typeFlag=None):
-        """ Function returns an encapsulated message,
-        which clients wants to send, into a mixpacket format.
+    # ================================SPHINX PACKET FORMAT==================================
+    def makeSphinxPacket(self, receiver, mixes, message = '', dropFlag=False, typeFlag=None):
+        path = [self.provider] + mixes + [receiver.provider] + [receiver]
+        keys_nodes = [n.pubk for n in path]
+
+        nodes_routing = []
+        for i in range(len(path)):
+            delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
+            nodes_routing.append(Nenc([(path[i].host, path[i].port), dropFlag, typeFlag, delay, path[i].name]))
+
+        # Destination of the message
+        dest = (receiver.host, receiver.port, receiver.name)
+        header, body = create_forward_message(self.params, nodes_routing, keys_nodes, dest, message)
+        return (header, body)
+
+    def sendMessage(self, receiver, mixpath, msgF):
+        """ Function allows to buffer a message (packed into Sphinx format) which we want to send.
 
             Args:
-            receiver (namedtuple): a tuple including public receivers information,
-            mixnet (list): list of mixnodes which the message should traverse through,
-            setup (tuple): a setup contaning information of the currently used EC group,
-            dest_message (str): message which we want to send to the receiver,
-            return_message (str): message which we want to receive in a bounce,
-            dropFlag (boolean): flag, if True, this means a cover message should be created.
+            receiver - public information of a receiver,
+            mixpath (list) - path of mixnodes which should be traversed by the message,
+            msgF (str) - message which we want to send,
+            msgB (str) - message which is included in a bounce.
         """
+        try:
+            timestamp = '%.5f' % time.time()
+            if self.TESTMODE:
+                (header, body) = self.makeSphinxPacket(receiver, mixpath, msgF + timestamp, dropFlag=False, typeFlag = 'P')
+            else:
+                (header, body) = self.makeSphinxPacket(receiver, mixpath, msgF + timestamp, dropFlag=False)
+            self.buffer.append(("ROUT" + petlib.pack.encode((header, body)), (self.provider.host, self.provider.port)))
+        except Exception, e:
+            print "[%s] > ERROR: Message could not be buffered for send: %s" % (self.name, str(e))
 
-        path = [self.provider] + mixnet + [receiver.provider]
-        current_time = time.time()
-        delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(path)+1)]
-        package = format3.create_mixpacket_format(self, receiver, path, setup, dest_message, return_message, delay, dropFlag, typeFlag)
-        self.sentElements.add(package[0])
-        return (petlib.pack.encode((str(uuid.uuid1()), package[1:])), (self.provider.host, self.provider.port))
 
     def createHeartbeat(self, mixes, timestamp):
         """ Function creates a heartbeat - a noise message for which the sender and the receiver are the same entity.
@@ -334,17 +355,16 @@ class Client(DatagramProtocol):
         """
         try:
             heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
-            # self.heartbeatsSent.add((heartMsg, '%.5f' % time.time()))
             if self.TESTMODE:
-                readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False, typeFlag='H')
+                (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + timestamp, dropFlag=False, typeFlag = 'H')
             else:
-                readyToSentPacket, addr = self.makePacket(self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, False)
-            return (readyToSentPacket, addr)
+                (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + timestamp, dropFlag=False)
+            return (header, body)
         except Exception, e:
             print "[%s] > ERROR: %s" % (self.name, str(e))
             return None
 
-    def sendHeartBeat(self, mixnet, timestamp, predefinedPath=None):
+    def sendHeartbeat(self, mixnet, timestamp, predefinedPath=None):
         """ Function sends a heartbeat message.
 
                 Args:
@@ -357,14 +377,13 @@ class Client(DatagramProtocol):
             raise Exception("SendHeartbeat: list of active mixes in the Network is empty!")
         else:
             try:
-                mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
+                mixpath = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
                 heartbeatData = self.createHeartbeat(mixes, timestamp)
                 if heartbeatData:
-                    readyPacket, addr = heartbeatData
-                    self.send("ROUT" + readyPacket, addr)
-                    self.numHeartbeatsSent += 1
+                    header, body = heartbeatData
+                    self.send("ROUT" + petlib.pack.encode((header, body)), (self.provider.host, self.provider.port))
                 else:
-                    print "[%s] > Heartbeat could not be send." % self.name
+                    raise Exception("[%s] > Heartbeat could not be send." % self.name)
             except Exception, e:
                 print "[%s] > Send heartbeat ERROR: %s" % (self.name, str(e))
 
@@ -380,15 +399,15 @@ class Client(DatagramProtocol):
             randomMessage = sf.generateRandomNoise(NOISE_LENGTH)
             randomBounce = sf.generateRandomNoise(NOISE_LENGTH)
             if self.TESTMODE:
-                readyToSentPacket, addr = self.makePacket(randomReceiver, mixes, self.setup, randomMessage, randomBounce, True, typeFlag='D')
+                header, body = self.makeSphinxPacket(randomReceiver, mixes, randomMessage, dropFlag=True, typeFlag = 'D')
             else:
-                readyToSentPacket, addr = self.makePacket(randomReceiver, mixes, self.setup, randomMessage, randomBounce, True)
-            return (readyToSentPacket, addr)
+                header, body = self.makeSphinxPacket(randomReceiver, mixes, randomMessage, dropFlag=True)
+            return (header, body)
         except Exception, e:
             print "[%s] > Create drop message ERROR: %s" % (self.name, str(e))
             return None
 
-    def sendDropMessage(self, mixnet, predefinedPath=None):
+    def sendDropMessage(self, mixnet, predefinedPath = None):
         """ Function creates a drop cover message.
 
                 Args:
@@ -400,33 +419,14 @@ class Client(DatagramProtocol):
             mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
             dropData = self.createDropMessage(mixes)
             if dropData:
-                readyPacket, addr = dropData
-                self.send("ROUT" + readyPacket, addr)
+                dropHeader, dropBody= dropData
+                self.send("ROUT" + petlib.pack.encode((dropHeader, dropBody)), (self.provider.host, self.provider.port))
             else:
-                print "[%s] > Drop message could not be send." % self.name
+                raise Exception("[%s] > Drop message could not be send." % self.name)
         except ValueError, e:
             print "[%s] > Send drop message ERROR: %s" % (self.name, str(e))
         except Exception, e:
             print "[%s] > Send drop message ERROR: %s" % (self.name, str(e))
-
-    def sendMessage(self, receiver, mixpath, msgF, msgB):
-        """ Function allows to buffer a message which we want to send.
-
-                Args:
-                receiver - public information of a receiver,
-                mixpath (list) - path of mixnodes which should be traversed by the message,
-                msgF (str) - message which we want to send,
-                msgB (str) - message which is included in a bounce.
-        """
-        try:
-            timestamp = '%.5f' % time.time()
-            if self.TESTMODE:
-                message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False, typeFlag = 'P')
-            else:
-                message, addr = self.makePacket(receiver, mixpath, self.setup,  msgF + timestamp, msgB + timestamp, False)
-            self.buffer.append(("ROUT" + message, addr))
-        except Exception, e:
-            print "[%s] > ERROR: Message could not be buffered for send: %s" % (self.name, str(e))
 
     def send(self, packet, (host, port)):
         """ Function sends a packet.
@@ -447,10 +447,6 @@ class Client(DatagramProtocol):
             self.numMessagesSent += 1
         except KeyError, e:
             reactor.resolve(host).addCallback(send_to_ip)
-        #if host in self.resolvedAdrs:
-        #    self.transport.write(packet, (self.resolvedAdrs[host], port))
-        #else:
-        #    reactor.resolve(host).addCallback(send_to_ip)
 
     def readMessage(self, message, (host, port)):
         """ Function allows to decyrpt and read a received message.
@@ -460,36 +456,17 @@ class Client(DatagramProtocol):
                 host (str) - host of a provider,
                 port (int) - port of a provider.
         """
-        elem = message[0]
-        forward = message[1]
-        backward = message[2]
-        element = EcPt.from_binary(elem, self.G)
-        if elem in self.sentElements:
-            # print "[%s] > Decrypted bounce:" % self.name
-            return forward
-        else:
-            aes = Cipher("AES-128-CTR")
-            k1 = format3.KDF((self.privk * element).export())
-            b = Bn.from_binary(k1.b) % self.o
-            new_element = b * element
-            expected_mac = forward[:20]
-            ciphertext_metadata, ciphertext_body = msgpack.unpackb(forward[20:])
-            mac1 = hmac.new(k1.kmac, ciphertext_metadata, digestmod=sha1).digest()
-            if not (expected_mac == mac1):
-                raise Exception("> CLIENT %s : WRONG MAC ON PACKET" % self.name)
-            enc_metadata = aes.dec(k1.kenc, k1.iv)
-            enc_body = aes.dec(k1.kenc, k1.iv)
-            pt = enc_body.update(ciphertext_body)
-            pt += enc_body.finalize()
-            header = enc_metadata.update(ciphertext_metadata)
-            header += enc_metadata.finalize()
-            header = petlib.pack.decode(header)
-            if pt.startswith('HT'):
-                # print "[%s] > Decrypted heartbeat. " % self.name
-                return pt
-            else:
-                # print "[%s] > Decrypted message. " % self.name
-                return pt
+        print "Message received."
+        (header, body) = message
+        
+        peeledData = sphinx_process(self.params, self.privk, header, body)
+        (tag, info, (header, body)) = peeledData
+        rounting = PFdecode(self.params, info)
+        if rounting[0] == Dest_flag:
+            dest, message = receive_forward(self.params, body)
+
+        assert dest == [self.host, self.port, self.name]
+        return message
 
     def takePathSequence(self, mixnet, length):
         """ Function takes a random path sequence build of active mixnodes. If the
@@ -523,8 +500,8 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        #friendsGroup = random.sample(self.usersPubs, 5)
-        friendsGroup = self.usersPubs
+        friendsGroup = random.sample(self.usersPubs, 5)
+        #friendsGroup = self.usersPubs
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
@@ -546,8 +523,7 @@ class Client(DatagramProtocol):
         self.testHeartbeats = set()
         self.testDrops = set()
         self.testPayload = set()
-        # friendsGroup = random.sample(self.usersPubs, 5)
-        friendsGroup = self.usersPubs
+        friendsGroup = random.sample(self.usersPubs, 5)
 
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
@@ -565,9 +541,11 @@ class Client(DatagramProtocol):
                 # r = random.choice(self.usersPubs)
                 r = random.choice(friendsGroup)
             msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-            msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-            packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
-            self.testPayload.add((packet, addr))
+            
+            header, addr = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
+            self.testPayload.add((petlib.pack.encode(header, body), (self.provider.host, self.provider.port)))
+            #packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
+            #self.testPayload.add((packet, addr))
 
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
@@ -634,7 +612,7 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Users")
             users = c.fetchall()
             for u in users:
-                p = self.takeProvidersData("example.db", u[5])
+                p = self.takeProvidersData(self.DATABASE, u[5])
                 if not self.name == u[1]:
                     usersList.append(format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]), p))
             db.close()
@@ -712,4 +690,5 @@ class Client(DatagramProtocol):
             csvW = csv.writer(outfile, delimiter='\n')
             csvW.writerow(self.sendMeasurments)
         self.sendMeasurments = []
+
 
