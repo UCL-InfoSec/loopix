@@ -87,7 +87,8 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         #if (host, port) in self.clientList.values():
         #    self.mixedTogether += 1
-        self.mixedTogether += 1
+        self.totalCounter += 1
+        self.partialCounter += 1
         try:
             self.processQueue.put((data, (host, port)))
             self.bReceived += 1

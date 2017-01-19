@@ -87,7 +87,10 @@ class MixNode(DatagramProtocol):
 		self.resolvedAdrs = {}
 		self.savedLatency = []
 		#self.timeits = []
-		self.mixedTogether = 0
+		# number of all messages mixed together at a time a message is leaving
+		self.totalCounter = 0 
+		# number of messages which are in the mixnode between previous message leaving and current message leaving
+		self.partialCounter = 0
 		self.anonSetSizeAll = []
 
 	def startProtocol(self):
@@ -133,7 +136,8 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
-		self.mixedTogether += 1
+		self.totalCounter += 1
+		self.partialCounter += 1
 		try:
 			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
@@ -235,7 +239,7 @@ class MixNode(DatagramProtocol):
 						print "ERROR during bounce processing: ", str(e)
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
-		# self.mixedTogether += 1
+
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 		else:
@@ -393,13 +397,15 @@ class MixNode(DatagramProtocol):
 		"""
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.mixedTogether -= 1
-			self.anonSetSizeAll.append(self.mixedTogether)
+			self.totalCounter -= 1
+			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.partialCounter = 0
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-			self.mixedTogether -= 1
-			self.anonSetSizeAll.append(self.mixedTogether)
+			self.totalCounter -= 1
+			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.partialCounter = 0
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -421,7 +427,6 @@ class MixNode(DatagramProtocol):
 				print "ERROR: ", str(e)
 			else:
 				heartbeatPacket = self.createHeartbeat(mixes, time.time())
-				self.mixedTogether += 1
 				self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), heartbeatPacket)), (mixes[0].host, mixes[0].port))
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
@@ -448,7 +453,6 @@ class MixNode(DatagramProtocol):
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
-			self.mixedTogether += 1
 			self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:])), (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
 
@@ -596,7 +600,7 @@ class MixNode(DatagramProtocol):
 		lc.start(MEASURE_TIME, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether, self.hbProcessed])
+		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.hbProcessed])
 		self.bProcessed = 0
 		self.gbProcessed = 0
 		self.bReceived = 0
@@ -619,8 +623,11 @@ class MixNode(DatagramProtocol):
 		# 	print "Error while saving: ", str(e)
 		try:
 			with open("anonSet.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter='\n')
-				csvW.writerow(self.anonSetSizeAll)
+				# csvW = csv.writer(outfile, delimiter='\n')
+				csvW = csv.writer(outfile)
+				csvW.writerow(['TotalCounter', 'PartialCounter'])
+				for row in self.anonSetSizeAll:
+					csvW.writerow(row)
 			self.anonSetSizeAll = []
 		except Exception, e:
 			print "Error while saving: ", str(e)
