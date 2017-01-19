@@ -83,7 +83,7 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
-        self.TESTUSER = True if testUser == "True" else False
+        self.TESTUSER = True if _PARAMS["parametersClients"]["TEST_USER"] == "True" else False
 
         self.numHeartbeatsSent = 0
         self.numHeartbeatsReceived = 0
@@ -520,8 +520,8 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        friendsGroup = random.sample(self.usersPubs, 5)
-        #friendsGroup = self.usersPubs
+        #friendsGroup = random.sample(self.usersPubs, 5)
+        friendsGroup = self.usersPubs
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
@@ -543,7 +543,8 @@ class Client(DatagramProtocol):
         self.testHeartbeats = set()
         self.testDrops = set()
         self.testPayload = set()
-        friendsGroup = random.sample(self.usersPubs, 5)
+        # friendsGroup = random.sample(self.usersPubs, 5)
+        friendsGroup = self.usersPubs
 
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)

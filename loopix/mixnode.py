@@ -610,13 +610,13 @@ class MixNode(DatagramProtocol):
 		lc.start(SAVE_MEASURMENTS_TIME, False)
 
 	def save_to_file(self):
-		try:
-			with open("performanceMixnode.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				csvW.writerows(self.measurments)
-			self.measurments = []
-		except Exception, e:
-			print "Error while saving: ", str(e)
+		# try:
+		# 	with open("performanceMixnode.csv", "ab") as outfile:
+		# 		csvW = csv.writer(outfile, delimiter=',')
+		# 		csvW.writerows(self.measurments)
+		# 	self.measurments = []
+		# except Exception, e:
+		# 	print "Error while saving: ", str(e)
 		try:
 			with open("anonSet.csv", "ab") as outfile:
 				csvW = csv.writer(outfile, delimiter='\n')

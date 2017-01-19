@@ -87,6 +87,7 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         #if (host, port) in self.clientList.values():
         #    self.mixedTogether += 1
+        self.mixedTogether += 1
         try:
             self.processQueue.put((data, (host, port)))
             self.bReceived += 1
@@ -245,17 +246,17 @@ class Provider(MixNode):
         self.otherProc = 0
 
     def save_to_file(self):
-        try:
-            with open("performanceProvider.csv", "ab") as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                csvW.writerows(self.measurments)
-            self.measurments = []
-        except Exception, e:
-            print "ERROR saving to file: ", str(e)
         # try:
-        #     with open("anonSet.csv", "ab") as outfile:
-        #         csvW = csv.writer(outfile, delimiter='\n')
-        #         csvW.writerow(self.anonSetSizeAll)
-        #     self.anonSetSizeAll = []
+        #     with open("performanceProvider.csv", "ab") as outfile:
+        #         csvW = csv.writer(outfile, delimiter=',')
+        #         csvW.writerows(self.measurments)
+        #     self.measurments = []
         # except Exception, e:
-        #     print "Error while saving: ", str(e)
+        #     print "ERROR saving to file: ", str(e)
+        try:
+            with open("anonSet.csv", "ab") as outfile:
+                csvW = csv.writer(outfile, delimiter='\n')
+                csvW.writerow(self.anonSetSizeAll)
+            self.anonSetSizeAll = []
+        except Exception, e:
+            print "Error while saving: ", str(e)
