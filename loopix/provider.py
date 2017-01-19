@@ -85,6 +85,8 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
+        #if (host, port) in self.clientList.values():
+        #    self.mixedTogether += 1
         try:
             self.processQueue.put((data, (host, port)))
             self.bReceived += 1
@@ -235,13 +237,12 @@ class Provider(MixNode):
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc, self.mixedTogether])
+        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc])
         self.bProcessed = 0
         self.gbProcessed = 0
         self.bReceived = 0
         self.pProcessed = 0
         self.otherProc = 0
-        self.mixedTogether = 0
 
     def save_to_file(self):
         try:
@@ -251,3 +252,10 @@ class Provider(MixNode):
             self.measurments = []
         except Exception, e:
             print "ERROR saving to file: ", str(e)
+        # try:
+        #     with open("anonSet.csv", "ab") as outfile:
+        #         csvW = csv.writer(outfile, delimiter='\n')
+        #         csvW.writerow(self.anonSetSizeAll)
+        #     self.anonSetSizeAll = []
+        # except Exception, e:
+        #     print "Error while saving: ", str(e)
