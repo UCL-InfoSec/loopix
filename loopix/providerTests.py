@@ -83,22 +83,6 @@ def test_do_PULL(testProvider):
 		assert msg, (TH_3, TP_3) == "PMSG" + petlib.pack.encode("TestMessage%d"%i)
 	assert len(provider.storage[TN_3]) == old_len-provider.MAX_RETRIEVE
 
-# def testProviderRINFRequest(testProvider):
-# 	setup, provider = testProvider
-# 	testMix = MixNode("M8001", 8001, "127.0.0.1", setup)
-# 	mixInfo = format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk)
-# 	provider.do_PROCESS(("RINF"+petlib.pack.encode([mixInfo]), ("127.0.0.1", 9000)))
-# 	assert format3.Mix(testMix.name, testMix.port, testMix.host, testMix.pubk) in provider.mixList
-
-# def testProviderUPUBRequest(testProvider):
-# 	setup, provider = testProvider
-# 	client = Client(setup, "test@mail.com", 7000, "127.0.0.1")
-# 	client.provider = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
-# 	reqrsp = "UPUB" + petlib.pack.encode([[client.name, client.port, client.host, client.pubk, client.provider]])
-# 	provider.do_PROCESS((reqrsp, ("127.0.0.1", 9999)))
-# 	assert format3.User(client.name, client.port, client.host, client.pubk, 
-# 		[client.provider.name, client.provider.port,
-# 		client.provider.host, client.provider.pubk]) in provider.usersPubs 
 
 def test_do_ROUT(testProvider, testMessage, testParticipants):
 	setup, provider = testProvider
