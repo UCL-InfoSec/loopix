@@ -397,16 +397,14 @@ class MixNode(DatagramProtocol):
 		"""
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.totalCounter -= 1
-			self.partialCounter -= 1
 			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.totalCounter -= 1
 			self.partialCounter = 0
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-			self.totalCounter -= 1
-			self.partialCounter -= 1
 			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.totalCounter -= 1
 			self.partialCounter = 0
 		except KeyError, e:
 			# Resolve and call the send function
