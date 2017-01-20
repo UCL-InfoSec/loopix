@@ -93,7 +93,7 @@ class Provider(MixNode):
             self.processQueue.put((data, (host, port)))
             self.bReceived += 1
         except Exception, e:
-            print "[%s] > ERROR: %s " % (self.name, str(e))
+            print "[%s] > ERROR Datagram Received: %s " % (self.name, str(e))
 
     def do_PROCESS(self, obj):
         self.processMessage(obj)
@@ -102,7 +102,7 @@ class Provider(MixNode):
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+            print "[%s] > ERROR do_PROCESS: %s" % (self.name, str(e))
 
     def get_and_addCallback(self, f):
         self.processQueue.get().addCallback(f)
@@ -118,7 +118,7 @@ class Provider(MixNode):
                 self.do_ROUT((header, body), (host, port))
                 self.gbProcessed += 1
             except Exception, e:
-                print "[%s] > ERROR: " % self.name, str(e)
+                print "[%s] > ERROR processMessage: " % self.name, str(e)
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)

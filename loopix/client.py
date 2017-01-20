@@ -528,10 +528,12 @@ class Client(DatagramProtocol):
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             timestamp = time.time()
-            self.testHeartbeats.add(self.createHeartbeat(mixpath, timestamp))
+            header, body = self.createHeartbeat(mixpath, timestamp)
+            self.testHeartbeats.add(petlib.pack.encode((header, body)))
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            self.testDrops.add(self.createDropMessage(mixpath))
+            header, body = self.createDropMessage(mixpath)
+            self.testDrops.add(petlib.pack.encode((header, body)))
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             if self.TESTUSER:

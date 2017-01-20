@@ -147,7 +147,7 @@ class MixNode(DatagramProtocol):
 			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
 		except Exception, e:
-			print "[%s] > ERROR: %s " % (self.name, str(e))
+			print "[%s] > ERROR Datagram Received: %s " % (self.name, str(e))
 
 	def do_PROCESS(self, (data, (host, port))):
 		self.processMessage(data, (host, port))
@@ -156,7 +156,7 @@ class MixNode(DatagramProtocol):
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
 		except Exception, e:
-			print "[%s] > ERROR: %s" % (self.name, str(e))
+			print "[%s] > ERROR do_PROCESS: %s" % (self.name, str(e))
 
 	def get_and_addCallback(self, f):
 		self.processQueue.get().addCallback(f)
@@ -169,7 +169,7 @@ class MixNode(DatagramProtocol):
 				self.do_ROUT((header, body), (host, port))
 				self.gbProcessed += 1
 			except Exception, e:
-				print "ERROR: ", str(e)
+				print "ERROR processMessage: ", str(e)
 		elif data[:4] == "ACKN":
 			#if data in self.expectedACK:
 			#	self.expectedACK.remove(data)
@@ -260,7 +260,7 @@ class MixNode(DatagramProtocol):
 			reactor.resolve(host).addCallback(send_to_ip)
 
 	# ================================HEARTBEATS USING SPHINX=================================
-	def packIntoSphinxPacket(self, message, path, typeFlag):
+	def packIntoSphinxPacket(self, message, path, typeFlag=None):
 		keys_nodes = [n.pubk for n in path]
 		nodes_routing = []
 
@@ -302,7 +302,7 @@ class MixNode(DatagramProtocol):
 			try:
 				mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
 			except ValueError, e:
-				print "ERROR: ", str(e)
+				print "ERROR sendHeartbeat: ", str(e)
 			else:
 				if self.TESTMODE:
 					header, body = self.createSphinxHeartbeat(mixes, time.time(), 'H')
@@ -401,7 +401,7 @@ class MixNode(DatagramProtocol):
 			db.commit()
 			db.close()
 		except Exception, e:
-			print "[%s] > Error during saveing in database: %s" % (self.name, str(e))
+			print "[%s] > Error during saving in database: %s" % (self.name, str(e))
 
 	def readMixnodesFromDatabase(self, database):
 		"""	Function reads the public information of registered mixnodes from the database.
