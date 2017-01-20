@@ -115,7 +115,9 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 header, body = petlib.pack.decode(data[4:])
+                print "OK"
                 self.do_ROUT((header, body), (host, port))
+                print "OK 2"
                 self.gbProcessed += 1
             except Exception, e:
                 print "[%s] > ERROR processMessage: " % self.name, str(e)

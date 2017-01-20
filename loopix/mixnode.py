@@ -166,7 +166,9 @@ class MixNode(DatagramProtocol):
 			try:
 				# idt, msgData = petlib.pack.decode(data[4:])
 				header, body = petlib.pack.decode(data[4:])
+				print "OK---"
 				self.do_ROUT((header, body), (host, port))
+				print "OK--------"
 				self.gbProcessed += 1
 			except Exception, e:
 				print "ERROR processMessage: ", str(e)

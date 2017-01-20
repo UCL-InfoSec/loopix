@@ -244,7 +244,7 @@ class Client(DatagramProtocol):
             interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
             reactor.callLater(interval, self.generateFakeLoopTraffic)
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR generateFakeLoopTraffic: ", str(e)
 
     def generateFakeCoverTraffic(self):
         try:
@@ -262,7 +262,7 @@ class Client(DatagramProtocol):
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.generateFakePayload)
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR generateFakePayload: ", str(e)
 
 
     def datagramReceived(self, data, (host, port)):
@@ -271,7 +271,7 @@ class Client(DatagramProtocol):
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
-            print "[%s] > ERROR: %s " % (self.name, str(e))
+            print "[%s] > ERROR datagramReceived: %s " % (self.name, str(e))
 
     def do_PROCESS(self, (data, (host, port))): 
         self.processMessage(data, (host, port))
@@ -280,7 +280,7 @@ class Client(DatagramProtocol):
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+            print "[%s] > ERROR do_PROCESS: %s" % (self.name, str(e))
 
     def get_and_addCallback(self, f):
         self.processQueue.get().addCallback(f)
@@ -361,7 +361,7 @@ class Client(DatagramProtocol):
                 (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + timestamp, dropFlag=False)
             return (header, body)
         except Exception, e:
-            print "[%s] > ERROR: %s" % (self.name, str(e))
+            print "[%s] > ERROR createHeartbeat: %s" % (self.name, str(e))
             return None
 
     def sendHeartbeat(self, mixnet, timestamp, predefinedPath=None):
@@ -581,7 +581,7 @@ class Client(DatagramProtocol):
             db.commit()
             db.close()
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR Save in Database: ", str(e)
 
     def takeSingleUserFromDB(self, database, idt):
         """ Function takes information about a selected single client from a database.
@@ -601,7 +601,7 @@ class Client(DatagramProtocol):
                 return receiver
             return None
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR takeSingleUserFromDB: ", str(e)
 
     def takeAllUsersFromDB(self, database):
         """ Function takes information about all clients from the database.
@@ -622,7 +622,7 @@ class Client(DatagramProtocol):
             db.close()
             return usersList
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR takeAllUsersFromDB: ", str(e)
 
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
@@ -645,7 +645,7 @@ class Client(DatagramProtocol):
             return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
 
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR takeProvidersData: ", str(e)
         finally:
             db.close()
 
@@ -664,7 +664,7 @@ class Client(DatagramProtocol):
             for m in mixdata:
                 self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
         except Exception, e:
-            print "ERROR: ", str(e)
+            print "ERROR takeMixnodesData: ", str(e)
 
     def readInUsersPubs(self, databaseName):
         self.usersPubs = self.takeAllUsersFromDB(databaseName)
