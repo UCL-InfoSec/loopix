@@ -356,9 +356,9 @@ class Client(DatagramProtocol):
         try:
             heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
             if self.TESTMODE:
-                (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + timestamp, dropFlag=False, typeFlag = 'H')
+                (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + str(timestamp), dropFlag=False, typeFlag = 'H')
             else:
-                (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + timestamp, dropFlag=False)
+                (header, body) = self.makeSphinxPacket(self, mixes, 'HT' + heartMsg + str(timestamp), dropFlag=False)
             return (header, body)
         except Exception, e:
             print "[%s] > ERROR createHeartbeat: %s" % (self.name, str(e))
