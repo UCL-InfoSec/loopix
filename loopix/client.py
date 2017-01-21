@@ -461,6 +461,7 @@ class Client(DatagramProtocol):
                 port (int) - port of a provider.
         """
         print "Message received."
+        print len(message)
         (header, body) = message
         print "Peeling data"
         peeledData = sphinx_process(self.params, self.privk, header, body)
