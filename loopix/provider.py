@@ -139,11 +139,13 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         try:
+            print "Name: ", name
             self.flushStorage(name, (host, port))
         except Exception, e:
             print "ERROR during flushing: ", str(e)
 
     def flushStorage(self, name, (ip_host, port)):
+        print "Storage keys: ", self.storage.keys()
         if name in self.storage:
             if self.storage[name]:
                 for _ in range(self.MAX_RETRIEVE):
@@ -178,10 +180,9 @@ class Provider(MixNode):
                 if routing[0] == Relay_flag:
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
-                    print next_addr
                     if next_name in self.clientList:
                         assert self.clientList[next_name] == (next_addr[0], next_addr[1])
-                        self.saveInStorage(next_name, (header, body))
+                        # self.saveInStorage(next_name, (header, body))
                     else:
                         try:
                             reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
@@ -207,8 +208,8 @@ class Provider(MixNode):
     def subscribeClient(self, name, host, port):
         if name not in self.clientList:
             self.clientList[name] = (host, port)
-        #else:
-        #    self.clientList[name] = (host, port)
+        else:
+            self.clientList[name] = (host, port)
 
     # def sendInfoMixnet(self, host, port):
     #     """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
