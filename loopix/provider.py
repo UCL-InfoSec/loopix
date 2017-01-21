@@ -108,17 +108,19 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(f)
 
     def processMessage(self, (data, (host, port))):
-
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
             self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
                 header, body = petlib.pack.decode(data[4:])
+                print "OK"
                 self.do_ROUT((header, body), (host, port))
+                print "OK2"
                 self.gbProcessed += 1
             except Exception, e:
-                print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
+                # print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
+                print "ERROR processMessage: ", str(e)
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)
