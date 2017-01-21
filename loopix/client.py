@@ -549,7 +549,7 @@ class Client(DatagramProtocol):
             msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             
             header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
-            self.testPayload.add(petlib.pack.encode(header, body))
+            self.testPayload.add(petlib.pack.encode((header, body)))
 
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
