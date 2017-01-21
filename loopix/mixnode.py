@@ -69,17 +69,13 @@ class MixNode(DatagramProtocol):
 
 		self.heartbeatsSent = set()
 		self.numHeartbeatsReceived = 0
-		self.hbProcessed = 0
 		self.tagedHeartbeat = {}
 
 		self.savedElements = set()
 
-		self.bReceived = 0
 		self.bProcessed = 0
 		self.gbProcessed = 0
 		self.pProcessed = 0
-		self.otherProc = 0
-		self.hbSent = {}
 		self.measurments = []
 
 		self.PATH_LENGTH = 3
@@ -91,8 +87,6 @@ class MixNode(DatagramProtocol):
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
 		self.savedLatency = []
-		#self.timeits = []
-		self.mixedTogether = 0
 		self.anonSetSizeAll = []
 
 		# ====================SPHINX VALUES==================
@@ -202,7 +196,6 @@ class MixNode(DatagramProtocol):
 				dest, message = receive_forward(self.params, body)
 				if dest[-1] == self.name:
 					if message.startswith('TAG'):
-						print "Tagged message received."
 						self.measureLatency(message)
 					if message.startswith('HT'):
 						# print "[%s] > Heartbeat looped pack" % self.name
@@ -213,7 +206,6 @@ class MixNode(DatagramProtocol):
 				print 'Flag not recognized' 
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
-		self.mixedTogether += 1
 		if delay > 0:
 			reactor.callLater(delay, self.sendMessage, packet, (xtoHost, xtoPort))
 		else:
@@ -249,13 +241,11 @@ class MixNode(DatagramProtocol):
 		"""
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.mixedTogether -= 1
-			self.anonSetSizeAll.append(self.mixedTogether)
+			# self.anonSetSizeAll.append(self.mixedTogether)
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-			self.mixedTogether -= 1
-			self.anonSetSizeAll.append(self.mixedTogether)
+			# self.anonSetSizeAll.append(self.mixedTogether)
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -333,7 +323,6 @@ class MixNode(DatagramProtocol):
 		try:
 			if msg in self.tagedHeartbeat:
 				latency = float(time.time()) - float(self.tagedHeartbeat[msg])
-				print latency
 				del self.tagedHeartbeat[msg]
 				self.savedLatency.append(latency)
 		except Exception, e:
@@ -469,14 +458,10 @@ class MixNode(DatagramProtocol):
 		lc.start(MEASURE_TIME, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.mixedTogether, self.hbProcessed])
+		self.measurments.append([self.bProcessed, self.gbProcessed, self.pProcessed])
 		self.bProcessed = 0
 		self.gbProcessed = 0
-		self.bReceived = 0
 		self.pProcessed = 0
-		self.otherProc = 0
-		self.hbSent = {}
-		self.hbProcessed = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)

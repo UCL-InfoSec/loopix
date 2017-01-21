@@ -50,7 +50,6 @@ class Provider(MixNode):
         self.MAX_RETRIEVE = 500
 
         self.bSent = 0
-        self.bReceived = 0
         self.bProcessed = 0
         self.gbSent = 0
         self.gbProcessed = 0
@@ -91,7 +90,6 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         try:
             self.processQueue.put((data, (host, port)))
-            self.bReceived += 1
         except Exception, e:
             print "[%s] > ERROR Datagram Received: %s " % (self.name, str(e))
 
@@ -242,13 +240,11 @@ class Provider(MixNode):
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc, self.mixedTogether])
+        self.measurments.append([self.bProcessed, self.gbProcessed, self.pProcessed, self.otherProc])
         self.bProcessed = 0
         self.gbProcessed = 0
-        self.bReceived = 0
         self.pProcessed = 0
         self.otherProc = 0
-        self.mixedTogether = 0
 
     def save_to_file(self):
         try:
