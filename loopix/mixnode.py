@@ -317,9 +317,10 @@ class MixNode(DatagramProtocol):
 	def sendTagedMessage(self):
 		try:
 			mixes = self.takePathSequence(self.mixList, self.PATH_LENGTH)
+			path = mixes + [self]
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
-			header, body = self.packIntoSphinxPacket(tagedMessage, mixes)
-			self.sendMessage("ROUT" + petlib.pack.encode((header, body)), (mixes[0].host, mixes[0].port))
+			header, body = self.packIntoSphinxPacket(tagedMessage, path)
+			self.sendMessage("ROUT" + petlib.pack.encode((header, body)), (path[0].host, path[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
 
 			interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)

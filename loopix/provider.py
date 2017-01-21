@@ -144,18 +144,21 @@ class Provider(MixNode):
             print "ERROR during flushing: ", str(e)
 
     def flushStorage(self, name, (ip_host, port)):
-        if name in self.storage:
-            if self.storage[name]:
-                for _ in range(self.MAX_RETRIEVE):
-                    if self.storage[name]:
-                        message = self.storage[name].pop()
-                        print "LEN for flush: ", len(message)
-                        print "TYPE for flush: ", type(message)
-                        self.sendMessage("PMSG" + message, (ip_host, port))
+        if name not in self.clientList:
+           self.sendMessage("NOASG", (ip_host, port))
+        else: 
+            if name in self.storage:
+                if self.storage[name]:
+                    for _ in range(self.MAX_RETRIEVE):
+                        if self.storage[name]:
+                            message = self.storage[name].pop()
+                            print "LEN for flush: ", len(message)
+                            print "TYPE for flush: ", type(message)
+                            self.sendMessage("PMSG" + message, (ip_host, port))
+                else:
+                    self.sendMessage("NOMSG", (ip_host, port))
             else:
                 self.sendMessage("NOMSG", (ip_host, port))
-        else:
-            self.sendMessage("NOASG", (ip_host, port))
 
     def do_ROUT(self, data, (host, port)):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
@@ -183,8 +186,6 @@ class Provider(MixNode):
                     if dropFlag:
                         print "[%s] > Drop message." % self.name
                     else:
-                        print "Name: ", next_name
-                        print "Client list: ", self.clientList
                         if next_name in self.clientList:
                             self.saveInStorage(next_name, petlib.pack.encode((header, body)))
                         else:
