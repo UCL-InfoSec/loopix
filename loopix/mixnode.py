@@ -203,9 +203,11 @@ class MixNode(DatagramProtocol):
 					print "ERROR during message processing", str(e)
 			elif routing[0] == Dest_flag:
 				dest, message = receive_forward(self.params, body)
-				print dest
-				if message.startswith('TAG'):
-					print "Tagged message received."
+				if dest[-1] == self.name:
+					if message.startswith('TAG'):
+						print "Tagged message received."
+				else:
+					raise Exception("Destionation did not match")
 			else:
 				print 'Flag not recognized' 
 

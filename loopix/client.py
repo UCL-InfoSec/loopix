@@ -472,9 +472,11 @@ class Client(DatagramProtocol):
         if rounting[0] == Dest_flag:
             dest, message = receive_forward(self.params, body)
 
-        print dest
-        print [self.host, self.port, self.name]
-        return message
+        if dest[-1] == self.name:
+            return message
+        else:
+            raise Exception("Destination did not match")
+            return None
 
     def takePathSequence(self, mixnet, length):
         """ Function takes a random path sequence build of active mixnodes. If the

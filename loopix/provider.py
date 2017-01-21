@@ -195,9 +195,10 @@ class Provider(MixNode):
                                 print "ERROR during message processing", str(e)
                 elif routing[0] == Dest_flag:
                     dest, message = receive_forward(self.params, body)
-                    print "Received Dest_message"
-                    print dest
-                    print [self.host, self.port, self.name]
+                    if dest[-1] == self.name:
+                        print "[%s] > Received Dest_message" % self.name
+                    else:
+                        raise Exception("Destination did not match")
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
