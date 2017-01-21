@@ -52,7 +52,6 @@ class Provider(MixNode):
         self.bSent = 0
         self.bProcessed = 0
         self.gbSent = 0
-        self.gbProcessed = 0
         self.otherProc = 0
 
         self.nMsgSent = 0
@@ -113,13 +112,13 @@ class Provider(MixNode):
             try:
                 header, body = petlib.pack.decode(data[4:])
                 self.do_ROUT((header, body), (host, port))
-                self.gbProcessed += 1
             except Exception, e:
                 print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
                 print repr(e)
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)
+            # self.otherProc += 1
             pass
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
@@ -185,6 +184,8 @@ class Provider(MixNode):
                         if next_name in self.clientList:
                             self.saveInStorage(next_name, petlib.pack.encode((header, body)))
                         else:
+                            if typeFlag == 'P':
+                                self.pProcessed += 1
                             try:
                                 reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
                             except Exception, e:
@@ -230,7 +231,6 @@ class Provider(MixNode):
         db.close()
         print "[%s] > Provider public information saved in database." % self.name
 
-
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.takeMeasurments)
         lc.start(MEASURE_TIME, False)
@@ -240,9 +240,8 @@ class Provider(MixNode):
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbProcessed, self.pProcessed, self.otherProc])
+        self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
         self.bProcessed = 0
-        self.gbProcessed = 0
         self.pProcessed = 0
         self.otherProc = 0
 

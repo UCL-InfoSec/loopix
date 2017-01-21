@@ -74,8 +74,8 @@ class MixNode(DatagramProtocol):
 		self.savedElements = set()
 
 		self.bProcessed = 0
-		self.gbProcessed = 0
 		self.pProcessed = 0
+		self.otherProc = 0
 		self.measurments = []
 
 		self.PATH_LENGTH = 3
@@ -158,12 +158,12 @@ class MixNode(DatagramProtocol):
 			try:
 				(header, body) = petlib.pack.decode(data[4:])
 				self.do_ROUT((header, body), (host, port))
-				self.gbProcessed += 1
 			except Exception, e:
 				print "ERROR processMessage: ", str(e)
 		elif data[:4] == "ACKN":
 			#if data in self.expectedACK:
 			#	self.expectedACK.remove(data)
+			#	self.otherProc += 1
 			pass
 		else:
 			print "[%s] > Processing Message - message not recognized" % self.name
@@ -188,6 +188,8 @@ class MixNode(DatagramProtocol):
 			if routing[0] == Relay_flag:
 				routing_flag, meta_info = routing
 				next_addr, dropFlag, typeFlag, delay, next_name = meta_info
+				if typeFlag == 'P':
+					self.pProcessed += 1
 				try:
 					reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
 				except Exception, e:
@@ -458,10 +460,10 @@ class MixNode(DatagramProtocol):
 		lc.start(MEASURE_TIME, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbProcessed, self.pProcessed])
+		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
 		self.bProcessed = 0
-		self.gbProcessed = 0
 		self.pProcessed = 0
+		self.otherProc = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
