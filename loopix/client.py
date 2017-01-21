@@ -308,7 +308,9 @@ class Client(DatagramProtocol):
         try:
             #encMsg, timestamp = petlib.pack.decode(data)
             message = petlib.pack.decode(data)
+            print "OK"
             msg = self.readMessage(message, (host, port))
+            print "OK2"
             #print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
