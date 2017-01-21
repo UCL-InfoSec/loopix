@@ -149,6 +149,8 @@ class Provider(MixNode):
                 for _ in range(self.MAX_RETRIEVE):
                     if self.storage[name]:
                         message = self.storage[name].pop()
+                        print "LEN for flush: ", len(message)
+                        print "TYPE for flush: ", type(message)
                         self.sendMessage("PMSG" + message, (ip_host, port))
             else:
                 self.sendMessage("NOMSG", (ip_host, port))
@@ -181,6 +183,8 @@ class Provider(MixNode):
                     if dropFlag:
                         print "[%s] > Drop message." % self.name
                     else:
+                        print "Name: ", next_name
+                        print "Client list: ", self.clientList
                         if next_name in self.clientList:
                             self.saveInStorage(next_name, petlib.pack.encode((header, body)))
                         else:
@@ -202,10 +206,9 @@ class Provider(MixNode):
                 value (str): message (encrypted) stored for the client.
         """
         if key in self.storage:
-            #self.storage[key].append(petlib.pack.encode((value, time.time())))
             self.storage[key].append(value)
         else:
-            self.storage[key] = [petlib.pack.encode(value)]
+            self.storage[key] = [value]
 
     def subscribeClient(self, name, host, port):
         if name not in self.clientList:

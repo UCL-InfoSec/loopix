@@ -283,6 +283,7 @@ class MixNode(DatagramProtocol):
 		try:
 			heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
 			path = mixes + [self]
+			print path
 			header, body = self.packIntoSphinxPacket('HT' + heartMsg, path, typeFlag)
 			return (header, body)
 		except Exception, e:
