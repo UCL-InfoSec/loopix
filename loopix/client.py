@@ -239,7 +239,8 @@ class Client(DatagramProtocol):
 
     def generateFakeLoopTraffic(self):
         try:
-            packet, addr = random.choice(tuple(self.testHeartbeats))
+            packet = random.choice(tuple(self.testHeartbeats))
+            addr = (self.provider.host, self.provider.port)
             self.send("ROUT" + packet, addr)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
             reactor.callLater(interval, self.generateFakeLoopTraffic)
@@ -248,7 +249,8 @@ class Client(DatagramProtocol):
 
     def generateFakeCoverTraffic(self):
         try:
-            packet, addr = random.choice(tuple(self.testDrops))
+            packet = random.choice(tuple(self.testDrops))
+            addr = (self.provider.host, self.provider.port)
             self.send("ROUT" + packet, addr)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
             reactor.callLater(interval, self.generateFakeCoverTraffic)
@@ -257,7 +259,8 @@ class Client(DatagramProtocol):
 
     def generateFakePayload(self):
         try:
-            packet, addr = random.choice(tuple(self.testPayload))
+            packet = random.choice(tuple(self.testPayload))
+            addr = (self.provider.host, self.provider.port)
             self.send("ROUT" + packet, addr)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.generateFakePayload)
@@ -542,14 +545,11 @@ class Client(DatagramProtocol):
                 r = friendsGroup[0]
                 print "Client: %s with provider %s" % (r.name, r.provider.name)
             else:
-                # r = random.choice(self.usersPubs)
-                r = random.choice(friendsGroup)
+                r = random.choice(self.usersPubs)
             msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
             
             header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
-            self.testPayload.add((petlib.pack.encode(header, body), (self.provider.host, self.provider.port)))
-            #packet, addr = self.makePacket(r, mixpath, self.setup,  msgF, msgB, False, typeFlag = 'P')
-            #self.testPayload.add((packet, addr))
+            self.testPayload.add(petlib.pack.encode(header, body))
 
     def setExpParamsDelay(self, newParameter):
         self.EXP_PARAMS_DELAY = (newParameter, None)
