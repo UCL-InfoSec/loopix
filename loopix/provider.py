@@ -199,6 +199,8 @@ class Provider(MixNode):
                         print "[%s] > Received Dest_message" % self.name
                         if message.startswith('HT'):
                             print "[%s] > Heartbeat looped back" % self.name
+                        if message.startswith('TAG'):
+                            print "[%s] > Tagged message received" % self.name
                     else:
                         raise Exception("Destination did not match")
 
