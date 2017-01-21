@@ -185,7 +185,12 @@ class Provider(MixNode):
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
                     if next_name in self.clientList:
-                        assert self.clientList[next_name] == (next_addr[0], next_addr[1])
+                        if self.clientList[next_name] == (next_addr[0], next_addr[1]):
+                            print "OK"
+                        else:
+                            print "NOT OK"
+                            print self.clientList[next_name]
+                            print (next_addr[0], next_addr[1])
                         self.saveInStorage(next_name, (header, body))
                     else:
                         try:
