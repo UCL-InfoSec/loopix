@@ -201,7 +201,7 @@ class MixNode(DatagramProtocol):
 					reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
 				except Exception, e:
 					print "ERROR during message processing", str(e)
-			elif routing_flag[0] == Dest_flag:
+			elif routing[0] == Dest_flag:
 				dest, message = receive_forward(self.params, body)
 				print dest
 				if message.startswith('TAG'):
