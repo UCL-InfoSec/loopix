@@ -308,9 +308,8 @@ class Client(DatagramProtocol):
         try:
             #encMsg, timestamp = petlib.pack.decode(data)
             message = petlib.pack.decode(data)
-            print "OK"
             msg = self.readMessage(message, (host, port))
-            print "OK2"
+            print "Message was readed."
             #print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
@@ -472,7 +471,8 @@ class Client(DatagramProtocol):
         if rounting[0] == Dest_flag:
             dest, message = receive_forward(self.params, body)
 
-        assert dest == [self.host, self.port, self.name]
+        print dest
+        print [self.host, self.port, self.name]
         return message
 
     def takePathSequence(self, mixnet, length):
