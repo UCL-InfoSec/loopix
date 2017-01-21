@@ -463,9 +463,11 @@ class Client(DatagramProtocol):
         """
         print "Message received."
         (header, body) = message
-        
+        print "Peeling data"
         peeledData = sphinx_process(self.params, self.privk, header, body)
+        print "Data peeled"
         (tag, info, (header, body)) = peeledData
+        print "Shareded"
         rounting = PFdecode(self.params, info)
         if rounting[0] == Dest_flag:
             dest, message = receive_forward(self.params, body)
