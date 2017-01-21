@@ -118,6 +118,7 @@ class Provider(MixNode):
                 self.do_ROUT((header, body), (host, port))
                 print "OK2"
                 self.gbProcessed += 1
+                print "OK3"
             except Exception, e:
                 # print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
                 print "ERROR processMessageProvider: ", str(e)
