@@ -185,12 +185,6 @@ class Provider(MixNode):
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
                     if next_name in self.clientList:
-                        if self.clientList[next_name] == (next_addr[0], next_addr[1]):
-                            print "OK"
-                        else:
-                            print "NOT OK"
-                            print self.clientList[next_name]
-                            print (next_addr[0], next_addr[1])
                         self.saveInStorage(next_name, (header, body))
                     else:
                         try:
@@ -200,7 +194,8 @@ class Provider(MixNode):
                 elif routing[0] == Dest_flag:
                     dest, message = receive_forward(self.params, body)
                     print "Received Dest_message"
-                    assert dest == [self.host, self.port, self.name]
+                    print dest
+                    print [self.host, self.port, self.name]
 
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
