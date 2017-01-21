@@ -122,6 +122,7 @@ class Provider(MixNode):
             except Exception, e:
                 # print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
                 print "ERROR processMessageProvider: ", str(e)
+                print repr(e)
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)
