@@ -70,11 +70,11 @@ class Provider(MixNode):
         
         reactor.callLater(10.0, self.turnOnProcessing)
 
-        #if self.TAGED_HEARTBEATS == "True":
-        #    self.d.addCallback(self.turnOnTagedHeartbeats)
-        #else:
-        #    self.d.addCallback(self.turnOnHeartbeats)
-        #self.d.addErrback(self.errbackHeartbeats)
+        if self.TAGED_HEARTBEATS == "True":
+           self.d.addCallback(self.turnOnTagedHeartbeats)
+        else:
+           self.d.addCallback(self.turnOnHeartbeats)
+        self.d.addErrback(self.errbackHeartbeats)
 
         #self.turnOnReliableUDP()
         self.readInData('example.db')
@@ -178,13 +178,16 @@ class Provider(MixNode):
                 if routing[0] == Relay_flag:
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
-                    if next_name in self.clientList:
-                        self.saveInStorage(next_name, petlib.pack.encode((header, body)))
+                    if dropFlag:
+                        print "[%s] > Drop message." % self.name
                     else:
-                        try:
-                            reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
-                        except Exception, e:
-                            print "ERROR during message processing", str(e)
+                        if next_name in self.clientList:
+                            self.saveInStorage(next_name, petlib.pack.encode((header, body)))
+                        else:
+                            try:
+                                reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
+                            except Exception, e:
+                                print "ERROR during message processing", str(e)
                 elif routing[0] == Dest_flag:
                     dest, message = receive_forward(self.params, body)
                     print "Received Dest_message"
