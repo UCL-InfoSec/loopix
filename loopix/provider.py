@@ -178,6 +178,7 @@ class Provider(MixNode):
                 if routing[0] == Relay_flag:
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
+                    print next_addr
                     if next_name in self.clientList:
                         assert self.clientList[next_name] == (next_addr[0], next_addr[1])
                         self.saveInStorage(next_name, (header, body))

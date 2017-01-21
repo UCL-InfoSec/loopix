@@ -164,7 +164,11 @@ class MixNode(DatagramProtocol):
 	def processMessage(self, data, (host, port)):
 		if data[:4] == "ROUT":
 			try:
-				header, body = petlib.pack.decode(data[4:])
+				print "Received data"
+				# header, body = petlib.pack.decode(data[4:])
+				print "FROM: ", (host, port)
+				message = petlib.pack.decode(data[4:])
+				print "LEN: ", len(message)
 				print "OK---"
 				self.do_ROUT((header, body), (host, port))
 				print "OK--------"
