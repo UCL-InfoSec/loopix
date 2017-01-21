@@ -194,14 +194,16 @@ class MixNode(DatagramProtocol):
 			print "ERROR - during message decryption: ", str(e)
 		else:
 			(tag, info, (header, body)) = peeledData
-			routing_flag, meta_info = PFdecode(self.params, info)
-			if routing_flag == Relay_flag:
+			# routing_flag, meta_info = PFdecode(self.params, info)
+			routing = PFdecode(self.params, info)
+			if routing[0] == Relay_flag:
+				routing_flag, meta_info = routing
 				next_addr, dropFlag, typeFlag, delay, next_name = meta_info
 				try:
 					reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
 				except Exception, e:
 					print "ERROR during message processing", str(e)
-			elif routing_flag == Dest_flag:
+			elif routing_flag[0] == Dest_flag:
 				dest, message = receive_forward(self.params, body)
 				print dest
 				if message.startswith('TAG'):

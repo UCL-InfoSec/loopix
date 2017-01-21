@@ -173,8 +173,10 @@ class Provider(MixNode):
         else:
             if peeledData:
                 (tag, info, (header, body)) = peeledData
-                routing_flag, meta_info = PFdecode(self.params, info)
-                if routing_flag == Relay_flag:
+                #routing_flag, meta_info = PFdecode(self.params, info)
+                routing = PFdecode(self.params, info)
+                if routing[0] == Relay_flag:
+                    routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
                     if next_name in self.clientList:
                         assert self.clientList[next_name] == (next_addr[0], next_addr[1])
@@ -184,7 +186,7 @@ class Provider(MixNode):
                             reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
                         except Exception, e:
                             print "ERROR during message processing", str(e)
-                elif routing_flag == Dest_flag:
+                elif routing[0] == Dest_flag:
                     dest, message = receive_forward(self.params, body)
                     print "Received Dest_message"
                     assert dest == [self.host, self.port, self.name]
