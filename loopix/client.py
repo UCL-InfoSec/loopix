@@ -144,8 +144,8 @@ class Client(DatagramProtocol):
         self.measureSentMessages()
         self.save_measurments()
         self.turnOnCoverLoops(mixList)
-        #self.turnOnCoverMsg(mixList)
-        #self.turnOnBufferChecking(mixList)
+        self.turnOnCoverMsg(mixList)
+        self.turnOnBufferChecking(mixList)
         # ====== This is generating fake messages to fake reall traffic=====
         if FAKE_MESSAGING:
             self.turnOnFakeMessaging()

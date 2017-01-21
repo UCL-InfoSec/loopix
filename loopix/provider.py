@@ -114,14 +114,10 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 header, body = petlib.pack.decode(data[4:])
-                print "OK"
                 self.do_ROUT((header, body), (host, port))
-                print "OK2"
                 self.gbProcessed += 1
-                print "OK3"
             except Exception, e:
-                # print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
-                print "ERROR processMessageProvider: ", str(e)
+                print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
                 print repr(e)
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
@@ -143,13 +139,11 @@ class Provider(MixNode):
                 port (int): port of the requesting client.
         """
         try:
-            print "Name: ", name
             self.flushStorage(name, (host, port))
         except Exception, e:
             print "ERROR during flushing: ", str(e)
 
     def flushStorage(self, name, (ip_host, port)):
-        print "Storage keys: ", self.storage.keys()
         if name in self.storage:
             if self.storage[name]:
                 for _ in range(self.MAX_RETRIEVE):
