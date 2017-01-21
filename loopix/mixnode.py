@@ -206,6 +206,8 @@ class MixNode(DatagramProtocol):
 				if dest[-1] == self.name:
 					if message.startswith('TAG'):
 						print "Tagged message received."
+					if message.startswith('HT'):
+						print "Heartbeat looped pack"
 				else:
 					raise Exception("Destionation did not match")
 			else:

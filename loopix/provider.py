@@ -197,6 +197,8 @@ class Provider(MixNode):
                     dest, message = receive_forward(self.params, body)
                     if dest[-1] == self.name:
                         print "[%s] > Received Dest_message" % self.name
+                        if message.startswith('HT'):
+                            print "[%s] > Heartbeat looped back" % self.name
                     else:
                         raise Exception("Destination did not match")
 

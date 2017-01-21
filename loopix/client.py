@@ -309,7 +309,9 @@ class Client(DatagramProtocol):
             #encMsg, timestamp = petlib.pack.decode(data)
             message = petlib.pack.decode(data)
             msg = self.readMessage(message, (host, port))
-            print "Message was readed."
+            print "[%s] > Message was readed." % self.name
+            if msg.startswith("HT"):
+                print "[%s] > Heartbeat looped back" % self.name
             #print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
@@ -460,23 +462,18 @@ class Client(DatagramProtocol):
                 host (str) - host of a provider,
                 port (int) - port of a provider.
         """
-        print "Message received."
-        print len(message)
         (header, body) = message
-        print "Peeling data"
+
         peeledData = sphinx_process(self.params, self.privk, header, body)
-        print "Data peeled"
         (tag, info, (header, body)) = peeledData
-        print "Shareded"
         rounting = PFdecode(self.params, info)
         if rounting[0] == Dest_flag:
             dest, message = receive_forward(self.params, body)
-
-        if dest[-1] == self.name:
-            return message
-        else:
-            raise Exception("Destination did not match")
-            return None
+            if dest[-1] == self.name:
+                return message
+            else:
+                raise Exception("Destination did not match")
+                return None
 
     def takePathSequence(self, mixnet, length):
         """ Function takes a random path sequence build of active mixnodes. If the
