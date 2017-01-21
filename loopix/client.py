@@ -312,7 +312,8 @@ class Client(DatagramProtocol):
             print "[%s] > Message was readed." % self.name
             if msg.startswith("HT"):
                 print "[%s] > Heartbeat looped back" % self.name
-            #print "[%s] > New message unpacked: " % self.name
+            else:
+                print "[%s] > New message unpacked: " % self.name
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data

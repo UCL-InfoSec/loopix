@@ -152,8 +152,6 @@ class Provider(MixNode):
                     for _ in range(self.MAX_RETRIEVE):
                         if self.storage[name]:
                             message = self.storage[name].pop()
-                            print "LEN for flush: ", len(message)
-                            print "TYPE for flush: ", type(message)
                             self.sendMessage("PMSG" + message, (ip_host, port))
                 else:
                     self.sendMessage("NOMSG", (ip_host, port))
@@ -196,7 +194,6 @@ class Provider(MixNode):
                 elif routing[0] == Dest_flag:
                     dest, message = receive_forward(self.params, body)
                     if dest[-1] == self.name:
-                        print "[%s] > Received Dest_message" % self.name
                         if message.startswith('HT'):
                             print "[%s] > Heartbeat looped back" % self.name
                         if message.startswith('TAG'):
