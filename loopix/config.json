@@ -3,27 +3,27 @@
         "NOISE_LENGTH": "500", 
         "C": "2", 
         "TEST_USER": "False", 
-        "EXP_PARAMS_COVER": "6", 
+        "EXP_PARAMS_COVER": "20", 
         "PATH_LENGTH": "3", 
-        "EXP_PARAMS_LOOPS": "6", 
+        "MEASURE_TIME": "60", 
+        "EXP_PARAMS_LOOPS": "10", 
         "EXP_PARAMS_DELAY": "0.05", 
         "FAKE_MESSAGING": "False", 
         "TESTMODE": "True", 
         "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "6",
-        "MEASURE_TIME": "60",
-        "SAVE_MEASURMENTS_TIME" : "360"
+        "EXP_PARAMS_PAYLOAD": "5", 
+        "SAVE_MEASURMENTS_TIME": "360"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
         "TAGED_HEARTBEATS": "True", 
-        "EXP_PARAMS_LOOPS": "6", 
+        "MEASURE_TIME": "60", 
+        "EXP_PARAMS_LOOPS": "20", 
         "TIME_ACK": "1600", 
         "EXP_PARAMS_DELAY": "0.05", 
         "TIME_FLUSH": "0.01", 
         "MAX_DELAY_TIME": "-432000", 
-        "TIME_CLEAN": "1600",
-        "MEASURE_TIME": "60",
-        "SAVE_MEASURMENTS_TIME" : "360"
+        "SAVE_MEASURMENTS_TIME": "360", 
+        "TIME_CLEAN": "1600"
     }
 }
