@@ -185,7 +185,7 @@ class Provider(MixNode):
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
                     if next_name in self.clientList:
-                        self.saveInStorage(next_name, (header, body))
+                        self.saveInStorage(next_name, petlib.pack.encode((header, body)))
                     else:
                         try:
                             reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
@@ -205,9 +205,10 @@ class Provider(MixNode):
                 value (str): message (encrypted) stored for the client.
         """
         if key in self.storage:
-            self.storage[key].append(petlib.pack.encode((value, time.time())))
+            #self.storage[key].append(petlib.pack.encode((value, time.time())))
+            self.storage[key].append(value)
         else:
-            self.storage[key] = [petlib.pack.encode((value, time.time()))]
+            self.storage[key] = [petlib.pack.encode(value)]
 
     def subscribeClient(self, name, host, port):
         if name not in self.clientList:
