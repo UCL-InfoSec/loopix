@@ -115,9 +115,7 @@ class Provider(MixNode):
         elif data[:4] == "ROUT":
             try:
                 header, body = petlib.pack.decode(data[4:])
-                print "OK"
                 self.do_ROUT((header, body), (host, port))
-                print "OK 2"
                 self.gbProcessed += 1
             except Exception, e:
                 print "[%s] > ERROR processMessage: " % self.name, str(e)
@@ -188,6 +186,7 @@ class Provider(MixNode):
                             print "ERROR during message processing", str(e)
                 elif routing_flag == Dest_flag:
                     dest, message = receive_forward(self.params, body)
+                    print "Received Dest_message"
                     assert dest == [self.host, self.port, self.name]
 
     def saveInStorage(self, key, value):
@@ -208,23 +207,23 @@ class Provider(MixNode):
         #else:
         #    self.clientList[name] = (host, port)
 
-    def sendInfoMixnet(self, host, port):
-        """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
+    # def sendInfoMixnet(self, host, port):
+    #     """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
 
-                Args:
-                host (str): requesting host
-                port (port): requesting port
-        """
-        if not self.mixList:
-            self.transport.write("EMPT", (host, port))
-        else:
-            self.transport.write("RINF" + petlib.pack.encode(self.mixList), (host, port))
+    #             Args:
+    #             host (str): requesting host
+    #             port (port): requesting port
+    #     """
+    #     if not self.mixList:
+    #         self.transport.write("EMPT", (host, port))
+    #     else:
+    #         self.transport.write("RINF" + petlib.pack.encode(self.mixList), (host, port))
 
-    def sendInfoUsers(self, host, port):
-        if not self.usersPubs:
-            self.transport.write("EMPT", (host, port))
-        else:
-            self.transport.write("UINF" + petlib.pack.encode(self.usersPubs), (host, port))
+    # def sendInfoUsers(self, host, port):
+    #     if not self.usersPubs:
+    #         self.transport.write("EMPT", (host, port))
+    #     else:
+    #         self.transport.write("UINF" + petlib.pack.encode(self.usersPubs), (host, port))
 
     def saveInDB(self, databaseName):
         data = [self.name, self.port, self.host, self.pubk]

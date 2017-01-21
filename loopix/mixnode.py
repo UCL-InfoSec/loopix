@@ -106,11 +106,11 @@ class MixNode(DatagramProtocol):
 		print "[%s] > Start protocol" % self.name
 		reactor.callLater(10.0, self.turnOnProcessing)
 
-		if self.TAGED_HEARTBEATS == "True":
-			self.d.addCallback(self.turnOnTagedHeartbeats)
-		else:
-			self.d.addCallback(self.turnOnHeartbeats)
-		self.d.addErrback(self.errbackHeartbeats)
+		#if self.TAGED_HEARTBEATS == "True":
+		#	self.d.addCallback(self.turnOnTagedHeartbeats)
+		#else:
+		#	self.d.addCallback(self.turnOnHeartbeats)
+		#self.d.addErrback(self.errbackHeartbeats)
 
 		# self.turnOnReliableUDP()
 		self.readInData('example.db')
@@ -164,7 +164,6 @@ class MixNode(DatagramProtocol):
 	def processMessage(self, data, (host, port)):
 		if data[:4] == "ROUT":
 			try:
-				# idt, msgData = petlib.pack.decode(data[4:])
 				header, body = petlib.pack.decode(data[4:])
 				print "OK---"
 				self.do_ROUT((header, body), (host, port))
@@ -175,7 +174,6 @@ class MixNode(DatagramProtocol):
 		elif data[:4] == "ACKN":
 			#if data in self.expectedACK:
 			#	self.expectedACK.remove(data)
-			# self.otherProc += 1
 			pass
 		else:
 			print "[%s] > Processing Message - message not recognized" % self.name
