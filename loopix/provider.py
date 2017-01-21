@@ -118,7 +118,7 @@ class Provider(MixNode):
                 self.do_ROUT((header, body), (host, port))
                 self.gbProcessed += 1
             except Exception, e:
-                print "[%s] > ERROR processMessage: " % self.name, str(e)
+                print "[%s] > ERROR processMessage: %s" % (self.name, str(e))
         elif data[:4] == "ACKN":
             #if data in self.expectedACK:
             #    self.expectedACK.remove(data)
@@ -182,7 +182,7 @@ class Provider(MixNode):
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
                     if next_name in self.clientList:
                         assert self.clientList[next_name] == (next_addr[0], next_addr[1])
-                        # self.saveInStorage(next_name, (header, body))
+                        self.saveInStorage(next_name, (header, body))
                     else:
                         try:
                             reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
