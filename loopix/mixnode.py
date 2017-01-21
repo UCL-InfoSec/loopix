@@ -166,12 +166,8 @@ class MixNode(DatagramProtocol):
 			try:
 				print "Received data"
 				# header, body = petlib.pack.decode(data[4:])
-				print "FROM: ", (host, port)
-				message = petlib.pack.decode(data[4:])
-				print "LEN: ", len(message)
-				print "OK---"
+				(header, body) = petlib.pack.decode(data[4:])
 				self.do_ROUT((header, body), (host, port))
-				print "OK--------"
 				self.gbProcessed += 1
 			except Exception, e:
 				print "ERROR processMessage: ", str(e)
