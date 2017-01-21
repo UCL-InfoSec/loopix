@@ -95,8 +95,6 @@ class MixNode(DatagramProtocol):
 		self.mixedTogether = 0
 		self.anonSetSizeAll = []
 
-		self.params = SphinxParams(header_len=1024)
-
 		# ====================SPHINX VALUES==================
 		self.params = SphinxParams(header_len=1024)
 
@@ -179,7 +177,6 @@ class MixNode(DatagramProtocol):
 	# def send_ack(self, msg, (host, port)):
 	# 	reactor.callLater(0.0, self.sendMessage, msg, (host, port))
 
-	# ==================================PROCESS SPHINX PACKET FORMAT=====================
 	def process_sphinx_packet(self, message):
 		header, body = message
 		ret_val = sphinx_process(self.params, self.privk, header, body)
@@ -206,14 +203,14 @@ class MixNode(DatagramProtocol):
 				if dest[-1] == self.name:
 					if message.startswith('TAG'):
 						print "Tagged message received."
+						self.measureLatency(message)
 					if message.startswith('HT'):
-						print "Heartbeat looped pack"
+						# print "[%s] > Heartbeat looped pack" % self.name
+						pass
 				else:
 					raise Exception("Destionation did not match")
 			else:
 				print 'Flag not recognized' 
-
-	# ===================================================================================
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		self.mixedTogether += 1
@@ -334,9 +331,10 @@ class MixNode(DatagramProtocol):
 
 	def measureLatency(self, msg):
 		try:
-			if msg[2:] in self.tagedHeartbeat:
-				latency = float(time.time()) - float(self.tagedHeartbeat[msg[2:]])
-				del self.tagedHeartbeat[msg[2:]]
+			if msg in self.tagedHeartbeat:
+				latency = float(time.time()) - float(self.tagedHeartbeat[msg])
+				print latency
+				del self.tagedHeartbeat[msg]
 				self.savedLatency.append(latency)
 		except Exception, e:
 			print str(e)

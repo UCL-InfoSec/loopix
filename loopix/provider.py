@@ -195,9 +195,11 @@ class Provider(MixNode):
                     dest, message = receive_forward(self.params, body)
                     if dest[-1] == self.name:
                         if message.startswith('HT'):
-                            print "[%s] > Heartbeat looped back" % self.name
+                            # print "[%s] > Heartbeat looped back" % self.name
+                            pass
                         if message.startswith('TAG'):
-                            print "[%s] > Tagged message received" % self.name
+                            # print "[%s] > Tagged message received" % self.name
+                            self.measureLatency(message)
                     else:
                         raise Exception("Destination did not match")
 
@@ -218,24 +220,6 @@ class Provider(MixNode):
             self.clientList[name] = (host, port)
         else:
             self.clientList[name] = (host, port)
-
-    # def sendInfoMixnet(self, host, port):
-    #     """ Function forwards the public information about the mixnodes and users in the system to the requesting address.
-
-    #             Args:
-    #             host (str): requesting host
-    #             port (port): requesting port
-    #     """
-    #     if not self.mixList:
-    #         self.transport.write("EMPT", (host, port))
-    #     else:
-    #         self.transport.write("RINF" + petlib.pack.encode(self.mixList), (host, port))
-
-    # def sendInfoUsers(self, host, port):
-    #     if not self.usersPubs:
-    #         self.transport.write("EMPT", (host, port))
-    #     else:
-    #         self.transport.write("UINF" + petlib.pack.encode(self.usersPubs), (host, port))
 
     def saveInDB(self, databaseName):
         data = [self.name, self.port, self.host, self.pubk]

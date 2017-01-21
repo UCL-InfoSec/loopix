@@ -306,7 +306,6 @@ class Client(DatagramProtocol):
     def do_PMSG(self, data, host, port):
 
         try:
-            #encMsg, timestamp = petlib.pack.decode(data)
             message = petlib.pack.decode(data)
             msg = self.readMessage(message, (host, port))
             print "[%s] > Message was readed." % self.name
@@ -485,7 +484,6 @@ class Client(DatagramProtocol):
                 mixnet (list) - list of active mixnodes,
                 length (int) - length of the path which we want to build.
         """
-        #return random.sample(mixnet, length) if len(mixnet) > length else mixnet
         if len(mixnet) > length:
             randomPath = random.sample(mixnet, length)
         else:
@@ -508,8 +506,8 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        friendsGroup = random.sample(self.usersPubs, 5)
-        #friendsGroup = self.usersPubs
+        # friendsGroup = random.sample(self.usersPubs, 5)
+        friendsGroup = self.usersPubs
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
