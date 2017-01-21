@@ -220,9 +220,9 @@ class MixNode(DatagramProtocol):
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		self.mixedTogether += 1
 		if delay > 0:
-			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+			reactor.callLater(delay, self.sendMessage, packet, (xtoHost, xtoPort))
 		else:
-			reactor.callLater(0.0, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+			reactor.callLater(0.0, self.sendMessage, packet, (xtoHost, xtoPort))
 
 
 	def checkMac(self, mac):
