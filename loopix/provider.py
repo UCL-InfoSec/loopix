@@ -146,6 +146,7 @@ class Provider(MixNode):
                     for _ in range(self.MAX_RETRIEVE):
                         if self.storage[name]:
                             message = self.storage[name].pop()
+                            print len(message)
                             self.sendMessage("PMSG" + message, (ip_host, port))
                 else:
                     self.sendMessage("NOMSG", (ip_host, port))
