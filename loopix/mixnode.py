@@ -121,11 +121,14 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(self.do_PROCESS)
 
 	def turnOnTagedHeartbeats(self, mixnet):
-		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
-		reactor.callLater(interval, self.sendTagedMessage)
+		if self.EXP_PARAMS_LOOPS:
+			interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+			reactor.callLater(interval, self.sendTagedMessage)
 
-		lc2 = task.LoopingCall(self.saveLatency)
-		lc2.start(SAVE_MEASURMENTS_TIME, False)
+			lc2 = task.LoopingCall(self.saveLatency)
+			lc2.start(SAVE_MEASURMENTS_TIME, False)
+		else:
+			print "[%s] > Loop cover traffic turned off." % self.name
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
@@ -133,8 +136,11 @@ class MixNode(DatagramProtocol):
 				Args:
 				mixnet (list): list of active mixnodes in the network.
 		"""
-		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
-		reactor.callLater(interval, self.sendHeartbeat, mixnet)
+		if self.EXP_PARAMS_LOOPS:
+			interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+			reactor.callLater(interval, self.sendHeartbeat, mixnet)
+		else:
+			print "[%s] > Loop cover traffic turned off." % self.name
 
 	def errbackHeartbeats(self, failure):
 		print "> Mixnode Errback during sending heartbeat: ", failure
