@@ -250,12 +250,12 @@ class Provider(MixNode):
             self.measurments = []
         except Exception, e:
             print "ERROR saving to file: ", str(e)
-        try:
-            with open("anonSet.csv", "ab") as outfile:
-                csvW = csv.writer(outfile)
-                csvW.writerow(['TotalCounter', 'PartialCounter'])
-                for row in self.anonSetSizeAll:
-                    csvW.writerow(row)
-            self.anonSetSizeAll = []
-        except Exception, e:
-            print "Error while saving: ", str(e)
+        # try:
+        #     with open("anonSet.csv", "ab") as outfile:
+        #         csvW = csv.writer(outfile)
+        #         csvW.writerow(['TotalCounter', 'PartialCounter'])
+        #         for row in self.anonSetSizeAll:
+        #             csvW.writerow(row)
+        #     self.anonSetSizeAll = []
+        # except Exception, e:
+        #     print "Error while saving: ", str(e)
