@@ -203,6 +203,7 @@ class MixNode(DatagramProtocol):
 				if typeFlag == 'P':
 					self.pProcessed += 1
 				try:
+					print type(delay)
 					reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
 				except Exception, e:
 					print "ERROR during message processing", str(e)
