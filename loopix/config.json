@@ -13,7 +13,8 @@
         "TIME_PULL": "10", 
         "EXP_PARAMS_PAYLOAD": "5",
         "MEASURE_TIME" :"60",
-        "SAVE_MEASURMENTS_TIME": "360"
+        "SAVE_MEASURMENTS_TIME": "360",
+        "TURN_ON_SENDING": "False"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 

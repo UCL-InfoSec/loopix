@@ -78,6 +78,8 @@ class MixNode(DatagramProtocol):
 		# number of messages which are in the mixnode between previous message leaving and current message leaving
 		self.partialCounter = 0
 
+		self.callCounter = 0
+
 		self.measurments = []
 		self.anonSetSizeAll = []
 		self.savedLatency = []
@@ -203,7 +205,6 @@ class MixNode(DatagramProtocol):
 				if typeFlag == 'P':
 					self.pProcessed += 1
 				try:
-					print type(delay)
 					reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
 				except Exception, e:
 					print "ERROR during message processing", str(e)
@@ -254,6 +255,7 @@ class MixNode(DatagramProtocol):
 			host (str): host of the destination,
 			port (int): port of the destination.
 		"""
+		self.callCounter += 1
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
 			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
@@ -481,10 +483,11 @@ class MixNode(DatagramProtocol):
 		lc.start(MEASURE_TIME, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
+		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc, self.callCounter])
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
+		self.callCounter = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
