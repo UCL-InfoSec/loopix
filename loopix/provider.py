@@ -82,8 +82,8 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
-        self.totalCounter += 1
-        self.partialCounter += 1
+        # self.totalCounter += 1
+        # self.partialCounter += 1
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
