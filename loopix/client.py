@@ -85,8 +85,14 @@ class Client(DatagramProtocol):
 
         self.PATH_LENGTH = int(_PARAMS["parametersClients"]["PATH_LENGTH"])
         self.EXP_PARAMS_PAYLOAD = (float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"]), None)
-        self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
-        self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
+        if _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] != "None":
+            self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
+        else:
+            self.EXP_PARAMS_LOOPS = None
+        if _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] != "None":
+            self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
+        else:
+            self.EXP_PARAMS_COVER = None
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
         self.TESTUSER = True if testUser == "True" else False
@@ -172,11 +178,14 @@ class Client(DatagramProtocol):
                 mixList (list): a list of active mixnodes in the network.
         """
 
-        interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
-        if self.TESTMODE:
-            reactor.callLater(interval, self.generateFakeLoopTraffic)
+        if self.EXP_PARAMS_LOOPS:
+            interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+            if self.TESTMODE:
+                reactor.callLater(interval, self.generateFakeLoopTraffic)
+            else:
+                reactor.callLater(interval, self.generateLoopTraffic, mixList)
         else:
-            reactor.callLater(interval, self.generateLoopTraffic, mixList)
+            print "[%s] > Loop cover traffic turned off." % self.name
 
     def turnOnCoverMsg(self, mixList):
         """ Function turns on a loop generating a drop cover traffic.
@@ -185,11 +194,14 @@ class Client(DatagramProtocol):
                 mixList (list): a list of active mixnodes in the network.
         """
 
-        interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
-        if self.TESTMODE:
-            reactor.callLater(interval, self.generateFakeCoverTraffic)
+        if self.EXP_PARAMS_COVER:
+            interval = sf.sampleFromExponential(self.EXP_PARAMS_COVER)
+            if self.TESTMODE:
+                reactor.callLater(interval, self.generateFakeCoverTraffic)
+            else:
+                reactor.callLater(interval, self.generateCoverTraffic, mixList)
         else:
-            reactor.callLater(interval, self.generateCoverTraffic, mixList)
+            print "[%s] > Drop cover traffic turned off." % self.name
 
     def checkBuffer(self, mixList):
         """ Function sends message from buffer or drop messages.
