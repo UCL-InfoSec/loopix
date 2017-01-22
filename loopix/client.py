@@ -214,18 +214,13 @@ class Client(DatagramProtocol):
                 mixList (list): a list of active mixnodes in the network.
         """
 
-        print str(self.TURN_ON_SENDING)
         try:
             if len(self.buffer) > 0 and self.TURN_ON_SENDING:
-                print "IN"
                 message, addr = self.buffer.pop(0)
                 self.send(message, addr)
             else:
+                print "[%s] > Sending turned off. " % self.name
                 self.sendDropMessage(mixList)
-                if self.TURN_ON_SENDING == False:
-                    print "SENDING TURNED OFF"
-                else:
-                    print "Hello world"
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.checkBuffer, mixList)
         except Exception, e:
@@ -281,9 +276,15 @@ class Client(DatagramProtocol):
 
     def generateFakePayload(self):
         try:
-            packet = random.choice(tuple(self.testPayload))
-            addr = (self.provider.host, self.provider.port)
-            self.send("ROUT" + packet, addr)
+            if self.TURN_ON_SENDING:
+                packet = random.choice(tuple(self.testPayload))
+                addr = (self.provider.host, self.provider.port)
+                self.send("ROUT" + packet, addr)
+            else:
+                print "[%s] > Sending turned off. " % self.name
+                packet = random.choice(tuple(self.testDrops))
+                addr = (self.provider.host, self.provider.port)
+                self.send("ROUT" + packet, addr)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.generateFakePayload)
         except Exception, e:
