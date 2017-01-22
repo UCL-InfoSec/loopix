@@ -63,7 +63,6 @@ class MixNode(DatagramProtocol):
 		self.prvList = []
 
 		self.seenMacs = set()
-		self.seenElements = set()
 		self.bounceInformation = {}
 		# self.expectedACK = set()
 
@@ -71,12 +70,17 @@ class MixNode(DatagramProtocol):
 		self.numHeartbeatsReceived = 0
 		self.tagedHeartbeat = {}
 
-		self.savedElements = set()
-
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
+		# number of all messages mixed together at a time a message is leaving
+		self.totalCounter = 0 
+		# number of messages which are in the mixnode between previous message leaving and current message leaving
+		self.partialCounter = 0
+
 		self.measurments = []
+		self.anonSetSizeAll = []
+		self.savedLatency = []
 
 		self.PATH_LENGTH = 3
 		self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"]), None)
@@ -86,8 +90,6 @@ class MixNode(DatagramProtocol):
 
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
-		self.savedLatency = []
-		self.anonSetSizeAll = []
 
 		# ====================SPHINX VALUES==================
 		self.params = SphinxParams(header_len=1024)
@@ -137,7 +139,8 @@ class MixNode(DatagramProtocol):
 	def datagramReceived(self, data, (host, port)):
 		try:
 			self.processQueue.put((data, (host, port)))
-			self.bReceived += 1
+			self.totalCounter += 1
+			self.partialCounter += 1
 		except Exception, e:
 			print "[%s] > ERROR Datagram Received: %s " % (self.name, str(e))
 
@@ -243,11 +246,15 @@ class MixNode(DatagramProtocol):
 		"""
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			# self.anonSetSizeAll.append(self.mixedTogether)
+			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.totalCounter -= 1
+			self.partialCounter = 0
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-			# self.anonSetSizeAll.append(self.mixedTogether)
+			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.totalCounter -= 1
+			self.partialCounter = 0 
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -479,8 +486,10 @@ class MixNode(DatagramProtocol):
 			print "Error while saving: ", str(e)
 		try:
 			with open("anonSet.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter='\n')
-				csvW.writerow(self.anonSetSizeAll)
+				csvW = csv.writer(outfile)
+				csvW.writerow(['TotalCounter', 'PartialCounter'])
+				for row in self.anonSetSizeAll:
+					csvW.writerow(row)
 			self.anonSetSizeAll = []
 		except Exception, e:
 			print "Error while saving: ", str(e)

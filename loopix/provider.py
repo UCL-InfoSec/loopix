@@ -43,23 +43,18 @@ class Provider(MixNode):
         """ A class representing a provider. """
         MixNode.__init__(self, name, port, host, setup, privk, pubk)
 
+        self.processQueue = ProcessQueue()
+
         self.clientList = {}
         self.usersPubs = []
         self.storage = {}
-        self.replyBlocks = {}
         self.MAX_RETRIEVE = 500
 
-        self.bSent = 0
         self.bProcessed = 0
         self.gbSent = 0
         self.otherProc = 0
 
-        self.nMsgSent = 0
-        self.testReceived = 0
         self.measurments = []
-        self.testQueueSize = 0
-
-        self.processQueue = ProcessQueue()
 
     def startProtocol(self):
         reactor.suggestThreadPoolSize(50)
@@ -89,6 +84,8 @@ class Provider(MixNode):
     def datagramReceived(self, data, (host, port)):
         try:
             self.processQueue.put((data, (host, port)))
+            self.totalCounter += 1
+            self.partialCounter += 1
         except Exception, e:
             print "[%s] > ERROR Datagram Received: %s " % (self.name, str(e))
 
@@ -253,3 +250,12 @@ class Provider(MixNode):
             self.measurments = []
         except Exception, e:
             print "ERROR saving to file: ", str(e)
+        try:
+            with open("anonSet.csv", "ab") as outfile:
+                csvW = csv.writer(outfile)
+                csvW.writerow(['TotalCounter', 'PartialCounter'])
+                for row in self.anonSetSizeAll:
+                    csvW.writerow(row)
+            self.anonSetSizeAll = []
+        except Exception, e:
+            print "Error while saving: ", str(e)
