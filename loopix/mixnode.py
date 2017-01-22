@@ -137,10 +137,10 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
+		self.totalCounter += 1
+		self.partialCounter += 1
 		try:
 			self.processQueue.put((data, (host, port)))
-			self.totalCounter += 1
-			self.partialCounter += 1
 		except Exception, e:
 			print "[%s] > ERROR Datagram Received: %s " % (self.name, str(e))
 
