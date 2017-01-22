@@ -281,7 +281,6 @@ class Client(DatagramProtocol):
                 addr = (self.provider.host, self.provider.port)
                 self.send("ROUT" + packet, addr)
             else:
-                print "[%s] > Sending turned off. " % self.name
                 packet = random.choice(tuple(self.testDrops))
                 addr = (self.provider.host, self.provider.port)
                 self.send("ROUT" + packet, addr)
@@ -331,7 +330,6 @@ class Client(DatagramProtocol):
         try:
             message = petlib.pack.decode(data)
             msg = self.readMessage(message, (host, port))
-            print "[%s] > Message was readed." % self.name
             if msg.startswith("HT"):
                 print "[%s] > Heartbeat looped back" % self.name
             else:
@@ -536,14 +534,13 @@ class Client(DatagramProtocol):
 
     def randomMessaging(self, group):
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-        msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        msgB = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+        message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         if self.TESTUSER:
             r = group[0]
             print "Client: %s with provider %s" % (r.name, r.provider.name)
         else:
             r = random.choice(group)
-        self.sendMessage(r, mixpath, msgF, msgB)
+        self.sendMessage(r, mixpath, message)
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, group)
