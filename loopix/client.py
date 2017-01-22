@@ -214,8 +214,10 @@ class Client(DatagramProtocol):
                 mixList (list): a list of active mixnodes in the network.
         """
 
+        print str(self.TURN_ON_SENDING)
         try:
             if len(self.buffer) > 0 and self.TURN_ON_SENDING:
+                print "IN"
                 message, addr = self.buffer.pop(0)
                 self.send(message, addr)
             else:
