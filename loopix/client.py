@@ -96,10 +96,10 @@ class Client(DatagramProtocol):
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
         self.TESTUSER = True if testUser == "True" else False
-        if _PARAMS["parametersClients"]["TURN_ON_SENDING"] != "False":
-            self.TURN_ON_SENDING = True
-        else:
+        if _PARAMS["parametersClients"]["TURN_ON_SENDING"] == "False":
             self.TURN_ON_SENDING = False
+        else:
+            self.TURN_ON_SENDING = True
         self.DATABASE = "example.db"
 
         self.numHeartbeatsSent = 0
@@ -220,8 +220,10 @@ class Client(DatagramProtocol):
                 self.send(message, addr)
             else:
                 self.sendDropMessage(mixList)
-                if not self.TURN_ON_SENDING:
+                if self.TURN_ON_SENDING == False:
                     print "SENDING TURNED OFF"
+                else:
+                    print "Hello world"
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.checkBuffer, mixList)
         except Exception, e:
