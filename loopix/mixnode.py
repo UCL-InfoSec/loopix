@@ -318,6 +318,8 @@ class MixNode(DatagramProtocol):
 					header, body = self.createSphinxHeartbeat(mixes, time.time(), 'H')
 				else:
 					header, body = self.createSphinxHeartbeat(mixes, time.time())
+				self.totalCounter += 1
+				self.partialCounter += 1
 				self.sendMessage("ROUT" + petlib.pack.encode((header, body)), (mixes[0].host, mixes[0].port))
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
@@ -329,6 +331,8 @@ class MixNode(DatagramProtocol):
 			path = mixes + [self]
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			header, body = self.packIntoSphinxPacket(tagedMessage, path)
+			self.totalCounter += 1
+			self.partialCounter += 1
 			self.sendMessage("ROUT" + petlib.pack.encode((header, body)), (path[0].host, path[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
 
