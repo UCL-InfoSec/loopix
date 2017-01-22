@@ -84,7 +84,10 @@ class MixNode(DatagramProtocol):
 
 		self.PATH_LENGTH = 3
 		self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"]), None)
-		self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"]), None)
+		if _PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"] != "None":
+			self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"]), None)
+		else:
+			self.EXP_PARAMS_LOOPS = None
 		self.TAGED_HEARTBEATS = _PARAMS["parametersMixnodes"]["TAGED_HEARTBEATS"]
 		self.TESTMODE = False
 
