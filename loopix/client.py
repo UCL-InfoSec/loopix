@@ -155,11 +155,12 @@ class Client(DatagramProtocol):
         self.save_measurments()
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
+        self.turnOnBufferChecking(mixList)
         # ====== This is generating fake messages to fake reall traffic=====
-        if not FAKE_MESSAGING:
-            self.turnOnBufferChecking(mixList)
-        else:
-            self.turnOnFakeMessaging()
+        # if not FAKE_MESSAGING:
+        #     self.turnOnBufferChecking(mixList)
+        # else:
+        #     self.turnOnFakeMessaging()
         # ==================================================================
 
     def turnOnBufferChecking(self, mixList):
@@ -534,7 +535,6 @@ class Client(DatagramProtocol):
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
-        # FIX THIS 
         print "Random Messaging"
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
