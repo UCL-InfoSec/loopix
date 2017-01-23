@@ -336,6 +336,8 @@ class Client(DatagramProtocol):
                 print "[%s] > Heartbeat looped back" % self.name
             else:
                 print "[%s] > New message unpacked: " % self.name
+                if msg.startswith("TESTMESSAGE"):
+                    print "[%s] > Test message received %s" % (self.name, msg[:1000])
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
@@ -576,7 +578,7 @@ class Client(DatagramProtocol):
                 print "Client: %s with provider %s" % (r.name, r.provider.name)
             else:
                 r = random.choice(self.usersPubs)
-            msgF = "TESTMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
+            msgF = "TESTMESSAGE" + self.name + sf.generateRandomNoise(NOISE_LENGTH)
             
             header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
             self.testPayload.add(petlib.pack.encode((header, body)))
