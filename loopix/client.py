@@ -465,6 +465,7 @@ class Client(DatagramProtocol):
             port (int) - destination port.
         """
 
+        print "[%s] > Sending message" % self.name
         def send_to_ip(IPAddrs):
             self.transport.write(packet, (IPAddrs, port))
             self.resolvedAdrs[host] = IPAddrs
