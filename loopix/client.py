@@ -535,6 +535,7 @@ class Client(DatagramProtocol):
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
+        print "Random Messaging"
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         if self.TARGETUSER:
@@ -548,6 +549,7 @@ class Client(DatagramProtocol):
         reactor.callLater(interval, self.randomMessaging, group)
 
     def createTestingSet(self):
+        print "Creating Testing Set"
         self.testHeartbeats = set()
         self.testDrops = set()
         self.testPayload = set()
