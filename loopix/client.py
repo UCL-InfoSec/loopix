@@ -43,7 +43,7 @@ MEASURE_TIME = float(_PARAMS["parametersClients"]["MEASURE_TIME"])
 SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersClients"]["SAVE_MEASURMENTS_TIME"])
 
 class Client(DatagramProtocol):
-    def __init__(self, setup, name, port, host, testUser=False,
+    def __init__(self, setup, name, port, host,
                  providerId=None, privk=None, pubk=None):
         """A class representing a user client."""
 
@@ -95,7 +95,7 @@ class Client(DatagramProtocol):
             self.EXP_PARAMS_COVER = None
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
-        self.TESTUSER = True if testUser == "True" else False
+        self.TARGETUSER = True if _PARAMS["parametersClients"]["TARGETUSER"] == "True" else False
         if _PARAMS["parametersClients"]["TURN_ON_SENDING"] == "False":
             self.TURN_ON_SENDING = False
         else:
@@ -113,7 +113,7 @@ class Client(DatagramProtocol):
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
-        print "TEST USER MODE: ", self.TESTUSER
+        print "TEST USER MODE: ", self.TARGETUSER
 
         self.provider = self.takeProvidersData(self.DATABASE, self.providerId)
         print "Provider: ", self.provider
@@ -155,9 +155,10 @@ class Client(DatagramProtocol):
         self.save_measurments()
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
-        self.turnOnBufferChecking(mixList)
         # ====== This is generating fake messages to fake reall traffic=====
-        if FAKE_MESSAGING:
+        if not FAKE_MESSAGING:
+            self.turnOnBufferChecking(mixList)
+        else:
             self.turnOnFakeMessaging()
         # ==================================================================
 
@@ -535,7 +536,7 @@ class Client(DatagramProtocol):
     def randomMessaging(self, group):
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        if self.TESTUSER:
+        if self.TARGETUSER:
             r = group[0]
             print "Client: %s with provider %s" % (r.name, r.provider.name)
         else:
@@ -549,7 +550,9 @@ class Client(DatagramProtocol):
         self.testHeartbeats = set()
         self.testDrops = set()
         self.testPayload = set()
-        friendsGroup = random.sample(self.usersPubs, 5)
+        #friendsGroup = random.sample(self.usersPubs, 5)
+        friendsGroup = self.usersPubs
+        randomFriend = random.choice(self.usersPubs)
 
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
@@ -564,8 +567,8 @@ class Client(DatagramProtocol):
                 self.testDrops.add(petlib.pack.encode(dropData))
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            if self.TESTUSER:
-                r = friendsGroup[0]
+            if self.TARGETUSER:
+                r = randomFriend
                 print "Client: %s with provider %s" % (r.name, r.provider.name)
             else:
                 r = random.choice(self.usersPubs)
@@ -696,7 +699,7 @@ class Client(DatagramProtocol):
         self.readInUsersPubs(databaseName)
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
-        if self.TESTMODE or self.TESTUSER:
+        if self.TESTMODE or self.TARGETUSER:
             self.createTestingSet()
         self.turnOnMessaging(self.mixnet)
 
