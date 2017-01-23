@@ -465,7 +465,6 @@ class Client(DatagramProtocol):
             port (int) - destination port.
         """
 
-        print "[%s] > Sending message" % self.name
         def send_to_ip(IPAddrs):
             self.transport.write(packet, (IPAddrs, port))
             self.resolvedAdrs[host] = IPAddrs
@@ -535,6 +534,7 @@ class Client(DatagramProtocol):
         reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
     def randomMessaging(self, group):
+        # FIX THIS 
         print "Random Messaging"
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
@@ -543,7 +543,8 @@ class Client(DatagramProtocol):
             print "Client: %s with provider %s" % (r.name, r.provider.name)
         else:
             r = random.choice(group)
-        self.sendMessage(r, mixpath, message)
+        (header, body) = self.makeSphinxPacket(receiver, mixpath, msgF + timestamp, dropFlag=False, typeFlag = 'P')            
+        self.send(("ROUT" + petlib.pack.encode((header, body))), (self.provider.host, self.provider.port))
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
         reactor.callLater(interval, self.randomMessaging, group)
