@@ -344,7 +344,7 @@ class Client(DatagramProtocol):
             else:
                 print "[%s] > New message unpacked: " % self.name
                 if msg.startswith("TESTMESSAGE"):
-                    print "[%s] > Test message received %s" % (self.name, msg)
+                    print "[%s] > Test message received" % self.name
                 else:
                     print "[%s] > Other type of message received" % (self.name)
         except Exception, e:
