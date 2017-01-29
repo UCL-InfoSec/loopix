@@ -59,7 +59,7 @@ class MixNode(DatagramProtocol):
 
 		self.d = defer.Deferred()
 
-		# self.mixList = []
+		self.mixList = []
 		self.prvList = []
 		self.stratified_group = None
 
@@ -92,7 +92,6 @@ class MixNode(DatagramProtocol):
 		else:
 			self.EXP_PARAMS_LOOPS = None
 		self.TAGED_HEARTBEATS = _PARAMS["parametersMixnodes"]["TAGED_HEARTBEATS"]
-		self.mixList = {}
 
 		self.TESTMODE = False
 
@@ -373,23 +372,40 @@ class MixNode(DatagramProtocol):
 			bigger than the number of registered mixnodes in the network, all
 			mixnodes are used to build a path.
 		"""
-		if length > len(self.mixList.keys()):
-			raise Exception('There are not enough sets to build this path')
-			return None
-		else:
+		try:
+			ENTRY_NODE = 0
+			MIDDLE_NODE = 1
+			EXIT_NODE = 2
+			GROUPS = [ENTRY_NODE, MIDDLE_NODE, EXIT_NODE]
+
 			randomPath = []
-			entryMix = random.choice(self.mixList['entry'])
-			middleMix = random.choice(self.mixList['middle'])
-			exitMix = random.choice(self.mixList['exit'])
-			if self.stratified_group == 0:
-			 	randomPath = [middleMix, exitMix, random.choice(self.prvList)]
-			elif self.stratified_group == 1:
-				randomPath = [exitMix, random.choice(self.prvList), entryMix]
-			elif self.stratified_group == 2:
-				randomPath = [random.choice(self.prvList), entryMix, middleMix]
+			if length > len(GROUPS):
+				print '[%s] > There are not enough sets to build Stratified path' % self.name
+				if len(mixnet) > length:
+					randomPath = random.sample(mixnet, length)
+				else:
+					randomPath = mixnet
+					numpy.random.shuffle(randomPath)
 			else:
-				raise Exception('Group does not match the selected topology')
-		return randomPath
+				entries = [x for x in mixnet if x.group == ENTRY_NODE]
+				middles = [x for x in mixnet if x.group == MIDDLE_NODE]
+				exits = [x for x in mixnet if x.group == EXIT_NODE]
+
+				entryMix = random.choice(entries)
+				middleMix = random.choice(middles)
+				exitMix = random.choice(exits)
+
+				if self.stratified_group == 0:
+					randomPath = [middleMix, exitMix, random.choice(self.prvList)]
+				elif self.stratified_group == 1:
+					randomPath = [exitMix, random.choice(self.prvList), entryMix]
+				elif self.stratified_group == 2:
+					randomPath = [random.choice(self.prvList), entryMix, middleMix]
+				else:
+					raise Exception('Group does not match the selected topology')
+			return randomPath
+		except Exception, e:
+			print "[%s] > ERROR: During selecting path %s" % (self.name, str(e))
 
 	def printMixData(self):
 		"""Function prints the keypair information of a mixnode."""
@@ -450,23 +466,7 @@ class MixNode(DatagramProtocol):
 			mixnodes = c.fetchall()
 			for m in mixnodes:
 				if not m[1] == self.name:
-					if m[5] == 0:
-						if 'entry' in self.mixList:
-							self.mixList['entry'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-						else:
-							self.mixList['entry'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
-					elif m[5] == 1:
-						if 'middle' in self.mixList:
-							self.mixList['middle'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-						else:
-							self.mixList['middle'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
-					elif m[5] == 2:
-						if 'exit' in self.mixList:
-							self.mixList['exit'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-						else:
-							self.mixList['exit'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
-					else:
-						print "[%s] > Unrecognized stratified group addentifier" % self.name
+					self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]), m[5]))
 				else:
 					# Parameter to inform in which stratiefied group I am assigned
 					self.stratified_group = m[5]
@@ -486,7 +486,7 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Providers")
 			fetched = c.fetchall()
 			for p in fetched:
-				self.prvList.append(format3.Mix(p[1], p[2], p[3], petlib.pack.decode(p[4])))
+				self.prvList.append(format3.Provider(p[1], p[2], p[3], petlib.pack.decode(p[4])))
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 

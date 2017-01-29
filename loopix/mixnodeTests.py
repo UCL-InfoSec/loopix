@@ -37,7 +37,7 @@ def testProvider():
 @pytest.fixture
 def testSender(testProvider):
 	provider = testProvider
-	provider_pub = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
+	provider_pub = format3.Provider(provider.name, provider.port, provider.host, provider.pubk)
 	sender = Client(setup, "Client", 7000, "127.0.0.1")
 	sender.PATH_LENGTH = 3
 	sender.provider = provider_pub
@@ -57,34 +57,35 @@ def testMixes():
 @pytest.fixture
 def testReceiver(testProvider):
 	provider = testProvider
-	provider_pub = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
+	provider_pub = format3.Provider(provider.name, provider.port, provider.host, provider.pubk)
 	receiver = Client(setup, "Receiver", 7001, "127.0.0.1")
 	receiver.PATH_LENGTH = 3
 	receiver.provider = provider_pub
 	receiver.transport = proto_helpers.FakeDatagramTransport()
 	return receiver
 	
-@pytest.fixture	
-def testParticipantsPubs(testSender, testMixes, testReceiver, testProvider):
-	sender, (mix1, mix2), receiver, provider = testSender, testMixes, testReceiver, testProvider
+# @pytest.fixture	
+# def testParticipantsPubs(testSender, testMixes, testReceiver, testProvider):
+# 	sender, (mix1, mix2), receiver, provider = testSender, testMixes, testReceiver, testProvider
 
-	sender_pub = format3.User(sender.name, sender.port, sender.host, sender.pubk, sender.provider)
-	receiver_pub = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
-	mix1_pub = format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)
-	mix2_pub = format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)
-	provider_pub = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
+# 	sender_pub = format3.User(sender.name, sender.port, sender.host, sender.pubk, sender.provider)
+# 	receiver_pub = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
+# 	mix1_pub = format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)
+# 	mix2_pub = format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)
+# 	provider_pub = format3.Mix(provider.name, provider.port, provider.host, provider.pubk)
 
-	return sender_pub, receiver_pub, mix1_pub, mix2_pub, provider_pub
+# 	return sender_pub, receiver_pub, mix1_pub, mix2_pub, provider_pub
 
 @pytest.fixture
-def testMessage(testSender, testParticipantsPubs):
+def testMessage(testSender, testReceiver, testMixes):
 	sender = testSender
 
-	_, receiver, mix1, mix2, provider = testParticipantsPubs
+	receiver = testReceiver
+	mix1, mix2 = testMixes
 
 	sender.receiver = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
-	sender.mixnet = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk), 
-	format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
+	sender.mixnet = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk, 0), 
+	format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1)]
 
 	mixpath = sender.mixnet
 	message = sender.makeSphinxPacket(sender.receiver, mixpath, "Hello World")
@@ -173,9 +174,9 @@ def test_createSphinxHeartbeat(testMixes):
 	mix3.transport = proto_helpers.FakeDatagramTransport()
 	provider.transport = proto_helpers.FakeDatagramTransport()
 
-	(header, body) = mix1.createSphinxHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk), 
-		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), 
-		format3.Mix(provider.name, provider.port, provider.host, provider.pubk)], time.time())
+	(header, body) = mix1.createSphinxHeartbeat([format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 0), 
+		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 1), 
+		format3.Provider(provider.name, provider.port, provider.host, provider.pubk)], time.time())
 
 	ret_val = mix2.process_sphinx_packet((header, body))
 	(tag1, info1, (header1, body1)) = ret_val
@@ -194,10 +195,6 @@ def test_createSphinxHeartbeat(testMixes):
 		dest, message = receive_forward(mix1.params, body4)
 	assert dest == [mix1.host, mix1.port, mix1.name]
 	assert message.startswith('HT')
-
-
-def test_sendTagedMessage(testMixes):
-	pass
 
 
 def testAES_ENC_DEC(testMixes):
@@ -226,16 +223,11 @@ def test_takeMixnodesDataStratiefied(testSender, testMixes, testReceiver, testPr
 	mix1.readInData('test.db')
 	assert mix1.stratified_group == 0
 
-	assert mix1.mixList['entry'] == \
-		[format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
-
-	assert mix1.mixList['middle'] == \
-		[format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk), \
-		format3.Mix(mix4.name, mix4.port, mix4.host, mix4.pubk)]
-
-	assert mix1.mixList['exit'] == \
-		[format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk), \
-		format3.Mix(mix6.name, mix6.port, mix6.host, mix6.pubk)]
+	assert mix1.mixList == [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 0), \
+		format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+		format3.Mix(mix4.name, mix4.port, mix4.host, mix4.pubk, 1), \
+		format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2), \
+		format3.Mix(mix6.name, mix6.port, mix6.host, mix6.pubk, 2)]
 
 
 def test_takeRandomPathSTMode(testMixes, testMixset, testProvider):
@@ -244,29 +236,29 @@ def test_takeRandomPathSTMode(testMixes, testMixset, testProvider):
 	provider = testProvider
 	mix1.STRATIFIED = True
 
-	mix1.mixList['entry'] = [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
-	mix1.mixList['middle'] = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
-	mix1.mixList['exit'] = [format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk)]
+	mix1.mixList = [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 0), \
+					format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+					format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2)]
 
 	mix1.stratified_group = 0
-	mix1.prvList.append(format3.Mix(provider.name, provider.port, provider.host, provider.pubk)) 
-	path = mix1.takePathSequence([], 3)
-	assert path == [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk), \
-		format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk), \
-		format3.Mix(provider.name, provider.port, provider.host, provider.pubk)]
+	mix1.prvList.append(format3.Provider(provider.name, provider.port, provider.host, provider.pubk)) 
+	path = mix1.takePathSequence(mix1.mixList, 3)
+	assert path == [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+		format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2), \
+		format3.Provider(provider.name, provider.port, provider.host, provider.pubk)]
 
 
 	mix1.stratified_group = 1
-	mix1.prvList.append(format3.Mix(provider.name, provider.port, provider.host, provider.pubk)) 
-	path = mix1.takePathSequence([], 3)
-	assert path == [format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk), \
-		format3.Mix(provider.name, provider.port, provider.host, provider.pubk), \
-		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
+	mix1.prvList.append(format3.Provider(provider.name, provider.port, provider.host, provider.pubk)) 
+	path = mix1.takePathSequence(mix1.mixList, 3)
+	assert path == [format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2), \
+		format3.Provider(provider.name, provider.port, provider.host, provider.pubk), \
+		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 0)]
 
 	mix1.stratified_group = 2
-	mix1.prvList.append(format3.Mix(provider.name, provider.port, provider.host, provider.pubk)) 
-	path = mix1.takePathSequence([], 3)
-	assert path == [format3.Mix(provider.name, provider.port, provider.host, provider.pubk), \
-		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk), \
-		format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
+	mix1.prvList.append(format3.Provider(provider.name, provider.port, provider.host, provider.pubk)) 
+	path = mix1.takePathSequence(mix1.mixList, 3)
+	assert path == [format3.Provider(provider.name, provider.port, provider.host, provider.pubk), \
+		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 0), \
+		format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1)]
 

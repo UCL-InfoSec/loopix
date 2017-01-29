@@ -75,7 +75,7 @@ class Client(DatagramProtocol):
         self.d = defer.Deferred()
 
         # Information about active mixnodes and other users in the network
-        self.mixnet = {}
+        self.mixnet = []
         self.usersPubs = []
 
         self.sentElements = set()
@@ -516,23 +516,30 @@ class Client(DatagramProtocol):
                 mixnet (list) - list of active mixnodes,
                 length (int) - length of the path which we want to build.
         """
-        if length > len(self.mixnet.keys()):
-            raise Exception('There are not enough sets to build this path')
-            for key in self.mixnet.keys():
-                randomPath.append(random.choice(mixnet[key]))
+        ENTRY_NODE = 0
+        MIDDLE_NODE = 1
+        EXIT_NODE = 2
+        GROUPS = [ENTRY_NODE, MIDDLE_NODE, EXIT_NODE]
+
+        randomPath = []
+        if length > len(GROUPS):
+            print '[%s] > There are not enough sets to build Stratified path' % self.name
+            if len(mixnet) > length:
+                randomPath = random.sample(mixnet, length)
+            else:
+                randomPath = mixnet
+                numpy.random.shuffle(randomPath)
         else:
-            randomPath = []
-            entryMix = random.choice(mixnet['entry'])
-            middleMix = random.choice(mixnet['middle'])
-            exitMix = random.choice(mixnet['exit'])
+            entries = [x for x in mixnet if x.group == ENTRY_NODE]
+            middles = [x for x in mixnet if x.group == MIDDLE_NODE]
+            exits = [x for x in mixnet if x.group == EXIT_NODE]
+
+            entryMix = random.choice(entries)
+            middleMix = random.choice(middles)
+            exitMix = random.choice(exits)
+
             randomPath = [entryMix, middleMix, exitMix]
-        # else:
-        #     if len(mixnet) > length:
-        #         randomPath = random.sample(mixnet, length)
-        #     else:
-        #         randomPath = mixnet
-        #         numpy.random.shuffle(randomPath)
-            return randomPath
+        return randomPath
 
     def encryptData(self, data):
         ciphertext, tag = self.aes.quick_gcm_enc(self.kenc, self.iv, data)
@@ -647,7 +654,7 @@ class Client(DatagramProtocol):
             if u[1] != self.name:
                 p = petlib.pack.decode(u[5])
                 receiver = format3.User(str(u[1]), u[2], u[3], petlib.pack.decode(u[4]),
-                                        format3.Mix(p[0], p[1], p[2], p[3]))
+                                        format3.Provider(p[0], p[1], p[2], p[3]))
                 return receiver
             return None
         except Exception, e:
@@ -692,7 +699,7 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
-            return format3.Mix(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
+            return format3.Provider(str(pData[1]), pData[2], str(pData[3]), petlib.pack.decode(pData[4]))
 
         except Exception, e:
             print "ERROR takeProvidersData: ", str(e)
@@ -712,23 +719,7 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Mixnodes")
             mixdata = c.fetchall()
             for m in mixdata:
-                if m[5] == 0:
-                    if 'entry' in self.mixnet:
-                        self.mixnet['entry'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-                    else:
-                        self.mixnet['entry'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
-                elif m[5] == 1:
-                    if 'middle' in self.mixnet:
-                        self.mixnet['middle'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-                    else:
-                        self.mixnet['middle'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
-                elif m[5] == 2:
-                    if 'exit' in self.mixnet:
-                        self.mixnet['exit'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
-                    else:
-                        self.mixnet['exit'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
-                else:
-                    print "[%s] > Unrecognized stratified group addentifier" % self.name
+                self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]), m[5]))
         except Exception, e:
             print "ERROR takeMixnodesData: ", str(e)
 

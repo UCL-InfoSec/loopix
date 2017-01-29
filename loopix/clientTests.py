@@ -21,6 +21,7 @@ def testParticipants():
 
     setup = format3.setup()
     sender = Client(setup, "Alice", 7999, "127.0.0.1")
+    sender.PATH_LENGTH = 3
 
     transport = proto_helpers.FakeDatagramTransport()
     sender.transport = transport
@@ -30,6 +31,7 @@ def testParticipants():
     provider_s.clientList[sender.name] = (sender.host, sender.port)
 
     receiver = Client(setup, 'Bob', 9999, "127.0.0.1")
+    receiver.PATH_LENGTH = 3
     receiver.transport = proto_helpers.FakeDatagramTransport()
 
     provider_r = Provider("ReceiverProvider", 9000, "134.0.0.1", setup)
@@ -132,7 +134,7 @@ def test_checkBuffer(testParticipants):
     old_queue = len(sender.transport.written)
     sender.checkBuffer(sender.mixnet)
     assert len(sender.transport.written) == old_queue + 1, "During checking buffer one of the "\
-    "following messages should be send: drop message or real message"
+    # "following messages should be send: drop message or real message"
 
 def test_sphinxPacket(testParticipants):
     from sphinxmix.SphinxParams import SphinxParams
@@ -330,22 +332,23 @@ def test_takePathSequence(testParticipants):
     mix3.transport = proto_helpers.FakeDatagramTransport()
     
     sender.STRATIFIED = True
-    sender.mixnet['entry'] = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)]
-    sender.mixnet['middle'] = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
-    sender.mixnet['exit'] = [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
+    sender.mixnet = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk, 0), \
+        format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+        format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 2)]
+    
+
     path = sender.takePathSequence(sender.mixnet, 3)
-    assert path[0] == format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk) and \
-        path[1] == format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk) and \
-        path[2] == format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)
+    assert path[0] == format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk, 0) and \
+        path[1] == format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1) and \
+        path[2] == format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 2)
 
 
 def test_takeMixnodesDataSTMode(testParticipants):
     setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
-    sender.STRATIFIED = True
     sender.startProtocol()
-    assert sender.mixnet['entry'] == [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)]
-    assert sender.mixnet['middle'] == [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
-    assert sender.mixnet['exit'] == [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
+    assert sender.mixnet == [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk, 0), \
+        format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+        format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 2)]
 
 
 def test_selectRandomReceiver(testParticipants):
@@ -354,8 +357,8 @@ def test_selectRandomReceiver(testParticipants):
     
     assert sender.selectRandomReceiver() == None
 
-    sender.usersPubs.append(format3.User("TestUSer", 1234, "127.0.0.1", g, format3.Mix(provider_r.name, provider_r.port, provider_r.host, provider_r.pubk)))
-    assert sender.selectRandomReceiver() == format3.User("TestUSer", 1234, "127.0.0.1", g, format3.Mix(provider_r.name, provider_r.port, provider_r.host, provider_r.pubk))
+    sender.usersPubs.append(format3.User("TestUSer", 1234, "127.0.0.1", g, format3.Provider(provider_r.name, provider_r.port, provider_r.host, provider_r.pubk)))
+    assert sender.selectRandomReceiver() == format3.User("TestUSer", 1234, "127.0.0.1", g, format3.Provider(provider_r.name, provider_r.port, provider_r.host, provider_r.pubk))
    
 
 def test_generateRandomNoise():

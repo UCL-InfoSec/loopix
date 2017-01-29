@@ -199,6 +199,40 @@ class Provider(MixNode):
                     else:
                         raise Exception("Destination did not match")
 
+    def takePathSequence(self, mixnet, length):
+        """ Function takes path sequence of a given length. If the length is 
+            bigger than the number of registered mixnodes in the network, all
+            mixnodes are used to build a path.
+        """
+        try:
+            ENTRY_NODE = 0
+            MIDDLE_NODE = 1
+            EXIT_NODE = 2
+            GROUPS = [ENTRY_NODE, MIDDLE_NODE, EXIT_NODE]
+
+            randomPath = []
+            if length > len(GROUPS):
+                print '[%s] > There are not enough sets to build Stratified path' % self.name
+                if len(mixnet) > length:
+                    randomPath = random.sample(mixnet, length)
+                else:
+                    randomPath = mixnet
+                    numpy.random.shuffle(randomPath)
+            else:
+                entries = [x for x in mixnet if x.group == ENTRY_NODE]
+                middles = [x for x in mixnet if x.group == MIDDLE_NODE]
+                exits = [x for x in mixnet if x.group == EXIT_NODE]
+
+                entryMix = random.choice(entries)
+                middleMix = random.choice(middles)
+                exitMix = random.choice(exits)
+
+                randomPath = [entryMix, middleMix, exitMix]
+            return randomPath
+        except Exception, e:
+            print "[%s] > ERROR: During selecting path %s" % (self.name, str(e))
+
+
     def saveInStorage(self, key, value):
         """ Function saves a message in the local storage, where it awaits till the client will fetch it.
 
