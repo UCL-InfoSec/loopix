@@ -344,7 +344,10 @@ class Client(DatagramProtocol):
             else:
                 print "[%s] > New message unpacked: " % self.name
                 if msg.startswith("TESTMESSAGE"):
-                    print "[%s] > Test message received %s" % (self.name, msg[:1000])
+                    print type(msg)
+                    print "[%s] > Test message received" % (self.name)
+                else:
+                    print "[%s] > Other message received" % (self.name)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
@@ -419,6 +422,7 @@ class Client(DatagramProtocol):
                 heartbeatData = self.createHeartbeat(mixes, timestamp)
                 if heartbeatData:
                     header, body = heartbeatData
+                    print "[%s] > Sending heartbeat" % self.name
                     self.send("ROUT" + petlib.pack.encode((header, body)), (self.provider.host, self.provider.port))
                 else:
                     raise Exception("[%s] > Heartbeat could not be send." % self.name)
@@ -458,6 +462,7 @@ class Client(DatagramProtocol):
             dropData = self.createDropMessage(mixes)
             if dropData:
                 dropHeader, dropBody= dropData
+                print "[%s] > Sending drop message" % self.name
                 self.send("ROUT" + petlib.pack.encode((dropHeader, dropBody)), (self.provider.host, self.provider.port))
             else:
                 raise Exception("[%s] > Drop message could not be send." % self.name)
@@ -502,6 +507,7 @@ class Client(DatagramProtocol):
         if rounting[0] == Dest_flag:
             dest, message = receive_forward(self.params, body)
             if dest[-1] == self.name:
+                print "[%s] > Message read" % self.name
                 return message
             else:
                 raise Exception("Destination did not match")
@@ -522,24 +528,27 @@ class Client(DatagramProtocol):
         GROUPS = [ENTRY_NODE, MIDDLE_NODE, EXIT_NODE]
 
         randomPath = []
-        if length > len(GROUPS):
-            print '[%s] > There are not enough sets to build Stratified path' % self.name
-            if len(mixnet) > length:
-                randomPath = random.sample(mixnet, length)
+        try:
+            if length > len(GROUPS):
+                print '[%s] > There are not enough sets to build Stratified path' % self.name
+                if len(mixnet) > length:
+                    randomPath = random.sample(mixnet, length)
+                else:
+                    randomPath = mixnet
+                    numpy.random.shuffle(randomPath)
             else:
-                randomPath = mixnet
-                numpy.random.shuffle(randomPath)
-        else:
-            entries = [x for x in mixnet if x.group == ENTRY_NODE]
-            middles = [x for x in mixnet if x.group == MIDDLE_NODE]
-            exits = [x for x in mixnet if x.group == EXIT_NODE]
+                entries = [x for x in mixnet if x.group == ENTRY_NODE]
+                middles = [x for x in mixnet if x.group == MIDDLE_NODE]
+                exits = [x for x in mixnet if x.group == EXIT_NODE]
 
-            entryMix = random.choice(entries)
-            middleMix = random.choice(middles)
-            exitMix = random.choice(exits)
+                entryMix = random.choice(entries)
+                middleMix = random.choice(middles)
+                exitMix = random.choice(exits)
 
-            randomPath = [entryMix, middleMix, exitMix]
-        return randomPath
+                randomPath = [entryMix, middleMix, exitMix]
+            return randomPath
+        except Exception, e:
+            print "[%s] > ERROR: During path generation: %s" % (self.name, str(e))
 
     def encryptData(self, data):
         ciphertext, tag = self.aes.quick_gcm_enc(self.kenc, self.iv, data)
