@@ -344,10 +344,9 @@ class Client(DatagramProtocol):
             else:
                 print "[%s] > New message unpacked: " % self.name
                 if msg.startswith("TESTMESSAGE"):
-                    print type(msg)
-                    print "[%s] > Test message received" % (self.name)
+                    print "[%s] > Test message received %s" % (self.name, msg)
                 else:
-                    print "[%s] > Other message received" % (self.name)
+                    print "[%s] > Other type of message received" % (self.name)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
@@ -499,19 +498,22 @@ class Client(DatagramProtocol):
                 host (str) - host of a provider,
                 port (int) - port of a provider.
         """
-        (header, body) = message
+        try:
+            (header, body) = message
 
-        peeledData = sphinx_process(self.params, self.privk, header, body)
-        (tag, info, (header, body)) = peeledData
-        rounting = PFdecode(self.params, info)
-        if rounting[0] == Dest_flag:
-            dest, message = receive_forward(self.params, body)
-            if dest[-1] == self.name:
-                print "[%s] > Message read" % self.name
-                return message
-            else:
-                raise Exception("Destination did not match")
-                return None
+            peeledData = sphinx_process(self.params, self.privk, header, body)
+            (tag, info, (header, body)) = peeledData
+            rounting = PFdecode(self.params, info)
+            if rounting[0] == Dest_flag:
+                dest, message = receive_forward(self.params, body)
+                if dest[-1] == self.name:
+                    print "[%s] > Message has been read." % self.name
+                    return message
+                else:
+                    raise Exception("Destination did not match")
+                    return None
+        except Exception, e:
+            print "[%s] > ERROR: During message reading: %s" % (self.name, str(e))
 
     def takePathSequence(self, mixnet, length):
         """ Function takes a random path sequence build of active mixnodes. If the
