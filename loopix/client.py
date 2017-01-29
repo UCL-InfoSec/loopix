@@ -75,45 +75,59 @@ class Client(DatagramProtocol):
         self.d = defer.Deferred()
 
         # Information about active mixnodes and other users in the network
-        self.mixnet = []
+        self.mixnet = {}
         self.usersPubs = []
+        # self.stratified_info = {}
 
         self.sentElements = set()
         self.heartbeatsSent = set()
         self.buffer = []
 
 
+        # A set of PARAMETERS read in from the configuration file
         self.PATH_LENGTH = int(_PARAMS["parametersClients"]["PATH_LENGTH"])
+
         self.EXP_PARAMS_PAYLOAD = (float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"]), None)
         if _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] != "None":
             self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
         else:
             self.EXP_PARAMS_LOOPS = None
+
         if _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] != "None":
             self.EXP_PARAMS_COVER = (float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
         else:
             self.EXP_PARAMS_COVER = None
+
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
         self.TARGETUSER = True if _PARAMS["parametersClients"]["TARGETUSER"] == "True" else False
+
         if _PARAMS["parametersClients"]["TURN_ON_SENDING"] == "False":
             self.TURN_ON_SENDING = False
         else:
             self.TURN_ON_SENDING = True
+
         self.DATABASE = "example.db"
 
-        self.numHeartbeatsSent = 0
-        self.numHeartbeatsReceived = 0
-        self.numMessagesSent = 0
+        self.STRATIFIED = True if _PARAMS["parametersClients"]["STRATIFIED"] == "True" else False
+
 
         #self.receivedQueue = DeferredQueue()
         self.processQueue = ProcessQueue()
+
+        self.numMessagesSent = 0
         self.sendMeasurments = []
+        
         self.resolvedAdrs = {}
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
         print "TEST USER MODE: ", self.TARGETUSER
+
+        if self.PATH_LENGTH < 3:
+            print "[%s] > WARNING: Path length should be at least 3." % self.name
+        if self.STRATIFIED:
+            print "[%s] > The mixnode network is using the STRATIFIED topology" % self.name
 
         self.provider = self.takeProvidersData(self.DATABASE, self.providerId)
         print "Provider: ", self.provider
@@ -221,7 +235,6 @@ class Client(DatagramProtocol):
                 message, addr = self.buffer.pop(0)
                 self.send(message, addr)
             else:
-                print "[%s] > Sending turned off. " % self.name
                 self.sendDropMessage(mixList)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.checkBuffer, mixList)
@@ -509,12 +522,23 @@ class Client(DatagramProtocol):
                 mixnet (list) - list of active mixnodes,
                 length (int) - length of the path which we want to build.
         """
-        if len(mixnet) > length:
-            randomPath = random.sample(mixnet, length)
+        if length > len(self.mixnet.keys()):
+            raise Exception('There are not enough sets to build this path')
+            for key in self.mixnet.keys():
+                randomPath.append(random.choice(mixnet[key]))
         else:
-            randomPath = mixnet
-            numpy.random.shuffle(randomPath)
-        return randomPath
+            randomPath = []
+            entryMix = random.choice(mixnet['entry'])
+            middleMix = random.choice(mixnet['middle'])
+            exitMix = random.choice(mixnet['exit'])
+            randomPath = [entryMix, middleMix, exitMix]
+        # else:
+        #     if len(mixnet) > length:
+        #         randomPath = random.sample(mixnet, length)
+        #     else:
+        #         randomPath = mixnet
+        #         numpy.random.shuffle(randomPath)
+            return randomPath
 
     def encryptData(self, data):
         ciphertext, tag = self.aes.quick_gcm_enc(self.kenc, self.iv, data)
@@ -694,9 +718,27 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Mixnodes")
             mixdata = c.fetchall()
             for m in mixdata:
-                self.mixnet.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+                # If Loopix should use the stratified topology, the parameter STRATIFIED should be set to True
+                if m[5] == 0:
+                    if 'entry' in self.mixnet:
+                        self.mixnet['entry'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+                    else:
+                        self.mixnet['entry'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
+                elif m[5] == 1:
+                    if 'middle' in self.mixnet:
+                        self.mixnet['middle'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+                    else:
+                        self.mixnet['middle'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
+                elif m[5] == 2:
+                    if 'exit' in self.mixnet:
+                        self.mixnet['exit'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+                    else:
+                        self.mixnet['exit'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
+                else:
+                    print "[%s] > Unrecognized stratified group addentifier" % self.name
         except Exception, e:
             print "ERROR takeMixnodesData: ", str(e)
+
 
     def readInUsersPubs(self, databaseName):
         self.usersPubs = self.takeAllUsersFromDB(databaseName)

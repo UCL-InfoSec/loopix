@@ -59,8 +59,9 @@ class MixNode(DatagramProtocol):
 
 		self.d = defer.Deferred()
 
-		self.mixList = []
+		# self.mixList = []
 		self.prvList = []
+		self.stratified_group = None
 
 		self.seenMacs = set()
 		self.bounceInformation = {}
@@ -91,6 +92,8 @@ class MixNode(DatagramProtocol):
 		else:
 			self.EXP_PARAMS_LOOPS = None
 		self.TAGED_HEARTBEATS = _PARAMS["parametersMixnodes"]["TAGED_HEARTBEATS"]
+		self.mixList = {}
+
 		self.TESTMODE = False
 
 		self.processQueue = ProcessQueue()
@@ -103,6 +106,9 @@ class MixNode(DatagramProtocol):
 		reactor.suggestThreadPoolSize(50)
 
 		print "[%s] > Start protocol" % self.name
+		if self.PATH_LENGTH < 3:
+			print "[%s] > WARNING: Path length should be at least 3." % self.name
+
 		reactor.callLater(10.0, self.turnOnProcessing)
 
 		if self.TAGED_HEARTBEATS == "True":
@@ -367,12 +373,22 @@ class MixNode(DatagramProtocol):
 			bigger than the number of registered mixnodes in the network, all
 			mixnodes are used to build a path.
 		"""
-		if len(mixnet) > length:
-			randomPath = random.sample(mixnet, length)
+		if length > len(self.mixList.keys()):
+			raise Exception('There are not enough sets to build this path')
+			return None
 		else:
-			randomPath = mixnet + []
-			numpy.random.shuffle(randomPath) #TO DO: better and more secure
-		randomPath.insert(length, random.choice(self.prvList))
+			randomPath = []
+			entryMix = random.choice(self.mixList['entry'])
+			middleMix = random.choice(self.mixList['middle'])
+			exitMix = random.choice(self.mixList['exit'])
+			if self.stratified_group == 0:
+			 	randomPath = [middleMix, exitMix, random.choice(self.prvList)]
+			elif self.stratified_group == 1:
+				randomPath = [exitMix, random.choice(self.prvList), entryMix]
+			elif self.stratified_group == 2:
+				randomPath = [random.choice(self.prvList), entryMix, middleMix]
+			else:
+				raise Exception('Group does not match the selected topology')
 		return randomPath
 
 	def printMixData(self):
@@ -433,7 +449,27 @@ class MixNode(DatagramProtocol):
 			c.execute("SELECT * FROM Mixnodes")
 			mixnodes = c.fetchall()
 			for m in mixnodes:
-				self.mixList.append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+				if not m[1] == self.name:
+					if m[5] == 0:
+						if 'entry' in self.mixList:
+							self.mixList['entry'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+						else:
+							self.mixList['entry'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
+					elif m[5] == 1:
+						if 'middle' in self.mixList:
+							self.mixList['middle'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+						else:
+							self.mixList['middle'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
+					elif m[5] == 2:
+						if 'exit' in self.mixList:
+							self.mixList['exit'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
+						else:
+							self.mixList['exit'] = [format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4]))]
+					else:
+						print "[%s] > Unrecognized stratified group addentifier" % self.name
+				else:
+					# Parameter to inform in which stratiefied group I am assigned
+					self.stratified_group = m[5]
 		except Exception, e:
 			print "[%s] > Error during reading from the database: %s" % (self.name, str(e))
 

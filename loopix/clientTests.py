@@ -42,6 +42,9 @@ def testParticipants():
     mix2 = MixNode("M8002", 8002, "127.0.0.1", setup)
     mix2.transport = proto_helpers.FakeDatagramTransport()
 
+    mix3 = MixNode("M8003", 8003, "127.0.0.1", setup)
+    mix3.transport = proto_helpers.FakeDatagramTransport()
+
     sender.PATH_LENGTH = 2
     receiver.PATH_LENGTH = 2
 
@@ -66,11 +69,13 @@ def testParticipants():
     
     db.commit()
 
-    insertMixnode = "INSERT INTO Mixnodes VALUES(?, ?, ?, ?, ?)"
+    insertMixnode = "INSERT INTO Mixnodes VALUES(?, ?, ?, ?, ?, ?)"
     c.execute(insertMixnode, [None, mix1.name, mix1.port, mix1.host, 
-        sqlite3.Binary(petlib.pack.encode(mix1.pubk))])
+        sqlite3.Binary(petlib.pack.encode(mix1.pubk)), 0])
     c.execute(insertMixnode, [None, mix2.name, mix2.port, mix2.host, 
-        sqlite3.Binary(petlib.pack.encode(mix2.pubk))])
+        sqlite3.Binary(petlib.pack.encode(mix2.pubk)), 1])
+    c.execute(insertMixnode, [None, mix3.name, mix3.port, mix3.host, 
+        sqlite3.Binary(petlib.pack.encode(mix3.pubk)), 2])
     
     db.commit()
     insertProvider = "INSERT INTO Providers VALUES(?, ?, ?, ?, ?)"
@@ -86,16 +91,16 @@ def testParticipants():
     receiver.DATABASE = "test.db"
     receiver.TESTMODE = False
 
-    return setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver
+    return setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver
 
 def testStartClient(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
 
     sender.startProtocol()
 
 
 def testInitClient(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.startProtocol()
 
     assert sender.name == "Alice"
@@ -109,7 +114,7 @@ def testInitClient(testParticipants):
 
 
 def test_pullMessages(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.startProtocol()
     sender.pullMessages()
     # the first element in transport.written is the one from send ping in startprotocol
@@ -118,14 +123,14 @@ def test_pullMessages(testParticipants):
 
 
 def test_checkBuffer(testParticipants):
-    setup, sender, transport, provider, (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, provider, (mix1, mix2, mix3), receiver = testParticipants
     sender.startProtocol()
+    sender.STRATIFIED = False
     receiver.startProtocol()
     sender.usersPubs.append(format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider))
 
     old_queue = len(sender.transport.written)
-    sender.checkBuffer([format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk), 
-        format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)])
+    sender.checkBuffer(sender.mixnet)
     assert len(sender.transport.written) == old_queue + 1, "During checking buffer one of the "\
     "following messages should be send: drop message or real message"
 
@@ -135,7 +140,8 @@ def test_sphinxPacket(testParticipants):
     from sphinxmix.SphinxNode import sphinx_process
     params = SphinxParams(header_len=1024)
 
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
+    sender.STRATIFIED = True
     sender.startProtocol()
     receiver.startProtocol()
 
@@ -143,8 +149,9 @@ def test_sphinxPacket(testParticipants):
     #sender.usersPubs.append(format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider))
 
     # mixpath = rand_subset(sender.mixnet, 8)
-    mixpath = sender.mixnet
+    mixpath = sender.takePathSequence(sender.mixnet, 3)
 
+    print mixpath
     message = sender.makeSphinxPacket(sender.receiver, mixpath, "Hello World")
 
     ret_val = provider_s.process_sphinx_packet(message)
@@ -156,22 +163,27 @@ def test_sphinxPacket(testParticipants):
     ret_val3 = mix2.process_sphinx_packet((header2, body2))
     (tag3, info3, (header3, body3)) = ret_val3
 
-    ret_val4 = provider_r.process_sphinx_packet((header3, body3))
-    (tag4, info4, (header4, body4)) = ret_val4    
+    ret_val4 = mix3.process_sphinx_packet((header3, body3))
+    (tag4, info4, (header4, body4)) = ret_val4  
 
-    message = receiver.readMessage((header4, body4), (provider_r.host, provider_r.port))
+    ret_val5 = provider_r.process_sphinx_packet((header4, body4))
+    (tag5, info5, (header5, body5)) = ret_val5      
+
+    message = receiver.readMessage((header5, body5), (provider_r.host, provider_r.port))
     assert message == "Hello World"
 
 def test_createSphinxHeartbeat(testParticipants):
     from sphinxmix.SphinxClient import PFdecode, receive_forward, Dest_flag
 
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
+    sender.STRATIFIED = False
     sender.startProtocol()
     receiver.startProtocol()
 
+    mixpath = sender.takePathSequence(sender.mixnet, 3)
 
     timestamp = timestamp = '%.5f' % time.time()
-    header, body = sender.createHeartbeat(sender.mixnet, timestamp)
+    header, body = sender.createHeartbeat(mixpath, timestamp)
 
     ret_val = provider_s.process_sphinx_packet((header, body))
     (tag1, info1, (header1, body1)) = ret_val
@@ -182,22 +194,28 @@ def test_createSphinxHeartbeat(testParticipants):
     ret_val2 = mix2.process_sphinx_packet((header2, body2))
     (tag3, info3, (header3, body3)) = ret_val2
 
-    ret_val3 = provider_s.process_sphinx_packet((header3, body3))
+    ret_val3 = mix3.process_sphinx_packet((header3, body3))
     (tag4, info4, (header4, body4)) = ret_val3
 
-    message = sender.readMessage((header4, body4), (provider_s.host, provider_s.port))
+    ret_val4 = provider_s.process_sphinx_packet((header4, body4))
+    (tag5, info5, (header5, body5)) = ret_val4
+
+    message = sender.readMessage((header5, body5), (provider_s.host, provider_s.port))
     assert message.startswith('HT')
 
 
 def test_createSphinxDropMessage(testParticipants):
-    from sphinxmix.SphinxClient import PFdecode, receive_forward, Dest_flag
+    from sphinxmix.SphinxClient import PFdecode, receive_forward, Dest_flag, Relay_flag
     
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
+    sender.STRATIFIED = False
     sender.startProtocol()
     receiver.startProtocol()
     
+    mixpath = sender.takePathSequence(sender.mixnet, 3)
+
     timestamp = timestamp = '%.5f' % time.time()
-    header, body = sender.createDropMessage(sender.mixnet)
+    header, body = sender.createDropMessage(mixpath)
 
     ret_val = provider_s.process_sphinx_packet((header, body))
     (tag1, info1, (header1, body1)) = ret_val
@@ -208,27 +226,30 @@ def test_createSphinxDropMessage(testParticipants):
     ret_val2 = mix2.process_sphinx_packet((header2, body2))
     (tag3, info3, (header3, body3)) = ret_val2
 
+    ret_val3 = mix3.process_sphinx_packet((header3, body3))
+    (tag4, info4, (header4, body4)) = ret_val3
+
     #ret_val3 = provider_r.process_sphinx_packet((header3, body3))
-    ret_val3 = provider_r.do_ROUT((header3, body3), (mix2.host, mix2.port))
+    ret_val3 = provider_r.do_ROUT((header4, body4), (mix2.host, mix2.port))
     #(tag4, info4, (header4, body4)) = ret_val3    
 
-    #routing = PFdecode(provider_r.params, info4)
-    #assert routing[0] == Dest_flag
-    #dest, message = receive_forward(receiver.params, body4)
-
-    #assert dest == [receiver.host, receiver.port]
-    # next_addr, dropFlag, typeFlag, delay, next_name = routing[1]
+    routing = PFdecode(provider_r.params, info4)
+    assert routing[0] == Relay_flag
+    next_addr, dropFlag, typeFlag, delay, next_name = routing[1]
+    assert dropFlag == True
 
 
 def test_readMessage(testParticipants):
     from sphinxmix.SphinxClient import pki_entry, Nenc, create_forward_message, rand_subset, PFdecode, Relay_flag, Dest_flag, Surb_flag, receive_forward
 
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
+    sender.STRATIFIED = False
     sender.startProtocol()
     receiver.startProtocol()
 
+    mixpath = sender.takePathSequence(sender.mixnet, 3)
     sender.receiver = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
-    sender.sendMessage(sender.receiver, sender.mixnet, "Hello world")
+    sender.sendMessage(sender.receiver, mixpath, "Hello world")
 
     assert len(sender.buffer) == 1
     data, addr = sender.buffer.pop() 
@@ -243,47 +264,48 @@ def test_readMessage(testParticipants):
     ret_val2 = mix2.process_sphinx_packet((header2, body2))
     (tag3, info3, (header3, body3)) = ret_val2
 
-    ret_val3 = provider_r.process_sphinx_packet((header3, body3))
-    (tag4, info4, (header4, body4)) = ret_val3
+    ret_val3 = mix3.process_sphinx_packet((header3, body3))
+    (tag4, info4, (header4, body4)) = ret_val3    
 
-    message = receiver.readMessage((header4, body4), (provider_r.host, provider_r.port))
+    ret_val4 = provider_r.process_sphinx_packet((header4, body4))
+    (tag5, info5, (header5, body5)) = ret_val4
+
+    message = receiver.readMessage((header5, body5), (provider_r.host, provider_r.port))
     assert message.startswith("Hello world")
-
-    # receiver.do_PMSG((header4, body4), provider_r.host, provider_r.port)
 
 
 def test_send(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.send("Hello world", ("127.0.0.1", 8000))
     assert sender.transport.written[0] == ("Hello world", ("127.0.0.1", 8000))
 
 
 def test_setExpParamsDelay(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.setExpParamsDelay(10.0)
     assert sender.EXP_PARAMS_DELAY == (10.0, None)
 
 
 def test_setExpParamsLoops(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.setExpParamsLoops(20.0)
     assert sender.EXP_PARAMS_LOOPS == (20.0, None)
 
 
 def test_setExpParamsCover(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.setExpParamsCover(30.0)
     assert sender.EXP_PARAMS_COVER == (30.0, None)
 
 
 def test_setExpParamsPayload(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.setExpParamsPayload(40.0)
     assert sender.EXP_PARAMS_PAYLOAD == (40.0, None)
 
 
 def test_encryptData(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     plaintext = "TESTMESSAGE"
     cipher = sender.encryptData(plaintext)
 
@@ -293,7 +315,7 @@ def test_encryptData(testParticipants):
 
 
 def test_decryptData(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     plaintext = "TESTMESSAGE"
     aes = Cipher.aes_128_gcm()
     cipher, tag = aes.quick_gcm_enc(sender.kenc, sender.iv, plaintext)
@@ -302,21 +324,32 @@ def test_decryptData(testParticipants):
 
 
 def test_takePathSequence(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
-    sender.mixnet.append(format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk))
-    sender.mixnet.append(format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk))
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
 
-    path = sender.takePathSequence(sender.mixnet, 2)
-    assert len(path) == 2
-    assert (format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk) in path and format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk) in path)
+    mix3 = MixNode("M8003", 8003, "127.0.0.1", setup)
+    mix3.transport = proto_helpers.FakeDatagramTransport()
+    
+    sender.STRATIFIED = True
+    sender.mixnet['entry'] = [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)]
+    sender.mixnet['middle'] = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
+    sender.mixnet['exit'] = [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
+    path = sender.takePathSequence(sender.mixnet, 3)
+    assert path[0] == format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk) and \
+        path[1] == format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk) and \
+        path[2] == format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)
 
-    path2 = sender.takePathSequence(sender.mixnet, 1)
-    assert len(path2) == 1
-    assert (format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk) in path2 or format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk) in path2)
+
+def test_takeMixnodesDataSTMode(testParticipants):
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
+    sender.STRATIFIED = True
+    sender.startProtocol()
+    assert sender.mixnet['entry'] == [format3.Mix(mix1.name, mix1.port, mix1.host, mix1.pubk)]
+    assert sender.mixnet['middle'] == [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk)]
+    assert sender.mixnet['exit'] == [format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk)]
 
 
 def test_selectRandomReceiver(testParticipants):
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     G, o, g, o_bytes = setup
     
     assert sender.selectRandomReceiver() == None
@@ -336,13 +369,15 @@ def test_sampleFromExponential():
 
 def test_sendSphinxMessage(testParticipants):
     
-    setup, sender, transport, (provider_s, provider_r), (mix1, mix2), receiver = testParticipants
+    setup, sender, transport, (provider_s, provider_r), (mix1, mix2, mix3), receiver = testParticipants
     sender.startProtocol()
     receiver.startProtocol()
 
+
+    mixpath = sender.takePathSequence(sender.mixnet, 3)
     sender.receiver = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
 
-    sender.sendMessage(sender.receiver, sender.mixnet, "Hello world")
+    sender.sendMessage(sender.receiver, mixpath, "Hello world")
     
     assert len(sender.buffer) == 1
     data, addr = sender.buffer.pop() 
