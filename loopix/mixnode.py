@@ -197,7 +197,10 @@ class MixNode(DatagramProtocol):
 
 	def do_ROUT(self, data, (host, port)):
 		try:
+			ts = time.time()
 			peeledData = self.process_sphinx_packet(data)
+			tp = time.time() - ts
+			print "Sphinx process: ", tp
 		except Exception, e:
 			print "ERROR - during message decryption: ", str(e)
 		else:
