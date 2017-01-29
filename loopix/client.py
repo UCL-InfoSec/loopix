@@ -77,7 +77,6 @@ class Client(DatagramProtocol):
         # Information about active mixnodes and other users in the network
         self.mixnet = {}
         self.usersPubs = []
-        # self.stratified_info = {}
 
         self.sentElements = set()
         self.heartbeatsSent = set()
@@ -109,9 +108,6 @@ class Client(DatagramProtocol):
 
         self.DATABASE = "example.db"
 
-        self.STRATIFIED = True if _PARAMS["parametersClients"]["STRATIFIED"] == "True" else False
-
-
         #self.receivedQueue = DeferredQueue()
         self.processQueue = ProcessQueue()
 
@@ -126,8 +122,6 @@ class Client(DatagramProtocol):
 
         if self.PATH_LENGTH < 3:
             print "[%s] > WARNING: Path length should be at least 3." % self.name
-        if self.STRATIFIED:
-            print "[%s] > The mixnode network is using the STRATIFIED topology" % self.name
 
         self.provider = self.takeProvidersData(self.DATABASE, self.providerId)
         print "Provider: ", self.provider
@@ -718,7 +712,6 @@ class Client(DatagramProtocol):
             c.execute("SELECT * FROM %s" % "Mixnodes")
             mixdata = c.fetchall()
             for m in mixdata:
-                # If Loopix should use the stratified topology, the parameter STRATIFIED should be set to True
                 if m[5] == 0:
                     if 'entry' in self.mixnet:
                         self.mixnet['entry'].append(format3.Mix(m[1], m[2], m[3], petlib.pack.decode(m[4])))
