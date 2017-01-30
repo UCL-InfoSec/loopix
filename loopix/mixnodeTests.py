@@ -262,3 +262,32 @@ def test_takeRandomPathSTMode(testMixes, testMixset, testProvider):
 		format3.Mix(mix3.name, mix3.port, mix3.host, mix3.pubk, 0), \
 		format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1)]
 
+	mix1.stratified_group = 0
+	mix1.mixList = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+					format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2)]
+	mix1.prvList.append(format3.Provider(provider.name, provider.port, provider.host, provider.pubk)) 
+	path = mix1.takePathSequence(mix1.mixList, 3)
+	assert path == [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 1), \
+		format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2), \
+		format3.Provider(provider.name, provider.port, provider.host, provider.pubk)]
+
+
+	mix1.stratified_group = 1
+	mix1.mixList = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 0), \
+					format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2)]
+	mix1.prvList.append(format3.Provider(provider.name, provider.port, provider.host, provider.pubk)) 
+	path = mix1.takePathSequence(mix1.mixList, 3) 
+	assert path == [format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 2), \
+		format3.Provider(provider.name, provider.port, provider.host, provider.pubk), \
+		format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 0)]
+
+	mix1.stratified_group = 2
+	mix1.mixList = [format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 0), \
+					format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 1)]
+	mix1.prvList.append(format3.Provider(provider.name, provider.port, provider.host, provider.pubk)) 
+	path = mix1.takePathSequence(mix1.mixList, 3)
+	assert path == [format3.Provider(provider.name, provider.port, provider.host, provider.pubk), \
+		format3.Mix(mix2.name, mix2.port, mix2.host, mix2.pubk, 0), \
+		format3.Mix(mix5.name, mix5.port, mix5.host, mix5.pubk, 1)]
+
+

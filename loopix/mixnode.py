@@ -394,15 +394,18 @@ class MixNode(DatagramProtocol):
 				middles = [x for x in mixnet if x.group == MIDDLE_NODE]
 				exits = [x for x in mixnet if x.group == EXIT_NODE]
 
-				entryMix = random.choice(entries)
-				middleMix = random.choice(middles)
-				exitMix = random.choice(exits)
 
 				if self.stratified_group == 0:
+					middleMix = random.choice(middles)
+					exitMix = random.choice(exits)
 					randomPath = [middleMix, exitMix, random.choice(self.prvList)]
 				elif self.stratified_group == 1:
+					entryMix = random.choice(entries)
+					exitMix = random.choice(exits)
 					randomPath = [exitMix, random.choice(self.prvList), entryMix]
 				elif self.stratified_group == 2:
+					entryMix = random.choice(entries)
+					middleMix = random.choice(middles)
 					randomPath = [random.choice(self.prvList), entryMix, middleMix]
 				else:
 					raise Exception('Group does not match the selected topology')
