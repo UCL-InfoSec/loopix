@@ -20,6 +20,18 @@ from twisted.internet.defer import DeferredQueue
 import supportFunctions as sf
 from processQueue import ProcessQueue
 import numpy
+import json
+
+with open('config.json') as infile:
+    _PARAMS = json.load(infile)
+
+TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
+TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
+TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
+MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
+NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
+MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
+SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersMixnodes"]["SAVE_MEASURMENTS_TIME"])
 
 class Provider(MixNode):
 
@@ -32,35 +44,33 @@ class Provider(MixNode):
         self.storage = {}
         self.replyBlocks = {}
         self.MAX_RETRIEVE = 500
-        # self.Queue = []
 
         self.bSent = 0
         self.bReceived = 0
         self.bProcessed = 0
         self.gbSent = 0
-        self.gbReceived = 0
-
-        self.receivedQueue = DeferredQueue()
+        self.gbProcessed = 0
+        self.otherProc = 0
 
         self.nMsgSent = 0
         self.testReceived = 0
-
+        self.measurments = []
         self.testQueueSize = 0
 
         self.processQueue = ProcessQueue()
 
-        self.measurments = []
-
     def startProtocol(self):
-        reactor.suggestThreadPoolSize(30)
+        reactor.suggestThreadPoolSize(50)
 
         print "[%s] > Start protocol." % self.name
         
         reactor.callLater(10.0, self.turnOnProcessing)
 
-        # self.run()
+        if self.TAGED_HEARTBEATS == "True":
+            self.d.addCallback(self.turnOnTagedHeartbeats)
+        else:
+            self.d.addCallback(self.turnOnHeartbeats)
 
-        self.d.addCallback(self.turnOnHeartbeats)
         self.d.addErrback(self.errbackHeartbeats)
 
         #self.turnOnReliableUDP()
@@ -76,6 +86,10 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
+        #if (host, port) in self.clientList.values():
+        #    self.mixedTogether += 1
+        self.totalCounter += 1
+        self.partialCounter += 1
         try:
             self.processQueue.put((data, (host, port)))
             self.bReceived += 1
@@ -84,6 +98,7 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         self.processMessage(obj)
+        self.bProcessed += 1
 
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -93,27 +108,27 @@ class Provider(MixNode):
     def get_and_addCallback(self, f):
         self.processQueue.get().addCallback(f)
 
-    def processMessage(self, obj):
-        data, (host, port) = obj
+    def processMessage(self, (data, (host, port))):
 
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
+            self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
                 idt, msgData = petlib.pack.decode(data[4:])
-                self.sendMessage("ACKN"+idt, (host, port))
                 self.do_ROUT(msgData, (host, port))
-                self.gbReceived += 1
+                self.gbProcessed += 1
             except Exception, e:
                 print "[%s] > ERROR: " % self.name, str(e)
         elif data[:4] == "ACKN":
-            if data in self.expectedACK:
-                self.expectedACK.remove(data)
+            #if data in self.expectedACK:
+            #    self.expectedACK.remove(data)
+            pass
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
+            self.otherProc += 1
         else:
             print "Processing Message - message not recognized"
-        self.bProcessed += 1
 
     def do_PULL(self, name, (host, port)):
         """ Function which responds the pull message request from the client. First, the function checks if the requesting 
@@ -128,24 +143,6 @@ class Provider(MixNode):
             self.flushStorage(name, (host, port))
         except Exception, e:
             print "ERROR during flushing: ", str(e)
-        # def send_to_ip(IPAddrs):
-        #     self.flushStorage(name, (IPAddrs, port))
-        #     self.resolvedAdrs[host] = IPAddrs
-            # if name in self.storage:
-            #     if self.storage[name]:
-            #         for _ in range(self.MAX_RETRIEVE):
-            #            if self.storage[name]:
-            #                message = self.storage[name].pop()
-            #                self.transport.write("PMSG" + message, (IPAddrs, port))
-            #     else:
-            #         self.transport.write("NOMSG", (IPAddrs, port))
-
-            # else:
-            #     self.transport.write("NOASG", (IPAddrs, port))
-        # if host in self.resolvedAdrs:
-        #     self.flushStorage(name, (self.resolvedAdrs[host], port))
-        # else:
-        #     reactor.resolve(host).addCallback(send_to_ip)
 
     def flushStorage(self, name, (ip_host, port)):
         if name in self.storage:
@@ -153,11 +150,11 @@ class Provider(MixNode):
                 for _ in range(self.MAX_RETRIEVE):
                     if self.storage[name]:
                         message = self.storage[name].pop()
-                        self.transport.write("PMSG" + message, (ip_host, port))
+                        self.sendMessage("PMSG" + message, (ip_host, port))
             else:
-                self.transport.write("NOMSG", (ip_host, port))
+                self.sendMessage("NOMSG", (ip_host, port))
         else:
-            self.transport.write("NOASG", (ip_host, port))
+            self.sendMessage("NOASG", (ip_host, port))
 
     def do_ROUT(self, data, (host, port), tag=None):
         """ Function operates on the received route packet. First, the function decrypts one layer on the packet. Next, if 
@@ -182,11 +179,8 @@ class Provider(MixNode):
                     self.saveInStorage(xtoName, msg_forw)
                 else:
                     try:
-                        if delay > 0:
-                            reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
-                        else:
-                            self.sendMessage("ROUT" + petlib.pack.encode((idt ,msg_forw)), (xtoHost, xtoPort))
-                        self.expectedACK.add("ACKN"+idt)
+                        reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, msg_forw)), (xtoHost, xtoPort))
+                        # self.expectedACK.add("ACKN"+idt)
                     except Exception, e:
                         print "ERROR during ROUT: ", str(e)
 
@@ -240,31 +234,32 @@ class Provider(MixNode):
 
     def turnOnMeasurments(self):
         lc = task.LoopingCall(self.takeMeasurments)
-        lc.start(120, False)
+        lc.start(MEASURE_TIME, False)
 
     def saveMeasurments(self):
         lc = task.LoopingCall(self.save_to_file)
-        lc.start(360, False)
+        lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed])
+        self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, self.otherProc])
         self.bProcessed = 0
-        self.gbReceived = 0
+        self.gbProcessed = 0
         self.bReceived = 0
         self.pProcessed = 0
+        self.otherProc = 0
 
     def save_to_file(self):
+        # try:
+        #     with open("performanceProvider.csv", "ab") as outfile:
+        #         csvW = csv.writer(outfile, delimiter=',')
+        #         csvW.writerows(self.measurments)
+        #     self.measurments = []
+        # except Exception, e:
+        #     print "ERROR saving to file: ", str(e)
         try:
-            with open("performanceProvider.csv", "ab") as outfile:
-                csvW = csv.writer(outfile, delimiter=',')
-                csvW.writerows(self.measurments)
-            self.measurments = []
-        except Exception, e:
-            print "ERROR saving to file: ", str(e)
-        try:
-            with open("timeit.csv", "ab") as outfile:
+            with open("anonSet.csv", "ab") as outfile:
                 csvW = csv.writer(outfile, delimiter='\n')
-                csvW.writerow(self.timeits)
-            self.timeits = []
+                csvW.writerow(self.anonSetSizeAll)
+            self.anonSetSizeAll = []
         except Exception, e:
-            print str(e)
+            print "Error while saving: ", str(e)

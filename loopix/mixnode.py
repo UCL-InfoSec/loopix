@@ -33,6 +33,8 @@ TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
 TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
 MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
 NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
+MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
+SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersMixnodes"]["SAVE_MEASURMENTS_TIME"])
 
 class MixNode(DatagramProtocol):
 	"""Class of Mixnode creates an object of a mixnode,
@@ -55,42 +57,52 @@ class MixNode(DatagramProtocol):
 
 		self.mixList = []
 		self.prvList = []
-		self.Queue = []
 
 		self.seenMacs = set()
 		self.seenElements = set()
 		self.bounceInformation = {}
-		self.expectedACK = set()
+		# self.expectedACK = set()
 
 		self.heartbeatsSent = set()
 		self.numHeartbeatsReceived = 0
+		self.hbProcessed = 0
 		self.tagedHeartbeat = {}
 
 		self.savedElements = set()
 
 		self.bReceived = 0
 		self.bProcessed = 0
-		self.gbReceived = 0
+		self.gbProcessed = 0
 		self.pProcessed = 0
+		self.otherProc = 0
 		self.hbSent = {}
 		self.measurments = []
 
 		self.PATH_LENGTH = 3
 		self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"]), None)
 		self.EXP_PARAMS_LOOPS = (float(_PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"]), None)
+		self.TAGED_HEARTBEATS = _PARAMS["parametersMixnodes"]["TAGED_HEARTBEATS"]
 
 		self.processQueue = ProcessQueue()
 		self.resolvedAdrs = {}
 		self.savedLatency = []
-		self.timeits = []
+		#self.timeits = []
+		# number of all messages mixed together at a time a message is leaving
+		self.totalCounter = 0 
+		# number of messages which are in the mixnode between previous message leaving and current message leaving
+		self.partialCounter = 0
+		self.anonSetSizeAll = []
 
 	def startProtocol(self):
-		reactor.suggestThreadPoolSize(30)
+		reactor.suggestThreadPoolSize(50)
 
 		print "[%s] > Start protocol" % self.name
 		reactor.callLater(10.0, self.turnOnProcessing)
 
-		self.d.addCallback(self.turnOnHeartbeats)
+		if self.TAGED_HEARTBEATS == "True":
+			self.d.addCallback(self.turnOnTagedHeartbeats)
+		else:
+			self.d.addCallback(self.turnOnHeartbeats)
 		self.d.addErrback(self.errbackHeartbeats)
 
 		# self.turnOnReliableUDP()
@@ -104,17 +116,12 @@ class MixNode(DatagramProtocol):
 	def turnOnProcessing(self):
 		self.processQueue.get().addCallback(self.do_PROCESS)
 
-	def run(self):
-		"""A loop function responsible for flushing the queue"""
+	def turnOnTagedHeartbeats(self, mixnet):
+		interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+		reactor.callLater(interval, self.sendTagedMessage)
 
-		lc = task.LoopingCall(self.flushQueue)
-		lc.start(TIME_FLUSH, False)
-
-	def turnOnTagedSending(self):
-		lc = task.LoopingCall(self.sendTagedMessage)
-		lc.start(10, True)
 		lc2 = task.LoopingCall(self.saveLatency)
-		lc2.start(600, False)
+		lc2.start(SAVE_MEASURMENTS_TIME, False)
 
 	def turnOnHeartbeats(self, mixnet):
 		""" Function starts a loop calling hearbeat sending.
@@ -128,27 +135,9 @@ class MixNode(DatagramProtocol):
 	def errbackHeartbeats(self, failure):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
-	# def sendRequest(self, rqs):
-	# 	""" Function sends a particular request to the bulletin board
-
-	# 		Args:
-	# 		rqs (str): the rqs shortcut which should be send.
-	# 	"""
-	# 	def send_to_ip(IPAddrs):
-	# 		self.transport.write(rqs, (IPAddrs, self.boardPort))
-	# 	reactor.resolve(self.boardHost).addCallback(send_to_ip)
-
-	# def announce(self):
-	# 	""" Mixnode annouces its presence in the network to the bulletin board.
-	# 	"""
-	# 	resp = "MINF" + petlib.pack.encode([self.name, self.port, self.host, self.pubk])
-	# 	def send_announce(IPAddr):
-	# 		self.transport.write(resp, (IPAddr, self.boardPort))
-	# 		# print "[%s] > Announced itself to the board." % self.name
-	# 	reactor.resolve(self.boardHost).addCallback(send_announce)
-
 	def datagramReceived(self, data, (host, port)):
-
+		self.totalCounter += 1
+		self.partialCounter += 1
 		try:
 			self.processQueue.put((data, (host, port)))
 			self.bReceived += 1
@@ -157,6 +146,7 @@ class MixNode(DatagramProtocol):
 
 	def do_PROCESS(self, (data, (host, port))):
 		self.processMessage(data, (host, port))
+		self.bProcessed += 1
 
 		try:
 			reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -167,29 +157,25 @@ class MixNode(DatagramProtocol):
 		self.processQueue.get().addCallback(f)
 
 	def processMessage(self, data, (host, port)):
-
-		if data[:4] == "MINF":
-			self.do_INFO(data, (host, port))
-		elif data[:4] == "ROUT":
+		#ts = time.time()
+		if data[:4] == "ROUT":
 			try:
 				idt, msgData = petlib.pack.decode(data[4:])
-				self.sendMessage("ACKN"+idt, (host, port))
 				self.do_ROUT(msgData, (host, port))
-				self.gbReceived += 1
+				self.gbProcessed += 1
 			except Exception, e:
 				print "ERROR: ", str(e)
-		elif data[:4] == "RINF":
-			try:
-				self.do_RINF(data[4:])
-			except Exception, e:
-				print "ERROR: ", str(e)
-		elif data.startswith("ACKN"):
-			if data in self.expectedACK:
-				self.expectedACK.remove(data)
+		elif data[:4] == "ACKN":
+			#if data in self.expectedACK:
+			#	self.expectedACK.remove(data)
+			self.otherProc += 1
 		else:
 			print "Processing Message - message not recognized"
-		self.bProcessed += 1
+		#te = time.time()
+		#self.timeits.append(te-ts)
 
+	# def send_ack(self, msg, (host, port)):
+	# 	reactor.callLater(0.0, self.sendMessage, msg, (host, port))
 
 	def do_INFO(self, data, (host, port)):
 		""" Mixnodes processes the INFO request
@@ -221,11 +207,9 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					try:
-						if delay > 0:
-							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
-						else:
-							self.sendMessage("ROUT" + petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
-						self.expectedACK.add("ACKN"+idt)
+						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, forw_msg)), (xtoHost, xtoPort))
+						#self.expectedACK.add("ACKN"+idt)
+						#reactor.callFromThread(self.send_ack, "ACKN", (host, port))
 					except Exception, e:
 						print "ERROR during ROUT processing: ", str(e)
 
@@ -249,13 +233,17 @@ class MixNode(DatagramProtocol):
 					print "[%s] > Message discarded" % self.name
 				else:
 					try:
-						if delay > 0:
-							reactor.callLater(delay, self.sendMessage, "ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						else:
-							self.sendMessage("ROUT" + petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
-						self.expectedACK.add("ACKN"+idt)
+						reactor.callFromThread(self.send_or_delay, delay, petlib.pack.encode((idt, back_msg)), (xtoHost, xtoPort))
+						# self.expectedACK.add("ACKN"+idt)
 					except Exception, e:
 						print "ERROR during bounce processing: ", str(e)
+
+	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
+
+		if delay > 0:
+			reactor.callLater(delay, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
+		else:
+			reactor.callLater(0.0, self.sendMessage, "ROUT" + packet, (xtoHost, xtoPort))
 
 	def do_RINF(self, data):
 		""" Mixnodes processes the RINF request, which returns the network information requested by the user
@@ -268,7 +256,6 @@ class MixNode(DatagramProtocol):
 			self.mixList.append(format3.Mix(element[0], element[1], element[2], element[3]))
 		if format3.Mix(self.name, self.port, self.host, self.pubk) in self.mixList:
 			self.mixList.remove(format3.Mix(self.name, self.port, self.host, self.pubk))
-		#self.d.callback(self.mixList)
 
 	def mix_operate(self, setup, message):
 		""" Mixnode operates on the received packet. It removes the encryption layer of the forward header, builts up the
@@ -278,7 +265,6 @@ class MixNode(DatagramProtocol):
 			setup (tuple): a setup of a group used in the protocol,
 			message (list): a received message which should be enc/dec.
 		"""
-		ts = time.time()
 
 		G, o, g, o_bytes = setup
 		elem = message[0]
@@ -320,13 +306,11 @@ class MixNode(DatagramProtocol):
 		header = petlib.pack.decode(header_en)
 
 		if pt.startswith('HT'):
-			hs = hashlib.md5()
-			hs.update(pt[2:])
-			x = hs.digest()
-			if x in self.hbSent:
-				self.hbSent[x] = True
+			if pt[2:] in self.hbSent:
+				self.hbSent[pt[2:]] = True
 			if pt.startswith('HTTAG'):
 				self.measureLatency(pt)
+			self.hbProcessed += 1
 			return None
 		else:
 			dropMessage = header[1]
@@ -338,6 +322,7 @@ class MixNode(DatagramProtocol):
 			typeFlag = header[2]
 			if typeFlag == "P":
 				self.pProcessed += 1
+
 			# delay - message delay
 			delay = header[3]
 
@@ -382,8 +367,6 @@ class MixNode(DatagramProtocol):
 				new_back = "None"
 
 			new_element = new_element.export()
-			te = time.time()
-			self.timeits.append(te-ts)
 			return (xto, [new_element, new_forw, new_back], idt, delay)
 
 	def checkMac(self, mac):
@@ -405,24 +388,6 @@ class MixNode(DatagramProtocol):
 		print "> Errback of mix Reliable UDP took care of ", failure
 
 
-	# def flushQueue(self):
-	# 	""" The function sends the messages queued in the mixnode pool.
-	# 	If the delay with which the message was suppose to be send exceeded
-	# 	MAX_DELAY_TIME, the message is dropped."""
-
-	# 	if self.Queue:
-	# 		timeToSend, element = self.Queue[0]
-	# 		#element contains: packet, destination address, idt
-	# 		while self.Queue and timeToSend - sf.epoch() < 0:
-	# 			if timeToSend - sf.epoch() < MAX_DELAY_TIME:
-	# 				print "[%s] > Time elapsed - message droped" % self.name
-	# 			else:
-	# 				self.sendMessage(element[0], element[1])
-	# 				self.expectedACK.add("ACKN"+element[2])
-	# 			heapq.heappop(self.Queue)
-	# 			if self.Queue:
-	# 				timeToSend, element = self.Queue[0]
-
 	def sendMessage(self, data, (host, port)):
 		""" Function sends the message to the specified place in the network.
 
@@ -431,20 +396,20 @@ class MixNode(DatagramProtocol):
 			host (str): host of the destination,
 			port (int): port of the destination.
 		"""
-
-		# def send_to_ip(IPaddrs):
-		# 	self.transport.write(data, (IPaddrs, port))
-		# 	self.resolvedAdrs[host] = IPaddrs
-
-		if host in self.resolvedAdrs:
+		def send_to_ip(IPaddrs):
+			self.transport.write(data, (IPaddrs, port))
+			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.totalCounter -= 1
+			self.partialCounter = 0
+			self.resolvedAdrs[host] = IPaddrs
+		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-		else:
+			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
+			self.totalCounter -= 1
+			self.partialCounter = 0
+		except KeyError, e:
 			# Resolve and call the send function
-			reactor.resolve(host).addCallback(self.send_to_ip, host=host, port=port, data=data)
-
-	def send_to_ip(self, IPaddrs, host, port, data):
-		self.transport.write(data, (IPaddrs, port))
-		self.resolvedAdrs[host] = IPaddrs
+			reactor.resolve(host).addCallback(send_to_ip)
 
 	def sendHeartbeat(self, mixnet, predefinedPath=None):
 		""" Mixnode sends a heartbeat message.
@@ -478,11 +443,7 @@ class MixNode(DatagramProtocol):
 			heartMsg = sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			packet = format3.create_mixpacket_format(self, self, mixes, self.setup, 'HT'+heartMsg, 'HB'+heartMsg, delay, False, typeFlag='H')
-			# self.savedElements.add(packet[0])
-			hs = hashlib.md5()
-			hs.update(heartMsg)
-			x = hs.digest()
-			self.hbSent[x] = False
+			self.hbSent[heartMsg] = False
 			return packet[1:]
 		except Exception, e:
 			print "[%s] > Error during hearbeat creating: %s" % (self.name, str(e))
@@ -493,9 +454,11 @@ class MixNode(DatagramProtocol):
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			delay = [sf.sampleFromExponential(self.EXP_PARAMS_DELAY) for _ in range(len(mixes)+1)]
 			message = format3.create_mixpacket_format(self, self, mixes, self.setup,  'HT'+tagedMessage, 'HB'+tagedMessage, delay, False, typeFlag = 'P')
-			packet = "ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:]))
-			self.sendMessage(packet, (mixes[0].host, mixes[0].port))
+			self.sendMessage("ROUT" + petlib.pack.encode((str(uuid.uuid1()), message[1:])), (mixes[0].host, mixes[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
+
+			interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
+			reactor.callLater(interval, self.sendTagedMessage)
 		except Exception, e:
 			print "ERROR: Send tagged message: ", str(e)
 
@@ -534,27 +497,18 @@ class MixNode(DatagramProtocol):
 		"""Function prints the keypair information of a mixnode."""
 		print "OPERATED MIXNODE: Name: %s, address: (%d, %s), PubKey: %s" % (self.name, self.port, self.host, self.pubk)
 
-	def addToQueue(self, data, delay=0):
-		""" Function adds the packet data to the priority queue of the pooled messages.
+	# def ackListener(self):
+	# 	""" Function checks if mixnode received the acknowledgments for the sent packets. """
 
-			Args:
-			data (str): packet data.
-		"""
-		#data contains (packet, (host, poty), idt)
-		heapq.heappush(self.Queue, (delay, data))
-
-	def ackListener(self):
-		""" Function checks if mixnode received the acknowledgments for the sent packets. """
-
-		if self.expectedACK:
-			ack = self.expectedACK.pop()
-			if ack in self.bounceInformation:
-				try:
-					self.do_BOUNCE(self.bounceInformation[ack])
-				except Exception, e:
-					print "ERROR during ACK checking: ", str(e)
-			else:
-				print "> For this ACK there is no bounce message."
+	# 	if self.expectedACK:
+	# 		ack = self.expectedACK.pop()
+	# 		if ack in self.bounceInformation:
+	# 			try:
+	# 				self.do_BOUNCE(self.bounceInformation[ack])
+	# 			except Exception, e:
+	# 				print "ERROR during ACK checking: ", str(e)
+	# 		else:
+	# 			print "> For this ACK there is no bounce message."
 
 	def heartbeatListener(self, heartbeat):
 		""" Function checks the incoming heartbeat messages if and when this heartbeat was sent.
@@ -622,7 +576,6 @@ class MixNode(DatagramProtocol):
 		self.readMixnodesFromDatabase(database)
 		self.readProvidersFromDatabase(database)
 		self.d.callback(self.mixList)
-		self.turnOnTagedSending()
 
 	def takePublicInfo(self):
 		return petlib.pack.encode([self.name, self.port, self.host, self.pubk])
@@ -645,41 +598,38 @@ class MixNode(DatagramProtocol):
 
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.takeMeasurments)
-		lc.start(120, False)
+		lc.start(MEASURE_TIME, False)
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.gbReceived, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values())])
+		self.measurments.append([self.bProcessed, self.gbProcessed, self.bReceived, self.pProcessed, len(self.hbSent), sum(self.hbSent.values()), self.otherProc, self.hbProcessed])
 		self.bProcessed = 0
-		self.gbReceived = 0
+		self.gbProcessed = 0
 		self.bReceived = 0
 		self.pProcessed = 0
+		self.otherProc = 0
 		self.hbSent = {}
+		self.hbProcessed = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
-		lc.start(360, False)
+		lc.start(SAVE_MEASURMENTS_TIME, False)
 
 	def save_to_file(self):
-		try:
-			with open("performanceMixnode.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter=',')
-				csvW.writerows(self.measurments)
-			self.measurments = []
-		except Exception, e:
-			print "Error while saving: ", str(e)
-		try:
-			with open("timeit.csv", "ab") as outfile:
-				csvW = csv.writer(outfile, delimiter='\n')
-				csvW.writerow(self.timeits)
-			self.timeits = []
-		except Exception, e:
-			print "Error while saving: ", str(e)
 		# try:
-		# 	with open("reliabilityMixnode.csv", "ab") as outfile:
+		# 	with open("performanceMixnode.csv", "ab") as outfile:
 		# 		csvW = csv.writer(outfile, delimiter=',')
-		# 		csvW.writerows([(len(self.hbSent), sum(self.hbSent.values()))])
+		# 		csvW.writerows(self.measurments)
+		# 	self.measurments = []
 		# except Exception, e:
 		# 	print "Error while saving: ", str(e)
-		# self.hbSent = {}
-
+		try:
+			with open("anonSet.csv", "ab") as outfile:
+				# csvW = csv.writer(outfile, delimiter='\n')
+				csvW = csv.writer(outfile)
+				csvW.writerow(['TotalCounter', 'PartialCounter'])
+				for row in self.anonSetSizeAll:
+					csvW.writerow(row)
+			self.anonSetSizeAll = []
+		except Exception, e:
+			print "Error while saving: ", str(e)
 

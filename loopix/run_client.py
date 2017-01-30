@@ -13,9 +13,12 @@ import petlib
 from twisted.internet import stdio
 from twisted.protocols import basic
 from twisted.application import service, internet
+from twisted.python import usage
+from twisted.plugin import IPlugin
 
 import sqlite3
 import databaseConnect as dc
+
 
 def readAllUsersFromDB(database):
         usersList = []
@@ -52,11 +55,15 @@ class ClientEcho(basic.LineReceiver):
 			print "Command not found"
 		self.transport.write('>>> ')
 
+# class Options(usage.Options):
+# 	optParameters = [["testUser", "tU", False, "The client test mode"]]
 
 
 if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin")):
 	raise Exception("Key parameter files not found")
 
+
+# myoptions = Options()
 setup = format3.setup()
 G, o, g, o_bytes = setup
 
@@ -65,8 +72,9 @@ secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
 try:
 	data = file("publicClient.bin", "rb").read()
 	_, name, port, host, _, prvname = petlib.pack.decode(data)
- 	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
- 	
+	# myoptions.parseOptions()
+	client = Client(setup, name, port, host, privk = secret, providerId=prvname)
+	
 	# reactor.listenUDP(port, client)
 	# reactor.run()
 

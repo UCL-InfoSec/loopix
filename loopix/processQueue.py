@@ -50,6 +50,7 @@ class ProcessQueue():
 				d = self.consumers.pop(0)
 				obj = self.queue.pop(0)
 				dt = threads.deferToThread(self._process_in_thread, d, obj)
+				#reactor.callInThread(self._process_in_thread, d, obj)
 		except Exception, e:
 			print str(e)
 
@@ -93,7 +94,7 @@ class ProcessQueue():
 		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
 		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
 		
-			dataTmp = [drop_tmp, P, I, D, q_len, start_time - inserted_time]
+			dataTmp = [tmp, P, I, D, q_len, start_time - inserted_time]
 			self.log(dataTmp)
 
 
