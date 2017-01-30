@@ -82,8 +82,6 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
-        # self.totalCounter += 1
-        # self.partialCounter += 1
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
@@ -284,12 +282,3 @@ class Provider(MixNode):
             self.measurments = []
         except Exception, e:
             print "ERROR saving to file: ", str(e)
-        # try:
-        #     with open("anonSet.csv", "ab") as outfile:
-        #         csvW = csv.writer(outfile)
-        #         csvW.writerow(['TotalCounter', 'PartialCounter'])
-        #         for row in self.anonSetSizeAll:
-        #             csvW.writerow(row)
-        #     self.anonSetSizeAll = []
-        # except Exception, e:
-        #     print "Error while saving: ", str(e)

@@ -74,15 +74,9 @@ class MixNode(DatagramProtocol):
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
-		# number of all messages mixed together at a time a message is leaving
-		self.totalCounter = 0 
-		# number of messages which are in the mixnode between previous message leaving and current message leaving
-		self.partialCounter = 0
 
-		self.callCounter = 0
 
 		self.measurments = []
-		self.anonSetSizeAll = []
 		self.savedLatency = []
 
 		self.PATH_LENGTH = 3
@@ -119,7 +113,6 @@ class MixNode(DatagramProtocol):
 		# self.turnOnReliableUDP()
 		self.readInData('example.db')
 		self.turnOnMeasurments()
-		self.saveMeasurments()
 		
 	def stopProtocol(self):
 		print "> Protocol stoped."
@@ -153,8 +146,6 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
-		self.totalCounter += 1
-		self.partialCounter += 1
 		try:
 			self.processQueue.put((data, (host, port)))
 		except Exception, e:
@@ -263,18 +254,11 @@ class MixNode(DatagramProtocol):
 			host (str): host of the destination,
 			port (int): port of the destination.
 		"""
-		self.callCounter += 1
 		def send_to_ip(IPaddrs):
 			self.transport.write(data, (IPaddrs, port))
-			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
-			self.totalCounter -= 1
-			self.partialCounter = 0
 			self.resolvedAdrs[host] = IPaddrs
 		try:
 			self.transport.write(data, (self.resolvedAdrs[host], port))
-			self.anonSetSizeAll.append((self.totalCounter, self.partialCounter))
-			self.totalCounter -= 1
-			self.partialCounter = 0 
 		except KeyError, e:
 			# Resolve and call the send function
 			reactor.resolve(host).addCallback(send_to_ip)
@@ -329,8 +313,6 @@ class MixNode(DatagramProtocol):
 					header, body = self.createSphinxHeartbeat(mixes, time.time(), 'H')
 				else:
 					header, body = self.createSphinxHeartbeat(mixes, time.time())
-				self.totalCounter += 1
-				self.partialCounter += 1
 				self.sendMessage("ROUT" + petlib.pack.encode((header, body)), (mixes[0].host, mixes[0].port))
 				interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
 				reactor.callLater(interval, self.sendHeartbeat, mixnet)
@@ -342,8 +324,6 @@ class MixNode(DatagramProtocol):
 			path = mixes + [self]
 			tagedMessage = "TAG" + sf.generateRandomNoise(NOISE_LENGTH)
 			header, body = self.packIntoSphinxPacket(tagedMessage, path)
-			self.totalCounter += 1
-			self.partialCounter += 1
 			self.sendMessage("ROUT" + petlib.pack.encode((header, body)), (path[0].host, path[0].port))
 			self.tagedHeartbeat[tagedMessage] = time.time()
 
@@ -525,13 +505,13 @@ class MixNode(DatagramProtocol):
 	def turnOnMeasurments(self):
 		lc = task.LoopingCall(self.takeMeasurments)
 		lc.start(MEASURE_TIME, False)
+		self.saveMeasurments()
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc, self.callCounter])
+		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
-		self.callCounter = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
@@ -543,15 +523,6 @@ class MixNode(DatagramProtocol):
 				csvW = csv.writer(outfile, delimiter=',')
 				csvW.writerows(self.measurments)
 			self.measurments = []
-		except Exception, e:
-			print "Error while saving: ", str(e)
-		try:
-			with open("anonSet.csv", "ab") as outfile:
-				csvW = csv.writer(outfile)
-				csvW.writerow(['TotalCounter', 'PartialCounter'])
-				for row in self.anonSetSizeAll:
-					csvW.writerow(row)
-			self.anonSetSizeAll = []
 		except Exception, e:
 			print "Error while saving: ", str(e)
 

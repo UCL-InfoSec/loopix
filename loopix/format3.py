@@ -22,7 +22,7 @@ import time
 
 Keys = namedtuple('Keys', ['b', 'iv', 'kmac', 'kenc'])
 Mix = namedtuple('Mix', ['name', 'port', 'host', 'pubk', 'group'])
-Provider = namedtuple('Mix', ['name', 'port', 'host', 'pubk'])
+Provider = namedtuple('Provider', ['name', 'port', 'host', 'pubk'])
 User = namedtuple('User', ['name', 'port', 'host', 'pubk', 'provider'])
 
 
