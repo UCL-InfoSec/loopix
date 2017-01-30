@@ -3,7 +3,7 @@
         "NOISE_LENGTH": "500", 
         "C": "2", 
         "EXP_PARAMS_COVER": "1", 
-        "PATH_LENGTH": "1", 
+        "PATH_LENGTH": "3", 
         "TARGETUSER": "False", 
         "EXP_PARAMS_LOOPS": "1", 
         "EXP_PARAMS_DELAY": "0.05", 

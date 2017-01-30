@@ -47,8 +47,8 @@ def testParticipants():
     mix3 = MixNode("M8003", 8003, "127.0.0.1", setup)
     mix3.transport = proto_helpers.FakeDatagramTransport()
 
-    sender.PATH_LENGTH = 2
-    receiver.PATH_LENGTH = 2
+    sender.PATH_LENGTH = 3
+    receiver.PATH_LENGTH = 3
 
     sender.providerId = provider_s.name
     receiver.providerId = provider_r.name
