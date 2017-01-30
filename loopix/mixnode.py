@@ -406,6 +406,8 @@ class MixNode(DatagramProtocol):
 					randomPath = [random.choice(self.prvList), entryMix, middleMix]
 				else:
 					raise Exception('Group does not match the selected topology')
+			print "[%s] > My selected path and my group %d: " % (self.name, self.stratified_group)
+			print randomPath
 			return randomPath
 		except Exception, e:
 			print "[%s] > ERROR: During selecting path %s" % (self.name, str(e))

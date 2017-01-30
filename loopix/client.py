@@ -548,6 +548,9 @@ class Client(DatagramProtocol):
                 exitMix = random.choice(exits)
 
                 randomPath = [entryMix, middleMix, exitMix]
+
+            print "[%s] > My selected path: " % self.name
+            print randomPath
             return randomPath
         except Exception, e:
             print "[%s] > ERROR: During path generation: %s" % (self.name, str(e))
