@@ -1,5 +1,5 @@
 from fabric.api import env, sudo, run, settings, cd, local
-from fabric.decorators import runs_once, roles, parallel
+from fabric.decorators import runs_once, roles, parallel, hosts
 from fabric.operations import get, put
 from fabric.tasks import execute 
 import fabric.contrib.files
@@ -18,6 +18,9 @@ import matplotlib.mlab as mlab
 import time
 import subprocess
 from scapy.all import *
+import json
+
+# ---------------------------------
 
 ec2 = boto3.resource('ec2')
 
@@ -58,30 +61,23 @@ def get_providers():
     print "Providers", nodes
     return nodes
 
-@runs_once
-def get_board():
-    board_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Board"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
-    return ['ubuntu@' + i.public_dns_name for i in board_instances]
-
 
 mixnodes = get_mixnodes()
 clients = get_clients()
 providers = get_providers()
-board = get_board()
 
 env.roledefs.update({
     'mixnodes':mixnodes,
     'clients':clients,
-    'providers':providers,
-    'board':board
+    'providers':providers
     })
 
+# --------------------------------------------------KEY FILE ------------------------------------------
 env.key_filename = '../keys/Loopix.pem'
-
 # ----------------------------------------LAUNCHING-FUNCTIONS------------------------------------------
 
 #launching new instances
-def ec2start(num, typ='m4.2xlarge'):
+def ec2start(num, typ='t2.large'):
     instances = ec2.create_instances( 
         ImageId='ami-ed82e39e', 
         InstanceType=typ,
@@ -98,29 +94,27 @@ def ec2start_mixnode_instance(num):
     for i in mixnodes:
         ec2tagInstance(i.id, "Mixnode")
 
+
 @runs_once
 def ec2start_client_instance(num):
-    clients = ec2start(num, typ='m4.4xlarge')
+    clients = ec2start(num, typ='t2.large')
     for i in clients:
         ec2tagInstance(i.id, "Client")
 
+
 @runs_once
 def ec2start_provider_instance(num):
-    providers = ec2start(num, typ='m4.2xlarge')
+    providers = ec2start(num)
     for i in providers:
         ec2tagInstance(i.id, "Provider")
 
-@runs_once
-def ec2start_board_instance(num=1):
-    boards = ec2start(num)
-    for i in boards:
-        ec2tagInstance(i.id, "Board")
 
 @runs_once
 def ec2start_taged_instance(num, tag):
     instances = ec2start(num)
     for i in instances:
         ec2tagInstance(i.id, tag) 
+
 
 @runs_once
 def ec2start222():
@@ -149,6 +143,7 @@ def ec2stopAll():
     except Exception, e:
         print e
 
+
 @runs_once
 def ec2stopInstance(ids):
     try:
@@ -156,6 +151,7 @@ def ec2stopInstance(ids):
         ec2.instances.filter(InstanceIds=[ids]).terminate()
     except Exception, e:
         print e
+
 
 #@runs_once
 def ec2tagInstance(ids, tagname):
@@ -168,12 +164,14 @@ def ec2tagInstance(ids, tagname):
                 tag["Value"] = tagname
         print "Instance %s taged as %s." % (instance.id, tagname)
 
+
 #list all instances
 @runs_once
 def ec2listAll():
     instances = ec2.instances.all()
     for instance in instances:
         print(instance.id, instance.state["Name"], instance.public_dns_name, instance.instance_type)
+
 
 #list all running instances
 @runs_once
@@ -183,21 +181,61 @@ def ec2listAllRunning():
     for instance in instances:
         print(instance.id, instance.instance_type, instance.public_dns_name)
 
-#check instances status
+
+# Check instances status
 @runs_once
 def ec2checkStatus():
     for status in ec2.meta.client.describe_instance_status()['InstanceStatuses']:
         print(status)
 
+# Get instance public IP address
 def ec2getIP(ids):
     instances = ec2.instances.filter(InstanceIds=[ids])
-    ips = [i.public_ip_addess for i in instances]
+    ips = [i.public_ip_address for i in instances]
     return ips
 
+# Get instance public DNS name
 def ec2getDNS(ids):
     instances = ec2.instances.filter(InstanceIds=[ids])
     dns = [i.public_dns_name for i in instances]
     return dns
+
+# Get private IP addresses of the instances
+
+def ec2getIPs():
+    local('rm -f dns_ip_mix.csv')
+    local('rm -f dns_ip_user.csv')
+    local('rm -f dns_ip_prv.csv')
+
+    mixnodes = {}
+    clients = {}
+    providers = {}
+    mix_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Mixnode"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
+    client_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Client"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
+    provider_instances = ec2.instances.filter(Filters=[{"Name":"tag:Type", "Values":["Provider"]}, {'Name' : 'instance-state-name', 'Values' : ['running']}])
+    for i in mix_instances:
+        mixnodes[i.public_dns_name] = i.private_ip_address
+    for i in client_instances:
+        clients[i.public_dns_name] = i.private_ip_address
+    for i in provider_instances:
+        providers[i.public_dns_name] = i.private_ip_address
+    
+    with open('dns_ip_mix.csv', 'ab') as outfile:
+        csvW = csv.writer(outfile, delimiter=',')
+        csvW.writerow(['DNS', 'IP'])
+        for key in mixnodes:
+            csvW.writerow([key, mixnodes[key]])
+    with open('dns_ip_user.csv', 'ab') as outfile:
+        csvW = csv.writer(outfile, delimiter=',')
+        csvW.writerow(['DNS', 'IP'])
+        for key in clients:
+            csvW.writerow([key, clients[key]])
+    with open('dns_ip_prv.csv', 'ab') as outfile:
+        csvW = csv.writer(outfile, delimiter=',')
+        csvW.writerow(['DNS', 'IP'])
+        for key in providers:
+            csvW.writerow([key, providers[key]])
+
 
 
 #--------------------------------------DEPLOY-FUNCTIONS-----------------------------------------------------------
@@ -206,19 +244,18 @@ def gitpull():
     with cd('loopix'):
         run('git pull')
 
-#--------------------------------------EXPERIMENTS-FUNCTIONS------------------------------------------------------
 
 @roles("mixnodes")
 @parallel
-def start_mixnode(test):
+def start_mixnode(branch):
     with cd("loopix/loopix"):
-        if test=="True":
-            run("git checkout develop")
+        run("git checkout %s" % branch)
         run("git pull")
-        run("twistd -p profiler_output.dat -y run_mixnode.py")
-        #run("twistd -y run_mixnode.py")
+        #run("twistd -p profiler_output.dat -y run_mixnode.py")
+        run("twistd -y run_mixnode.py")
         pid = run("cat twistd.pid")
         print "Run on %s with PID %s" % (env.host, pid)
+
 
 
 @roles("mixnodes")
@@ -241,6 +278,7 @@ def start_client():
         print "Run Client on %s with PID %s" % (env.host, pid)
         run("rm -f *.csv")
 
+
 @roles("clients")
 @parallel
 def kill_client():
@@ -249,18 +287,19 @@ def kill_client():
         print "Kill %s with PID %s" % (env.host, pid)
         run("kill `cat twistd.pid`", warn_only=True)
 
+
 @roles("clients")
 @parallel
-def start_multi_client(num, test):
+def start_multi_client(num, branch):
     for i in range(int(num)):
         dirc = 'client%s' % i
         with cd(dirc+'/loopix/loopix'):
-            if test=="True":
-                run("git checkout develop")
+            run("git checkout %s" % branch)
             run('git pull')
             run('twistd -y run_client.py')
             pid = run('cat twistd.pid')
             print "Run Client on %s with PID %s" % (env.host, pid) 
+
 
 @roles("clients")
 @parallel
@@ -272,18 +311,19 @@ def kill_multi_client(num):
             print "Kill %s with PID %s" % (env.host, pid)
             run("kill `cat twistd.pid`", warn_only=True)
             run("rm -f *.csv")
-        
+ 
+
 @roles("providers")
 @parallel
-def start_provider(test):
+def start_provider(branch):
     with cd("loopix/loopix"):
-        if test=="True":
-            run("git checkout develop")
+        run("git checkout %s" % branch)
         run("git pull")
-        run("twistd -p profiler_output.dat -y run_provider.py")
-        #run("twistd -y run_provider.py")
+        #run("twistd -p profiler_output.dat -y run_provider.py")
+        run("twistd -y run_provider.py")
         pid = run("cat twistd.pid")
         print "Run on %s with PID %s" % (env.host, pid)
+
 
 @roles("providers")
 @parallel
@@ -293,39 +333,34 @@ def kill_provider():
         print "Kill %s with PID %s" % (env.host, pid)
         run("kill `cat twistd.pid`", warn_only=True)
         run("rm -f *.csv")
-        
-@runs_once
+  
+
 @parallel
 def startAll():
     execute(start_mixnode)
     execute(start_provider)
     execute(start_client)
 
-@runs_once
+
 @parallel
 def killAll():
     execute(kill_mixnode)
     execute(kill_provider)
     execute(kill_client)
 
+
 @parallel
 def startMultiAll(num, test="False"):
-    print "Started"
     execute(start_mixnode, test)
     execute(start_provider, test)
     execute(start_multi_client,num, test)
+
 
 @parallel
 def killMultiAll(num):
     execute(kill_mixnode)
     execute(kill_provider)
     execute(kill_multi_client,num)
-
-
-@roles("boards")
-@parallel
-def start_board():
-    run("python run_board.py")
 
 
 # ---------------------------------------------SETUP-AND-DEPLOY---------------------------------------
@@ -335,10 +370,12 @@ def start_board():
 def loaddirAll():
     put('example.db', 'loopix/loopix/example.db')
 
+
 @roles("mixnodes", "providers")
 @parallel
 def loaddirServers():
     put('example.db', 'loopix/loopix/example.db')
+
 
 @roles("clients")
 @parallel
@@ -346,31 +383,15 @@ def loaddirClients(num):
     for i in range(int(num)):
         put('example.db', 'client%d/loopix/loopix/example.db'%i)
 
+
 def whoami():
     run('whoami', env.hosts)
+
 
 @parallel
 def setupAll(num):
     execute(setupServers)
-    execute(setupClients, num)   
-
-# @roles("mixnodes", "clients", "providers","board")
-# @parallel
-# def setupAll():
-#     sudo('apt-get -y update')
-#     sudo('apt-get -y dist-upgrade')
-#     sudo('apt-get -y install python-pip python-dev build-essential')
-#     sudo('apt-get -y install libssl-dev libffi-dev git-all')
-#     sudo('yes | pip install --upgrade pip')
-#     sudo('yes | pip install --upgrade virtualenv')
-#     sudo('yes | pip install petlib')
-#     sudo('yes | pip install twisted')
-#     sudo('yes | pip install numpy')
-#     if fabric.contrib.files.exists("loopix"):
-#         with cd("loopix"):
-#             run("git pull")
-#     else:
-#         run("git clone https://github.com/UCL-InfoSec/loopix.git")
+    execute(setupClients, num)
 
 
 @roles("mixnodes", "providers")
@@ -386,7 +407,9 @@ def setupServers():
     sudo('yes | pip install twisted')
     sudo('yes | pip install numpy')
     sudo('yes | pip install service_identity')
-    sudo('apt-get install htop')
+    sudo('yes | pip install sphinxmix')
+    sudo('apt-get -y install htop')
+    sudo('apt-get -y install tshark')
     if fabric.contrib.files.exists("loopix"):
         with cd("loopix"):
             run("git pull")
@@ -407,7 +430,9 @@ def setupClients(num):
     sudo('yes | pip install twisted')
     sudo('yes | pip install numpy')
     sudo('yes | pip install service_identity')
-    sudo('apt-get install htop')
+    sudo('yes | pip install sphinxmix')
+    sudo('apt-get -y install htop')
+    sudo('apt-get -y install tshark')
     for i in range(int(num)):
         dirc = 'client%s' % i
         if not fabric.contrib.files.exists(dirc):
@@ -432,6 +457,9 @@ def setupMultiClients(num):
     sudo('yes | pip install --upgrade petlib')
     sudo('yes | pip install twisted')
     sudo('yes | pip install numpy')
+    sudo('yes | pip install sphinxmix')
+    sudo('apt-get -y install htop')
+    sudo('apt-get -y install tshark')
     for i in range(int(num)):
         dirc = 'client%s' % i
         if not fabric.contrib.files.exists(dirc):
@@ -461,7 +489,6 @@ def storeProvidersNames():
     with open('providersNames.bi2', 'wb') as outfile:
         outfile.write(petlib.pack.encode(pn))
 
-@runs_once
 def getProvidersNames():
     import petlib.pack
     filedir = 'providersNames.bi2'
@@ -493,7 +520,7 @@ def deployMulti(num):
     execute(loaddirServers)
     execute(loaddirClients,num)
 
-@roles("mixnodes", "clients", "providers","board")
+@roles("mixnodes", "clients", "providers")
 @parallel
 def cleanAll():
     with cd('loopix'):
@@ -523,6 +550,7 @@ def cleanSetup():
         run("rm -rf mixnode*")
         run("rm -rf provider*")
 
+
 @roles("mixnodes")
 @parallel
 def deployMixnode():
@@ -532,6 +560,7 @@ def deployMixnode():
         with cd('loopix'):
             run("python setup_mixnode.py 9999 %s Mix%s" % (str(env.host), N))
             get('publicMixnode.bin', 'publicMixnode-%s.bin'%env.host)
+
 
 @roles("clients")
 @parallel
@@ -549,6 +578,7 @@ def deployClient():
 @roles("clients")
 @parallel
 def deployMultiClient(num):
+    local('rm -f testMap.csv')
     for i in range(int(num)):
         dirc = 'client%s' % i
         with cd(dirc):
@@ -557,11 +587,14 @@ def deployMultiClient(num):
             with cd('loopix/loopix'):
                 N = hexlify(os.urandom(8))
                 providers = getProvidersNames()
-                print providers
                 prvName = random.choice(providers)
                 port = int(9999 - i)
+                print "CLIENT: Client%s" % N
                 run("python setup_client.py %d %s Client%s %s" % (port, str(env.host), N, prvName))
-                get('publicClient.bin', 'publicClient-%d-%s.bin'%(port, env.host))     
+                get('publicClient.bin', 'publicClient-%d-%s.bin'%(port, env.host))
+                with open('testMap.csv', 'a') as outfile:
+                    csvW = csv.writer(outfile)
+                    csvW.writerow(['Client%s'%N, dirc])
 
 
 @roles("providers")
@@ -573,6 +606,7 @@ def deployProvider():
         with cd("loopix"):
             run("python setup_provider.py 9999 %s Provider%s" % (str(env.host), N))
             get('publicProvider.bin', 'publicProvider-%s.bin'%env.host)
+
 
 @roles("providers")
 def checkHost():
@@ -605,20 +639,31 @@ def readFiles():
     dc.createProvidersTable(db, "Providers")
     dc.createMixnodesTable(db, "Mixnodes")
 
+    # 0 - 'start', 1 - 'middle', 2 - 'end'
+    group_id = 0
+    total_mixnode_number = len(mixnodes)
+    stop = int(total_mixnode_number / 3)
+    print "Group size: ", stop
+    counter = 0
     for f in os.listdir('.'):
         if f.endswith(".bin"):
             with open(f, 'rb') as fileName:
                 lines = petlib.pack.decode(fileName.read())
                 print lines
                 if lines[0] == "client":
+                    print "LINES: ", lines
                     insertQuery = "INSERT INTO Users VALUES(?, ?, ?, ?, ?, ?)"
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3], 
                         sqlite3.Binary(petlib.pack.encode(lines[4])),
                         lines[5]])
                 elif lines[0] == "mixnode":
-                    insertQuery = "INSERT INTO Mixnodes VALUES(?, ?, ?, ?, ?)"
+                    insertQuery = "INSERT INTO Mixnodes VALUES(?, ?, ?, ?, ?, ?)"
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3],
-                        sqlite3.Binary(petlib.pack.encode(lines[4]))])
+                        sqlite3.Binary(petlib.pack.encode(lines[4])), group_id])
+                    counter += 1
+                    if counter == stop:
+                        group_id += 1
+                        counter = 0
                 elif lines[0] == "provider":
                     insertQuery = "INSERT INTO Providers VALUES(?, ?, ?, ?, ?)"
                     c.execute(insertQuery, [None, lines[1], lines[2], lines[3],
@@ -627,12 +672,29 @@ def readFiles():
                     assert False
     db.commit()
 
+def checkDB_write():
+    import petlib.pack
+
+    sys.path += ["../loopix"]
+    import databaseConnect as dc
+    databaseName = "example.db"
+    db = dc.connectToDatabase(databaseName)
+    c = db.cursor()
+    c.execute("SELECT * FROM Mixnodes")
+    data = c.fetchall()
+    for i in data:
+        print i
+
+
+
+#========================================GET COMMENDS============================================
 @roles("providers")
 @parallel
 def getPerformanceProviders():
     with settings(warn_only=True):
         local("rm -f performanceProvider*.csv")
     get('loopix/loopix/performanceProvider.csv', 'performanceProvider-%s.csv'%env.host)
+
 
 @roles("mixnodes")
 @parallel
@@ -641,41 +703,34 @@ def getPerformanceMixnodes():
         local("rm -f performanceMixnode*.csv")
     get('loopix/loopix/performanceMixnode.csv', 'performanceMixnode-%s.csv'%env.host)
 
-@runs_once
+
+@parallel
 def getPerformance():
     execute(getPerformanceProviders)
     execute(getPerformanceMixnodes)
 
+
 @roles("mixnodes")
 @parallel
-def getTimeitMixnode():
+def getAnonimitySetMixnodes():
     with settings(warn_only=True):
-        local("rm -f timeitMixnode*.csv")
-    get('loopix/loopix/timeit.csv', 'timeitMixnode-%s.csv'%env.host)
+        local("rm -f anonSetMixnode*.csv")
+    get('loopix/loopix/anonSet.csv', 'anonSetMixnode-%s.csv'%env.host)
+
 
 @roles("providers")
 @parallel
-def getTimeitProvider():
+def getAnonimitySetProviders():
     with settings(warn_only=True):
-        local("rm -f timeitProvider*.csv")
-    get('loopix/loopix/timeit.csv', 'timeitProvider-%s.csv'%env.host)
+        local("rm -f anonSetProvider*.csv")
+    get('loopix/loopix/anonSet.csv', 'anonSetProvider-%s.csv'%env.host)
 
-def getTimeit():
-    execute(getTimeitMixnode)
-    execute(getTimeitProvider)
 
-def readTimeit():
-    data = []
-    for f in os.listdir('.'):
-        if f.startswith("timeit"):
-            print "File : %s" % f
-            with open(f, 'rb') as infile:
-                csvR = csv.reader(infile)
-                for row in csvR:
-                    data.append(float(row[0]))
-                plt.plot(data, 'b', marker='x')
-                plt.show()    
-            data = []
+@parallel
+def getAnonSet():
+    execute(getAnonimitySetMixnodes)
+    # execute(getAnonimitySetProviders)
+
 
 def readPerformance():
     import numpy 
@@ -687,6 +742,7 @@ def readPerformance():
     bProcMix = []
     bGoodMix = []
     mRecvMix = []
+    otherProc = []
     hbSent = []
     hbRec = []
     for f in os.listdir('.'):
@@ -700,12 +756,15 @@ def readPerformance():
                         bGoodProc.append(float(row[1]))
                         mReceived.append(float(row[2]))
                         payProc.append(float(row[3]))
+                        otherProc.append(float(row[4]))
                 print "NUMBER OF messages processed by datagramReceive function"
                 print bBefProc
                 print "NUMBER OF ROUT messages processed by datagramReceive function"
                 print bGoodProc
                 print "NUMBER OF MESSAGES received (counted at datagramReceive)"
                 print mReceived
+                print "NUMBER OF ACK MESSAGES"
+                print otherProc
 
                 plt.figure(1)
                 plt.subplot(211)
@@ -713,6 +772,7 @@ def readPerformance():
                 plt.plot(bGoodProc, 'r', marker='x', alpha=0.7)
                 plt.plot(payProc, 'g', marker='x')
                 plt.plot(mReceived, 'y', marker='x', alpha=0.3)
+                plt.plot(otherProc, color='orange', marker='o', alpha=0.7)
                 plt.grid(True)
                 plt.xlabel('t')
                 plt.ylabel('Number of messages processed')
@@ -729,6 +789,7 @@ def readPerformance():
                 mReceived = []
                 bGoodProc = []
                 payProc = []
+                otherProc = []
 
             except Exception, e:
                 print str(e)
@@ -745,24 +806,27 @@ def readPerformance():
                         payProc.append(float(row[3]))
                         hbSent.append(float(row[4]))
                         hbRec.append(float(row[5]))
+                        otherProc.append(float(row[6]))
                 print "NUMBER OF messages processed by datagramReceive function in mixnode"
                 print bProcMix
                 print "NUMBER OF ROUT messages processed by datagramReceive function in mixnode"
                 print bGoodMix
                 print "NUMBER OF MESSAGES received (counted at datagramReceive) in mixnode"
                 print mRecvMix
+                print "NUMBER OF ACK MESSAGES"
+                print otherProc
 
                 plt.figure(1)
                 plt.title("Mixnode")
                 plt.subplot(211)
                 plt.plot(bProcMix, 'b', marker='x')
-                plt.plot(bGoodMix, 'r', marker='x', alpha=0.7)
+                plt.plot(bGoodMix, 'r', marker='x')
                 plt.plot(payProc, 'g', marker='x')
-                plt.plot(mRecvMix, 'y', marker='x', alpha=0.3)
+                plt.plot(mRecvMix, 'y', marker='x')
+                plt.plot(otherProc, color='orange', marker='o', alpha=0.7)
                 plt.grid(True)
                 plt.xlabel('t')
                 plt.ylabel('Number of messages processed (mix)')
-                #plt.show()
 
                 plt.subplot(212)
                 plt.plot(mRecvMix, marker='x')
@@ -771,18 +835,13 @@ def readPerformance():
                 plt.ylabel("Number of messages received (mix)")
                 plt.show()
 
-                plt.title("Heartbeats")
-                plt.plot(hbSent, 'b', marker='x')
-                plt.plot(hbRec, 'r', marker='x')
-                plt.grid(True)
-                plt.show()
-
                 bProcMix = []
                 bGoodMix = []
                 mRecvMix = []
                 payProc = []
                 hbSent = []
                 hbRec = []
+                otherProc = []
 
             except Exception, e:
                 print str(e)
@@ -980,38 +1039,61 @@ def experiment_numClients(num):
     print "Last called."
 
 
-@roles("providers", "clients")
+@roles("providers", "clients", "mixnodes")
 @parallel
-def run_tcpdump():
+def run_tcpdump(time):
     with settings(warn_only=True, remote_interrupt=True):
+        run('rm -f tcpOut.pcap')
         assert(env.remote_interrupt)
-        sudo('tcpdump udp -G 120 > tcpOut')
+        # --snapshot-length=1000
+        sudo('timeout %ss tcpdump udp -w tcpOut.pcap' % str(time))
 
-def rdpcap_and_close(filename, count=-1):
-    """Read a pcap file and return a packet list
-    count: read only <count> packets"""
-    pcap_reader = PcapReader(filename)
-    packets = pcap_reader.read_all(count=count)
-    pcap_reader.close()
-    return packets
+@roles("mixnodes")
+@parallel
+def run_tshark(time):
+    #sudo('yes | dpkg-reconfigure wireshark-common')
+    #sudo('yes | gpasswd -a $USER wireshark')
+    with settings(warn_only=True, remote_interrupt=True):
+        run('rm -f tcpOut.pcap')
+        assert(env.remote_interrupt)
+        run('touch tcpOut.pcap')
+        sudo('chmod o=rw tcpOut.pcap')
+        # sudo('tshark -n -f udp -e frame.number -e frame.time -e ip.src -e ip.dst -e udp.srcport -e udp.dstport -e udp.port -e udp.length -T fields -a duration:%s -w tcpOut.pcap' % str(time))
+        sudo('tshark -n -f udp -e frame.time -e frame.time_delta -e ip.src -e ip.dst -e udp.srcport -e udp.dstport -e udp.port -e udp.length -T fields -a duration:%s -w tcpOut.pcap' % str(time))
 
-@runs_once
-def read_tcpdump(filename, flag=None):
-    pkts = rdpcap_and_close(filename)
+@roles("providers")
+@parallel
+def get_tcpdumpOutput_provider():
+    with settings(warn_only=True):
+        local('rm -f tcpOut_provider*')
+    get('tcpOut.pcap', 'tcpOut_provider_%s.pcap' % env.host)
 
-    time_zero = pkts[0].time
-    for p in pkts:
-        time = float(p.time - time_zero)
-        packet_size = len(p) #size of packet
-        payload_size = len(p.payload) #size of payload
-        print p
-        # if UDP in p:
-        #     sequence_number = p.seq
-        #     acknowledge_number = p.ack
-        #     ip_src = p[IP].src
-        #     ip_dst = p[IP].dst
-        #     tcp_sport = p[TCP].sport
-        #     tcp_dport = p[TCP].dport
+@roles("clients")
+@parallel
+def get_tcpdumpOutput_client():
+    with settings(warn_only=True):
+        local('rm -f tcpOut_client*')
+    get('tcpOut.pcap', 'tcpOut_client_%s.pcap' % env.host)
+
+@roles("mixnodes")
+@parallel
+def get_tcpdumpOutput_mixnode():
+    with settings(warn_only=True):
+        local('rm -f tcpOut_mixnode*')
+    get('tcpOut.pcap', 'tcpOut_mixnode_%s.pcap' % env.host)
+
+@parallel
+def get_tcpdumpOutput():
+    execute(get_tcpdumpOutput_provider)
+    execute(get_tcpdumpOutput_client)
+    execute(get_tcpdumpOutput_mixnode)
+
+
+def read_tcpOutputs():
+    for f in os.listdir('.'):
+        if f.startswith('tcpOut'):
+            print "File: ", f
+            read_tcpdump(f)
 
 @roles("clients", "providers")
 @parallel
@@ -1020,79 +1102,501 @@ def interruptProcess():
         sudo('kill -2 $(ps -e | pgrep tcpdump)')
 
 
-@roles("clients", "providers")
+@roles("providers", "clients", "mixnodes")
 @parallel
-def get_tcpOutput():
-    with settings(warn_only=True):
-        local('rm -f tcpOut*')
-    get('tcpOut', 'tcpOut2')
+def take_ip():
+    output = run('curl -s http://whatismijnip.nl')
+    print "RESULT: ", output
+    data = output.split(' ')
+    print data[:-1]
 
 
+def run_multiple_clients(subpath, numClients):
+
+    for i in range(5, 101, 5):
+        execute(run_clients, i)
+        time.sleep(1805) 
+        execute(getPerformance)
+        local("mkdir performance_%d_%s" % (i, subpath))
+        local("cp performanceProvider*.csv performance_%d_%s" % (i, subpath))
+        local("cp performanceMixnode*.csv performance_%d_%s" % (i, subpath))
+        execute(killMultiAll, i)
+        execute(reset_config, int(numClients))
+
+
+def update_config_file(new_rate_payload, new_rate_loops, new_rate_drop, new_mix_loop, delay):
+    configFile = '../loopix/config.json'
+
+    with open(configFile) as infile:
+        _PARAMS = json.load(infile)
+
+        _PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"] = str(new_rate_payload)
+        _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = str(new_rate_loops)
+        _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = str(new_rate_drop)
+        _PARAMS["parametersClients"]["EXP_PARAMS_DELAY"] = str(delay)
+
+        _PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"] = str(new_rate_drop)
+    #local('rm -f %s' % configFile)
+
+    with open(configFile, 'w') as f:
+        json.dump(_PARAMS, f, indent=4)
+
+@roles('mixnodes', 'providers')
+def upload_config_file_servers():
+    put('../loopix/config.json', 'loopix/loopix/config.json')
+
+@roles('clients')
+@parallel
+def upload_config_file_clients(numClients):
+    for i in range(int(numClients)):
+        put('../loopix/config.json', 'client%d/loopix/loopix/config.json'%i)
 
 @runs_once
 def exp_latency_vs_numClients():
-    execute(startMultiAll, 5, "True")
-    time.sleep(5405)
-    execute(getLatency)
-    local("mkdir latency_5")
-    local("cp latency_provider*.csv latency_5")
-    local("cp latency_mixnode*.csv latency_5")
-    execute(killMultiAll, 5)
 
-    print "=============================================="
-
-    execute(startMultiAll, 10, "True")
-    time.sleep(5405)
-    execute(getLatency)
-    local("mkdir latency_10")
-    local("cp latency_provider*.csv latency_10")
-    local("cp latency_mixnode*.csv latency_10")
-    execute(killMultiAll, 10)
-
-    print "=============================================="
+    for i in range(10, 81, 10):
+        execute(startMultiAll, i, "True")
+        time.sleep(1805)
+        execute(getLatency)
+        local("mkdir latency_%d" % i)
+        local("cp latency_provider*.csv latency_%d" % i)
+        local("cp latency_mixnode*.csv latency_%d" % i)
+        execute(killMultiAll, i)
+        print "=============================================="
 
 
-    execute(startMultiAll, 15, "True")
-    time.sleep(5405)
-    execute(getLatency)
-    local("mkdir latency_15")
-    local("cp latency_provider*.csv latency_15")
-    local("cp latency_mixnode*.csv latency_15")
-    execute(killMultiAll, 15)
+def experiment_increasing_payload(numClients):
+    execute(reset_config, int(numClients))
+    execute(update_git, int(numClients), "develop")
 
-    print "=============================================="
+    configFile = '../loopix/config.json'
+    with open(configFile) as infile:
+        _PARAMS = json.load(infile)
+        old_rate = float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"])
 
-    execute(startMultiAll, 20, "True")
-    time.sleep(5405)
-    execute(getLatency)
-    local("mkdir latency_20")
-    local("cp latency_provider*.csv latency_20")
-    local("cp latency_mixnode*.csv latency_20")
-    execute(killMultiAll, 20)
+    C = 2.0
 
-    print "=============================================="
+    for i in range(40):
+        if i > 0:
+            new_rate = float(60.0/((60.0/old_rate) + C))
 
-    execute(startMultiAll, 25, "True")
-    time.sleep(5405)
-    execute(getLatency)
-    local("mkdir latency_25")
-    local("cp latency_provider*.csv latency_25")
-    local("cp latency_mixnode*.csv latency_25")
-    execute(killMultiAll, 25)
+            execute(update_config_file, new_rate)
+            execute(upload_config_file, int(numClients))
+            old_rate = new_rate
 
-    print "=============================================="
-
-    execute(startMultiAll, 30, "True")
-    time.sleep(5405)
-    execute(getLatency)
-    local("mkdir latency_30")
-    local("cp latency_provider*.csv latency_30")
-    local("cp latency_mixnode*.csv latency_30")
-    execute(killMultiAll, 30)
-
-    print "=============================================="        
+        execute(start_mixnode, "True")
+        execute(start_provider, "True")
+        execute(run_clients, int(numClients), "True")
+        time.sleep(1805)
+        execute(getPerformance)
+        execute(getMessagesSent, int(numClients))
+        execute(getLatency)
+        execute(getAnonSet)
+        local('mkdir performance%d_%d' % (int(numClients), i))
+        local("cp performanceProvider*.csv performance%d_%d" % (int(numClients), i))
+        local("cp performanceMixnode*.csv performance%d_%d" % (int(numClients), i))
+        local("cp messagesSent*.csv performance%d_%d" % (int(numClients), i))
+        local("cp latency_provider*.csv performance%d_%d" % (int(numClients), i))
+        local("cp latency_mixnode*.csv performance%d_%d" % (int(numClients), i))
+        local("cp anonSetMixnode-*.csv performance%d_%d" % (int(numClients), i))
+        local("cp anonSetProvider-*.csv performance%d_%d" % (int(numClients), i))    
+        execute(killMultiAll, int(numClients))
+        execute(reset_config, int(numClients))
 
 
+@parallel
+def experiment_anonimity_set(numClients, branch):
+    execute(reset_config, int(numClients))
+    execute(update_git, int(numClients), branch)
+
+    configFile = '../loopix/config.json'
+    with open(configFile) as infile:
+        _PARAMS = json.load(infile)
+        old_rate = float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"])
+
+    C = 2.0
+    for i in range(25):
+        if i > 0:
+            new_rate = float(60.0/((60.0/old_rate) + C))
+
+            execute(update_config_file, new_rate)
+            execute(upload_config_file, int(numClients))
+            old_rate = new_rate
+
+        for j in range(25, 101, 25):
+            execute(start_mixnode, "True")
+            execute(start_provider, "True")
+            execute(run_clients, j)
+            time.sleep(1805)
+            execute(getPerformance)
+            execute(getMessagesSent, j)
+            execute(getLatency)
+            execute(getAnonSet)
+            local("mkdir anonimitySet%d_%d" % (j, i))
+            local("cp performanceProvider*.csv anonimitySet%d_%d" % (j, i))
+            local("cp performanceMixnode*.csv anonimitySet%d_%d" % (j, i))
+            local("cp messagesSent*.csv anonimitySet%d_%d" % (j, i))
+            #local("cp latency_provider*.csv anonimitySet%d_%d" % (j, i))
+            #local("cp latency_mixnode*.csv anonimitySet%d_%d" % (j, i))
+            local("cp anonSetMixnode-*.csv anonimitySet%d_%d" % (j, i))
+            local("cp anonSetProvider-*.csv anonimitySet%d_%d" % (j, i))
+            execute(killMultiAll, j)
+            execute(reset_config, int(numClients))
+
+@roles("clients")
+@parallel
+def run_clients(num, branch):
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        with cd(dirc+'/loopix/loopix'):
+            run("git checkout %s" % branch)
+            run('twistd -y run_client.py')
+            pid = run('cat twistd.pid')
+            print "Run Client on %s with PID %s" % (env.host, pid) 
+
+@roles("mixnodes", "providers")
+def reset_config_servers(branch):
+    with cd("loopix/loopix"):
+        run("git checkout %s" % branch)
+        run('git reset --hard')
+
+@roles("clients")
+@parallel
+def reset_config_clients(num, branch):
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        with cd(dirc+'/loopix/loopix'):
+            #sudo('rm -f config.json')
+            run("git checkout %s" % branch)
+            run('git reset --hard')
+
+
+@roles("mixnodes", "providers")
+@parallel
+def update_git_servers(branch):
+    with cd("loopix/loopix"):
+        run("git checkout %s" % branch)
+        run("git pull")
+    
+@roles("clients")
+@parallel
+def update_git_clients(num, branch):
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        with cd(dirc+'/loopix/loopix'):
+            run("git checkout %s" % branch)
+            run('git pull')
+    
+def update_git(numClients, branch):
+    execute(update_git_servers, branch)
+    execute(update_git_clients, int(numClients), branch)
+
+
+@parallel
+def experiment_tcpDump(num):
+    execute(startMultiAll, int(num), "True")
+    time.sleep(60)
+    execute(run_tcpdump, 120)
+    execute(get_tcpdumpOutput)
+    execute(getAnonSet)
+    execute(killMultiAll, int(num))
+
+@parallel
+def measureAnonSet(lambda_p, lambda_l, lambda_d, lambda_m, delay, num, flagId=1):
+    configFile = '../loopix/config.json'
+
+    execute(reset_config_clients, int(num), "develop")
+    execute(reset_config_servers, "develop")
+    
+    execute(update_git, int(num), "develop")
+    execute(update_config_file, lambda_p, lambda_l, lambda_d, lambda_m, delay)
+    execute(upload_config_file_clients, int(num))
+    execute(upload_config_file_servers)
+
+    execute(start_mixnode, "True")
+    execute(start_provider, "True")
+    execute(run_clients, int(num), "True")
+    time.sleep(600)
+    execute(run_tcpdump, 300)
+    execute(get_tcpdumpOutput)
+    execute(getAnonSet)
+    local("mkdir measurments%d_%d" % (int(num), flagId))
+    local("cp tcpOut_provider*.pcap measurments%d_%d" % (int(num), flagId))
+    local("cp tcpOut_mixnode*.pcap measurments%d_%d" % (int(num), flagId))
+    local("cp tcpOut_client*.pcap measurments%d_%d" % (int(num), flagId))
+    local("cp anonSetMixnode-*.csv measurments%d_%d" % (int(num), flagId))
+    local("cp anonSetProvider-*.csv measurments%d_%d" % (int(num), flagId))
+    execute(killMultiAll, int(num))
+    execute(reset_config_clients, int(num), "develop")
+    execute(reset_config_servers, "develop")
+
+    
+@roles("mixnodes")
+@parallel
+def start_sphinx_mixnode():
+    sudo('yes | pip install sphinxmix')
+    with cd("loopix/loopix"):
+        run("git fetch")
+        run("git checkout sphinx")
+        run("git pull")
+        run("twistd -y run_mixnode.py")
+        pid = run("cat twistd.pid")
+        print "Run on %s with PID %s" % (env.host, pid)
+
+@roles("providers")
+@parallel
+def start_sphinx_provider():
+    sudo('yes | pip install sphinxmix')
+    with cd("loopix/loopix"):
+        run("git fetch")
+        run("git checkout sphinx")
+        run("git pull")
+        run("twistd -y run_provider.py")
+        pid = run("cat twistd.pid")
+        print "Run on %s with PID %s" % (env.host, pid)
+
+@roles("clients")
+@parallel
+def start_sphinx_client(num):
+    sudo('yes | pip install sphinxmix')
+    for i in range(int(num)):
+        dirc = 'client%s' % i
+        with cd(dirc+'/loopix/loopix'):
+            run("git fetch")
+            run("git checkout sphinx")
+            run('git pull')
+            run('twistd -y run_client.py')
+            pid = run('cat twistd.pid')
+            print "Run Client on %s with PID %s" % (env.host, pid) 
+
+@parallel    
+def test_sphinx_packet(num):
+    execute(start_sphinx_mixnode)
+    execute(start_sphinx_provider)
+    execute(start_sphinx_client, int(num))
+    #execute(run_tshark,120)
+    #time.sleep(200)
+    #execute(get_tcpdumpOutput_mixnode)
+    #time.sleep(900)
+    #execute(getAnonSet)
+    #execute(getPerformance)
+
+@roles('mixnodes')
+@parallel
+def run_mixnode(branch):
+    with cd('loopix/loopix'):
+        # run("git checkout %s" % branch)
+        run("twistd -y run_mixnode.py")
+        pid = run("cat twistd.pid")
+        print "Run on %s with PID %s" % (env.host, pid)
+
+@roles('providers')
+@parallel
+def run_provider(branch):
+    with cd('loopix/loopix'):
+        # run("git checkout %s" % branch)
+        run("twistd -y run_provider.py")
+        pid = run("cat twistd.pid")
+        print "Run on %s with PID %s" % (env.host, pid)
+
+
+
+
+# ==============================================================================
+
+
+@runs_once
+def exp_Loopix_sec_params(mixnodes, providers, clients):
+    execute(ec2start_mixnode_instance, int(mixnodes))
+    execute(ec2start_provider_instance, int(providers))
+    execute(ec2start_client_instance, int(clients))
+
+@runs_once
+def ec2stop_experiment():
+    execute(ec2stopAll)
+
+
+@parallel
+def exp_setup(client):
+    execute(setupServers)
+    execute(setupClients, int(client))
+
+@runs_once
+def exp_deploy(clients):
+    with settings(warn_only=True):
+        local("rm *.bin *.bi2 example.db")
+    execute(deployMixnode)
+    execute(deployProvider)
+    execute(storeProvidersNames)
+    execute(deployMultiClient,int(clients))
+    execute(readFiles)
+    execute(loaddirServers)
+    execute(loaddirClients,int(clients))
+
+def read_in_mapping():
+    mapping = {}
+    with open('testMap.csv', 'r') as infile:
+        csvR = csv.reader(infile)
+        for row in csvR:
+            mapping[row[0]] = row[1]
+    print mapping
+    return mapping
+
+def run_client_id(clientId):
+    mapping = read_in_mapping()
+    dirc = mapping[clientId]
+    print 'Client under directory ', dirc
+    with cd(dirc+'/loopix/loopix'):
+            run("git checkout %s" % branch)
+            run('git pull')
+            run('twistd -y run_client.py')
+            pid = run('cat twistd.pid')
+            print "Run Client on %s with PID %s" % (env.host, pid)
+
+
+@roles("clients")
+@parallel
+def upload_to_dirc(fileName, dirc):
+    # put('../loopix/%s' % fileName, '%s/loopix/loopix/%s'%(dirc, fileName))
+    put('../loopix/config.json', '%s/loopix/loopix/config.json'%dirc)
+
+
+@roles("clients")
+@parallel
+def run_client_id(dirc, branch):
+    with cd(dirc+'/loopix/loopix'):
+        run("git checkout %s" % branch)
+        run('twistd -y run_client.py')
+        pid = run('cat twistd.pid')
+        print "Run Client on %s with PID %s" % (env.host, pid) 
+
+# @roles("clients")
+# @parallel
+# def run_clients(num, branch):
+#     for i in range(int(num)):
+#         dirc = 'client%s' % i
+#         with cd(dirc+'/loopix/loopix'):
+#             run("git checkout %s" % branch)
+#             run('twistd -y run_client.py')
+#             pid = run('cat twistd.pid')
+#             print "Run Client on %s with PID %s" % (env.host, pid) 
+
+# ================================================================================================ 
+@parallel
+def exp_test(clients, loopsOn=False, dropOn = False, loopClientParam=None, dropClientParam=None, loopMixParam=None):
+    
+    configFile = '../loopix/config.json'
+
+    execute(reset_config_clients, int(clients), 'sphinx')
+    execute(reset_config_servers, 'sphinx')
+    execute(update_git_clients, int(clients), 'sphinx')
+    execute(update_git_servers, 'sphinx')
+    
+    mapping = read_in_mapping()
+
+    # ---------------------------SETTING UP MIXNODES AND PROVIDERS--------------------
+    if not loopsOn:
+        with open(configFile) as infile:
+            _PARAMS = json.load(infile)
+            _PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"] = "None"
+        with open(configFile, 'w') as outfile:
+            json.dump(_PARAMS, outfile, indent=4)
+    else:
+        with open(configFile) as infile:
+            _PARAMS = json.load(infile)
+            _PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"] = str(loopMixParam)
+        with open(configFile, 'w') as outfile:
+            json.dump(_PARAMS, outfile, indent=4)
+
+    # uploading config file for servers (mixnodes and providers)
+    execute(upload_config_file_servers)
+
+    # ---------------------------------------------------------------------------------
+    data = read_from_db('example.db', 'Users')
+    tS, tR = random.sample(data, 2)
+    print "SENDER: ", tS
+    print "RECEIVER: ", tR
+
+    with open(configFile) as infile:
+        _PARAMS = json.load(infile)
+        _PARAMS["parametersClients"]["TARGETUSER"] = "True"
+        _PARAMS["parametersClients"]["TESTMODE"] = "True"
+        _PARAMS["parametersClients"]["FAKE_MESSAGING"] = "False"
+        if not loopsOn:
+            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = "None"
+        else:
+            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = str(loopClientParam)
+        if not dropOn:
+            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = "None"
+        else:
+            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = str(dropClientParam)
+    with open(configFile, 'w') as f:
+        json.dump(_PARAMS, f, indent=4)
+
+    senderId = tS[1]
+    dircS = mapping[senderId]
+    execute(upload_to_dirc, 'configFile.json', dircS)
+
+    # setting up usuall clients
+    with open(configFile) as infile:
+        _PARAMS = json.load(infile)
+        _PARAMS["parametersClients"]["TARGETUSER"] = "False"
+        _PARAMS["parametersClients"]["TESTMODE"] = "True"
+        _PARAMS["parametersClients"]["FAKE_MESSAGING"] = "False"
+        if not loopsOn:
+            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = "None"
+        if not dropOn:
+            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = "None"
+    with open(configFile, 'w') as f:
+        json.dump(_PARAMS, f, indent=4)
+
+    receiverId = tR[1]
+    dircR = mapping[receiverId]
+    execute(upload_to_dirc, 'configFile.json', dircR)
+
+    execute(run_mixnode, 'sphinx')
+    execute(run_provider, 'sphinx')
+    execute(run_client_id, dircS, 'sphinx')
+    execute(run_client_id, dircR, 'sphinx')
+
+    print "Sender - Receiver", (dircS, dircR)
+    execute(run_tshark, 300)
+    time.sleep(400)
+    execute(get_tcpdumpOutput_mixnode)
+
+    execute(killMultiAll, int(clients))
+    # reset changes to avoid git commit
+    execute(reset_config_clients, int(clients), 'sphinx')
+    execute(reset_config_servers, 'sphinx')
+    execute(update_git_clients, int(clients), 'sphinx')
+    execute(update_git_servers, 'sphinx')
+
+
+@parallel
+def exp_run(case, population=10, loopsOn=False):
+    if case == '1':
+        execute(exp_unobservability, 1, 1, loopsOn)
+    if case == '2':
+        execute(exp_unobservability, int(population), 1, loopsOn)
+
+
+@runs_once
+def read_from_db(databaseName, tableName):
+    sys.path += ["../loopix"]
+    import databaseConnect as dc
+
+    db = dc.connectToDatabase(databaseName)
+    c = db.cursor()
+    c.execute("SELECT * FROM %s" % tableName)
+    data = c.fetchall()
+    return data
+
+def take_random_client():
+    data = read_from_db('example.db', 'Users')
+    for d in data:
+        print d
+    c = random.choice(data)
+    return c
 
 
 
