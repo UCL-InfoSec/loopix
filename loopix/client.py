@@ -38,7 +38,7 @@ with open('config.json') as infile:
 
 TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
-FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
+# FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
 MEASURE_TIME = float(_PARAMS["parametersClients"]["MEASURE_TIME"])
 SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersClients"]["SAVE_MEASURMENTS_TIME"])
 
@@ -98,8 +98,14 @@ class Client(DatagramProtocol):
             self.EXP_PARAMS_COVER = None
 
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
+
+        # TEST MODE - 
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
+        # TARGET USER - This is set only for simulations; means that this users is sending to 
+        # one selected recipient
         self.TARGETUSER = True if _PARAMS["parametersClients"]["TARGETUSER"] == "True" else False
+        # TARGET RECEIPIENT - used only in TARGET USER MODE - it is the recipient of each real message
+        self.TARGETRECIPIENT = _PARAMS["parametersClients"]["TARGETRECIPIENT"]
 
         if _PARAMS["parametersClients"]["TURN_ON_SENDING"] == "False":
             self.TURN_ON_SENDING = False
@@ -118,7 +124,7 @@ class Client(DatagramProtocol):
 
     def startProtocol(self):
         print "[%s] > Start Protocol" % self.name
-        print "TEST USER MODE: ", self.TARGETUSER
+        print "TARGET USER MODE: ", self.TARGETUSER
 
         if self.PATH_LENGTH < 3:
             print "[%s] > WARNING: Path length should be at least 3." % self.name
@@ -438,7 +444,6 @@ class Client(DatagramProtocol):
         try:
             randomReceiver = self.selectRandomReceiver()
             randomMessage = sf.generateRandomNoise(NOISE_LENGTH)
-            randomBounce = sf.generateRandomNoise(NOISE_LENGTH)
             if self.TESTMODE:
                 header, body = self.makeSphinxPacket(randomReceiver, mixes, randomMessage, dropFlag=True, typeFlag = 'D')
             else:
@@ -580,7 +585,9 @@ class Client(DatagramProtocol):
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
         if self.TARGETUSER:
-            r = group[0]
+            r = self.takeUser(self.TARGETRECIPIENT)
+            if not r:
+                raise Exception('[%s] > Could not find the given user' % self.name)
             print "Client: %s with provider %s" % (r.name, r.provider.name)
         else:
             r = random.choice(group)
@@ -597,7 +604,6 @@ class Client(DatagramProtocol):
         self.testPayload = set()
         #friendsGroup = random.sample(self.usersPubs, 5)
         friendsGroup = self.usersPubs
-        randomFriend = random.choice(self.usersPubs)
 
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
@@ -613,7 +619,9 @@ class Client(DatagramProtocol):
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
             if self.TARGETUSER:
-                r = randomFriend
+                r = self.takeUser(self.TARGETRECIPIENT)
+                if not r:
+                    raise Exception('[%s] > Could not find the given user' % self.name)
                 print "Client: %s with provider %s" % (r.name, r.provider.name)
             else:
                 r = random.choice(self.usersPubs)
@@ -633,6 +641,13 @@ class Client(DatagramProtocol):
 
     def setExpParamsPayload(self, newParameter):
         self.EXP_PARAMS_PAYLOAD = (newParameter, None)
+
+    def takeUser(self, name):
+        user = None
+        for i in self.usersPubs:
+            if i.name == name:
+                user = i
+        return user
 
     def saveInDatabase(self, database):
         """ Function saves clients public information in a database.
