@@ -1,7 +1,8 @@
 {
     "parametersClients": {
-        "NOISE_LENGTH": "1000", 
+        "NOISE_LENGTH": "500", 
         "C": "2", 
+        "TARGETRECIPIENT": "", 
         "EXP_PARAMS_COVER": "None", 
         "PATH_LENGTH": "3", 
         "TARGETUSER": "False", 
@@ -13,8 +14,7 @@
         "TURN_ON_SENDING": "True", 
         "TIME_PULL": "10", 
         "EXP_PARAMS_PAYLOAD": "1", 
-        "SAVE_MEASURMENTS_TIME": "360",
-        "TARGETRECIPIENT" : ""
+        "SAVE_MEASURMENTS_TIME": "360"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
