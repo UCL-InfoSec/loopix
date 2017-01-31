@@ -2,7 +2,7 @@
     "parametersClients": {
         "NOISE_LENGTH": "500", 
         "C": "2", 
-        "TARGETRECIPIENT": "", 
+        "TARGETRECIPIENT": "Clientc48508b358f44560", 
         "EXP_PARAMS_COVER": "None", 
         "PATH_LENGTH": "3", 
         "TARGETUSER": "False", 
@@ -11,7 +11,7 @@
         "FAKE_MESSAGING": "False", 
         "MEASURE_TIME": "60", 
         "TESTMODE": "True", 
-        "TURN_ON_SENDING": "True", 
+        "TURN_ON_SENDING": "False", 
         "TIME_PULL": "10", 
         "EXP_PARAMS_PAYLOAD": "1", 
         "SAVE_MEASURMENTS_TIME": "360"
@@ -24,11 +24,8 @@
         "EXP_PARAMS_LOOPS": "None", 
         "TIME_ACK": "1600", 
         "EXP_PARAMS_DELAY": "0.05", 
-        "TARGETUSER": "True", 
-        "STRATIFIED": "True", 
         "TIME_FLUSH": "0.01", 
         "MAX_DELAY_TIME": "-432000", 
-        "SAVE_MEASURMENTS_TIME": "360", 
-        "TIME_CLEAN": "1600"
+        "SAVE_MEASURMENTS_TIME": "360"
     }
 }
