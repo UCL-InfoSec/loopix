@@ -187,7 +187,7 @@ class MixNode(DatagramProtocol):
 
 	def do_ROUT(self, data, (host, port)):
 		try:
-			ts = time.time()
+			# ts = time.time()
 			peeledData = self.process_sphinx_packet(data)
 		except Exception, e:
 			print "ERROR - during message decryption: ", str(e)
@@ -216,8 +216,8 @@ class MixNode(DatagramProtocol):
 					raise Exception("Destionation did not match")
 			else:
 				print 'Flag not recognized' 
-			tp = time.time() - ts
-			print "Sphinx process: ", tp
+			# tp = time.time() - ts
+			# print "Sphinx process: ", tp
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		if delay > 0:

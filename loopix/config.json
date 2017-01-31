@@ -2,7 +2,7 @@
     "parametersClients": {
         "NOISE_LENGTH": "500", 
         "C": "2", 
-        "TARGETRECIPIENT": "Clientc48508b358f44560", 
+        "TARGETRECIPIENT": "None", 
         "EXP_PARAMS_COVER": "None", 
         "PATH_LENGTH": "3", 
         "TARGETUSER": "False", 
@@ -13,12 +13,12 @@
         "TESTMODE": "True", 
         "TURN_ON_SENDING": "False", 
         "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "1", 
+        "EXP_PARAMS_PAYLOAD": "6", 
         "SAVE_MEASURMENTS_TIME": "360"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
-        "TAGED_HEARTBEATS": "True", 
+        "TAGED_HEARTBEATS": "False", 
         "EXP_PARAMS_COVER": "None", 
         "MEASURE_TIME": "60", 
         "EXP_PARAMS_LOOPS": "None", 

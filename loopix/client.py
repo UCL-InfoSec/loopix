@@ -348,11 +348,10 @@ class Client(DatagramProtocol):
             if msg.startswith("HT"):
                 print "[%s] > Heartbeat looped back" % self.name
             else:
-                print "[%s] > New message unpacked: " % self.name
                 if msg.startswith("TESTMESSAGE"):
-                    print "[%s] > Test message received" % self.name
+                    print "[%s] > This is a test message received" % self.name
                 else:
-                    print "[%s] > Other type of message received" % (self.name)
+                    print "[%s] > New message unpacked." % (self.name)
         except Exception, e:
             print "[%s] > ERROR: Message reading error: %s" % (self.name, str(e))
             print data
@@ -512,7 +511,6 @@ class Client(DatagramProtocol):
             if rounting[0] == Dest_flag:
                 dest, message = receive_forward(self.params, body)
                 if dest[-1] == self.name:
-                    print "[%s] > Message has been read." % self.name
                     return message
                 else:
                     raise Exception("Destination did not match")
@@ -553,9 +551,6 @@ class Client(DatagramProtocol):
                 exitMix = random.choice(exits)
 
                 randomPath = [entryMix, middleMix, exitMix]
-
-            print "[%s] > My selected path: " % self.name
-            print randomPath
             return randomPath
         except Exception, e:
             print "[%s] > ERROR: During path generation: %s" % (self.name, str(e))

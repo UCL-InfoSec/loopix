@@ -177,11 +177,13 @@ class Provider(MixNode):
                     else:
                         if next_name in self.clientList:
                             self.saveInStorage(next_name, petlib.pack.encode((header, body)))
+                            print "[%s] > Message saved in storage." % self.name   
                         else:
                             if typeFlag == 'P':
                                 self.pProcessed += 1
                             try:
                                 reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
+                                print "[%s] > Message forwarded." % self.name
                             except Exception, e:
                                 print "ERROR during message processing", str(e)
                 elif routing[0] == Dest_flag:
