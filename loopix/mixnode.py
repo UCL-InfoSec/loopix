@@ -33,7 +33,6 @@ with open('config.json') as infile:
 	_PARAMS = json.load(infile) 
 
 TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
-TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
 MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
 NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
 MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
