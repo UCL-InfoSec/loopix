@@ -363,7 +363,10 @@ class Client(DatagramProtocol):
 
         nodes_routing = []
         for i in range(len(path)):
-            delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
+            if float(self.EXP_PARAMS_DELAY[0]) == 0.0:
+                delay = 0.0
+            else:
+                delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
             nodes_routing.append(Nenc([(path[i].host, path[i].port), dropFlag, typeFlag, delay, path[i].name]))
 
         # Destination of the message

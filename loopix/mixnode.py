@@ -268,7 +268,10 @@ class MixNode(DatagramProtocol):
 		nodes_routing = []
 
 		for i in range(len(path)):
-			delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
+			if float(self.EXP_PARAMS_DELAY[0]) == 0.0:
+				delay = 0.0
+			else:
+				delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
 			nodes_routing.append(Nenc([(path[i].host, path[i].port), False, typeFlag, delay, path[i].name]))
 
 		dest = (self.host, self.port, self.name)
