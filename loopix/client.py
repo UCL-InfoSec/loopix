@@ -585,7 +585,7 @@ class Client(DatagramProtocol):
         if not r:
             raise Exception('[%s] > Could not find the given user' % self.name)
         
-        (header, body) = self.makeSphinxPacket(receiver, mixpath, msgF + timestamp, dropFlag=False, typeFlag = 'P')            
+        (header, body) = self.makeSphinxPacket(r, mixpath, msgF + timestamp, dropFlag=False, typeFlag = 'P')            
         self.buffer.append((("ROUT" + petlib.pack.encode((header, body))), (self.provider.host, self.provider.port)))
 
         interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
