@@ -38,7 +38,6 @@ with open('config.json') as infile:
 
 TIME_PULL = float(_PARAMS["parametersClients"]["TIME_PULL"])
 NOISE_LENGTH = float(_PARAMS["parametersClients"]["NOISE_LENGTH"])
-# FAKE_MESSAGING = True if _PARAMS["parametersClients"]["FAKE_MESSAGING"] == "True" else False
 MEASURE_TIME = float(_PARAMS["parametersClients"]["MEASURE_TIME"])
 SAVE_MEASURMENTS_TIME = float(_PARAMS["parametersClients"]["SAVE_MEASURMENTS_TIME"])
 
@@ -78,8 +77,6 @@ class Client(DatagramProtocol):
         self.mixnet = []
         self.usersPubs = []
 
-        self.sentElements = set()
-        self.heartbeatsSent = set()
         self.buffer = []
 
 
@@ -99,13 +96,12 @@ class Client(DatagramProtocol):
 
         self.EXP_PARAMS_DELAY = (float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
 
-        # TEST MODE - 
+        # TEST MODE - Each message in this mode is labeled with its type
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
         # TARGET USER - This is set only for simulations; means that this users is sending to 
         # one selected recipient
         self.TARGETUSER = True if _PARAMS["parametersClients"]["TARGETUSER"] == "True" else False
-        # TARGET RECEIPIENT - used only in TARGET USER MODE - it is the recipient of each real message
-        self.TARGETRECIPIENT = _PARAMS["parametersClients"]["TARGETRECIPIENT"]
+
 
         if _PARAMS["parametersClients"]["TURN_ON_SENDING"] == "False":
             self.TURN_ON_SENDING = False
@@ -135,6 +131,7 @@ class Client(DatagramProtocol):
         self.sendPing()
 
         self.readInData(self.DATABASE)
+
         reactor.callLater(100.0, self.turnOnProcessing)
 
     def turnOnProcessing(self):
@@ -170,12 +167,7 @@ class Client(DatagramProtocol):
         self.turnOnCoverLoops(mixList)
         self.turnOnCoverMsg(mixList)
         self.turnOnBufferChecking(mixList)
-        # ====== This is generating fake messages to fake reall traffic=====
-        # if not FAKE_MESSAGING:
-        #     self.turnOnBufferChecking(mixList)
-        # else:
-        #     self.turnOnFakeMessaging()
-        # ==================================================================
+
 
     def turnOnBufferChecking(self, mixList):
         """ Function turns on a loop checking the buffer with messages.
@@ -573,35 +565,41 @@ class Client(DatagramProtocol):
             return None
 
     def turnOnFakeMessaging(self):
-        # friendsGroup = random.sample(self.usersPubs, 5)
-        friendsGroup = self.usersPubs
-        interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
-        reactor.callLater(interval, self.randomMessaging, friendsGroup)
 
-    def randomMessaging(self, group):
-        print "Random Messaging"
+        print "[%s] > Generating fake 'real messages' which are put into buffer" % self.name
+        self.EXP_PARAMS_FAKEGEN = float(_PARAMS["parametersClients"]["FAKE_MESSAGING"])
+        self.TARGETRECIPIENT = _PARAMS["parametersClients"]["TARGETRECIPIENT"]
+        recipient = self.takeUser(self.TARGETRECIPIENT)
+
+        interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
+        reactor.callLater(interval, self.randomMessaging, recipient)
+
+    def randomMessaging(self, r):
+        """ Function simulated the generation of 'real' messages sent to a particular person
+        """
+
         mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
         message = "FAKEMESSAGE" + sf.generateRandomNoise(NOISE_LENGTH)
-        if self.TARGETUSER:
-            r = self.takeUser(self.TARGETRECIPIENT)
-            if not r:
-                raise Exception('[%s] > Could not find the given user' % self.name)
-            print "Client: %s with provider %s" % (r.name, r.provider.name)
-        else:
-            r = random.choice(group)
+        print "[%s] > Sending to one target recipient %s" % (self.name, r.name)
+        if not r:
+            raise Exception('[%s] > Could not find the given user' % self.name)
+        
         (header, body) = self.makeSphinxPacket(receiver, mixpath, msgF + timestamp, dropFlag=False, typeFlag = 'P')            
-        self.send(("ROUT" + petlib.pack.encode((header, body))), (self.provider.host, self.provider.port))
+        self.buffer.append((("ROUT" + petlib.pack.encode((header, body))), (self.provider.host, self.provider.port)))
 
-        interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
-        reactor.callLater(interval, self.randomMessaging, group)
+        interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
+        reactor.callLater(interval, self.randomMessaging, r)
 
     def createTestingSet(self):
+
         print "Creating Testing Set"
         self.testHeartbeats = set()
         self.testDrops = set()
         self.testPayload = set()
-        #friendsGroup = random.sample(self.usersPubs, 5)
-        friendsGroup = self.usersPubs
+        try:
+            friendsGroup = random.sample(self.usersPubs, 10)
+        except Exception, e:
+            friendsGroup = self.usersPubs
 
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
@@ -616,31 +614,30 @@ class Client(DatagramProtocol):
                 self.testDrops.add(petlib.pack.encode(dropData))
         for i in range(100):
             mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            if self.TARGETUSER:
-                r = self.takeUser(self.TARGETRECIPIENT)
-                if not r:
-                    raise Exception('[%s] > Could not find the given user' % self.name)
-                print "Client: %s with provider %s" % (r.name, r.provider.name)
-            else:
-                r = random.choice(self.usersPubs)
+            r = random.choice(friendsGroup)
             msgF = "TESTMESSAGE" + self.name + sf.generateRandomNoise(NOISE_LENGTH)
             
             header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
             self.testPayload.add(petlib.pack.encode((header, body)))
 
     def setExpParamsDelay(self, newParameter):
+
         self.EXP_PARAMS_DELAY = (newParameter, None)
 
     def setExpParamsLoops(self, newParameter):
+
         self.EXP_PARAMS_LOOPS = (newParameter, None)
 
     def setExpParamsCover(self, newParameter):
+
         self.EXP_PARAMS_COVER = (newParameter, None)
 
     def setExpParamsPayload(self, newParameter):
+
         self.EXP_PARAMS_PAYLOAD = (newParameter, None)
 
     def takeUser(self, name):
+
         user = None
         for i in self.usersPubs:
             if i.name == name:
@@ -752,29 +749,38 @@ class Client(DatagramProtocol):
 
 
     def readInUsersPubs(self, databaseName):
+
         self.usersPubs = self.takeAllUsersFromDB(databaseName)
 
     def readInData(self, databaseName):
+
         self.readInUsersPubs(databaseName)
         self.takeMixnodesData(databaseName)
         self.turnOnMessagePulling()
-        if self.TESTMODE or self.TARGETUSER:
+
+        if self.TESTMODE:
             self.createTestingSet()
+        if self.TARGETUSER:
+            self.turnOnFakeMessaging()
         self.turnOnMessaging(self.mixnet)
 
     def measureSentMessages(self):
+
         lc = task.LoopingCall(self.takeMeasurments)
         lc.start(MEASURE_TIME, False)
 
     def takeMeasurments(self):
+
         self.sendMeasurments.append(self.numMessagesSent)
         self.numMessagesSent = 0
 
     def save_measurments(self):
+
         lc = task.LoopingCall(self.save_to_file)
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def save_to_file(self):
+
         with open('messagesSent.csv', 'ab') as outfile:
             csvW = csv.writer(outfile, delimiter='\n')
             csvW.writerow(self.sendMeasurments)
