@@ -568,7 +568,7 @@ class Client(DatagramProtocol):
     def turnOnFakeMessaging(self):
 
         print "[%s] > Generating fake 'real messages' which are put into buffer" % self.name
-        self.EXP_PARAMS_FAKEGEN = float(_PARAMS["parametersClients"]["FAKE_MESSAGING"])
+        self.EXP_PARAMS_FAKEGEN = (float(_PARAMS["parametersClients"]["FAKE_MESSAGING"]), None)
         self.TARGETRECIPIENT = _PARAMS["parametersClients"]["TARGETRECIPIENT"]
         recipient = self.takeUser(self.TARGETRECIPIENT)
 
