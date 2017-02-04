@@ -226,6 +226,7 @@ class Client(DatagramProtocol):
             if len(self.buffer) > 0 and self.TURN_ON_SENDING:
                 message, addr = self.buffer.pop(0)
                 self.send(message, addr)
+                print "[%s] > Message from the buffer sent." % self.name
             else:
                 self.sendDropMessage(mixList)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
