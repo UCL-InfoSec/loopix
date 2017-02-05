@@ -72,6 +72,7 @@ class MixNode(DatagramProtocol):
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
+		self.mReceived = 0
 
 
 		self.measurments = []
@@ -144,6 +145,7 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
+		self.mReceived += 1
 		try:
 			self.processQueue.put((data, (host, port)))
 		except Exception, e:
@@ -509,10 +511,10 @@ class MixNode(DatagramProtocol):
 		self.saveMeasurments()
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
+		self.measurments.append([self.bProcessed, self.pProcessed, self.mReceived])
 		self.bProcessed = 0
 		self.pProcessed = 0
-		self.otherProc = 0
+		self.mReceived = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)

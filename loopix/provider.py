@@ -51,6 +51,7 @@ class Provider(MixNode):
         self.bProcessed = 0
         self.gbSent = 0
         self.otherProc = 0
+        self.mReceived = 0
 
         self.measurments = []
 
@@ -80,6 +81,7 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
+        self.mReceived += 1
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
@@ -269,10 +271,11 @@ class Provider(MixNode):
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
+        self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc, self.mReceived])
         self.bProcessed = 0
         self.pProcessed = 0
         self.otherProc = 0
+        self.mReceived = 0
 
     def save_to_file(self):
         try:
