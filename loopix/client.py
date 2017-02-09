@@ -348,6 +348,8 @@ class Client(DatagramProtocol):
             else:
                 if msg.startswith("TESTMESSAGE"):
                     print "[%s] > This is a test message received" % self.name
+                elif msg.startswith("FAKEMESSAGE"):
+                    print "[%s] > This is a fake message received" % self.name
                 else:
                     print "[%s] > New message unpacked." % (self.name)
         except Exception, e:
