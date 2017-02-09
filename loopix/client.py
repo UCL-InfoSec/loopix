@@ -228,7 +228,12 @@ class Client(DatagramProtocol):
                 self.send(message, addr)
                 print "[%s] > Message from the buffer sent." % self.name
             else:
-                self.sendDropMessage(mixList)
+                if self.TARGETUSER:
+                    packet = random.choice(tuple(self.testDrops))
+                    addr = (self.provider.host, self.provider.port)
+                    self.send("ROUT" + packet, addr)
+                else:
+                    self.sendDropMessage(mixList)
             interval = sf.sampleFromExponential(self.EXP_PARAMS_PAYLOAD)
             reactor.callLater(interval, self.checkBuffer, mixList)
         except Exception, e:
@@ -572,8 +577,10 @@ class Client(DatagramProtocol):
         self.TARGETRECIPIENT = _PARAMS["parametersClients"]["TARGETRECIPIENT"]
         recipient = self.takeUser(self.TARGETRECIPIENT)
 
-        interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
-        reactor.callLater(interval, self.randomMessaging, recipient)
+        lc = task.LoopingCall(self.randomMessaging, recipient)
+        lc.start(self.EXP_PARAMS_FAKEGEN, True)
+        # interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
+        # reactor.callLater(interval, self.randomMessaging, recipient)
 
     def randomMessaging(self, r):
         """ Function simulated the generation of 'real' messages sent to a particular person
@@ -588,8 +595,8 @@ class Client(DatagramProtocol):
         (header, body) = self.makeSphinxPacket(r, mixpath, message, dropFlag=False, typeFlag = 'P')            
         self.buffer.append((("ROUT" + petlib.pack.encode((header, body))), (self.provider.host, self.provider.port)))
 
-        interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
-        reactor.callLater(interval, self.randomMessaging, r)
+        # interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
+        # reactor.callLater(interval, self.randomMessaging, r)
 
     def createTestingSet(self):
 
@@ -613,13 +620,15 @@ class Client(DatagramProtocol):
             dropData = self.createDropMessage(mixpath)
             if dropData:
                 self.testDrops.add(petlib.pack.encode(dropData))
-        for i in range(100):
-            mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
-            r = random.choice(friendsGroup)
-            msgF = "TESTMESSAGE" + self.name + sf.generateRandomNoise(NOISE_LENGTH)
+        if not self.TARGETUSER:
+            print "[%s] > Creating a testing set of messages in the buffer"
+            for i in range(100):
+                mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
+                r = random.choice(friendsGroup)
+                msgF = "TESTMESSAGE" + self.name + sf.generateRandomNoise(NOISE_LENGTH)
             
-            header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
-            self.testPayload.add(petlib.pack.encode((header, body)))
+                header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
+                self.testPayload.add(petlib.pack.encode((header, body)))
 
     def setExpParamsDelay(self, newParameter):
 
