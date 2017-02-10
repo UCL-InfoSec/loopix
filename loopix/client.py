@@ -580,7 +580,7 @@ class Client(DatagramProtocol):
         recipient = self.takeUser(self.TARGETRECIPIENT)
 
         lc = task.LoopingCall(self.randomMessaging, recipient)
-        lc.start(self.EXP_PARAMS_FAKEGEN, True)
+        lc.start(self.EXP_PARAMS_FAKEGEN[0], True)
         # interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
         # reactor.callLater(interval, self.randomMessaging, recipient)
 
