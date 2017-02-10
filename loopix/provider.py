@@ -173,20 +173,20 @@ class Provider(MixNode):
                 if routing[0] == Relay_flag:
                     routing_flag, meta_info = routing
                     next_addr, dropFlag, typeFlag, delay, next_name = meta_info
-                    if dropFlag:
-                        print "[%s] > Drop message." % self.name
-                    else:
-                        if next_name in self.clientList:
+                    if next_name in self.clientList:
+                        if dropFlag:
+                            print "[%s] > Drop message." % self.name
+                        else:
                             self.saveInStorage(next_name, petlib.pack.encode((header, body)))
                             print "[%s] > Message saved in storage." % self.name   
-                        else:
-                            if typeFlag == 'P':
-                                self.pProcessed += 1
-                            try:
-                                reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
-                                print "[%s] > Message forwarded." % self.name
-                            except Exception, e:
-                                print "ERROR during message processing", str(e)
+                    else:
+                        if typeFlag == 'P':
+                            self.pProcessed += 1
+                        try:
+                            reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
+                            print "[%s] > Message forwarded." % self.name
+                        except Exception, e:
+                            print "ERROR during message processing", str(e)
                 elif routing[0] == Dest_flag:
                     dest, message = receive_forward(self.params, body)
                     if dest[-1] == self.name:
