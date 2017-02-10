@@ -773,6 +773,7 @@ class Client(DatagramProtocol):
         if self.TESTMODE:
             self.createTestingSet()
         if self.TARGETUSER:
+            self.createTestingSet()
             self.turnOnFakeMessaging()
         self.turnOnMessaging(self.mixnet)
 
