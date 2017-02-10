@@ -229,6 +229,7 @@ class Client(DatagramProtocol):
                 print "[%s] > Message from the buffer sent." % self.name
             else:
                 if self.TARGETUSER:
+                    print "[%s] > User send drop message" % self.name
                     packet = random.choice(tuple(self.testDrops))
                     addr = (self.provider.host, self.provider.port)
                     self.send("ROUT" + packet, addr)
