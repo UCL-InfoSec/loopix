@@ -429,7 +429,7 @@ class Client(DatagramProtocol):
             raise Exception("SendHeartbeat: list of active mixes in the Network is empty!")
         else:
             try:
-                mixpath = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
+                mixes = predefinedPath if predefinedPath else self.takePathSequence(mixnet, self.PATH_LENGTH)
                 heartbeatData = self.createHeartbeat(mixes, timestamp)
                 if heartbeatData:
                     header, body = heartbeatData
