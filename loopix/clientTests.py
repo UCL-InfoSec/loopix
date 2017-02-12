@@ -202,6 +202,11 @@ def test_createSphinxHeartbeat(testParticipants):
     ret_val4 = provider_s.process_sphinx_packet((header4, body4))
     (tag5, info5, (header5, body5)) = ret_val4
 
+    _, meta = petlib.pack.decode(info5)
+    next_addr, dropFlag, typeFlag, delay, next_name = meta
+    assert dropFlag == False
+    assert next_name in provider_s.clientList
+
     message = sender.readMessage((header5, body5), (provider_s.host, provider_s.port))
     assert message.startswith('HT')
 
@@ -232,10 +237,10 @@ def test_createSphinxDropMessage(testParticipants):
     (tag4, info4, (header4, body4)) = ret_val3
 
     #ret_val3 = provider_r.process_sphinx_packet((header3, body3))
-    ret_val3 = provider_r.do_ROUT((header4, body4), (mix2.host, mix2.port))
-    #(tag4, info4, (header4, body4)) = ret_val3    
+    ret_val4 = provider_r.process_sphinx_packet((header4, body4))
+    (tag5, info5, (header5, body5)) = ret_val4    
 
-    routing = PFdecode(provider_r.params, info4)
+    routing = PFdecode(provider_r.params, info5)
     assert routing[0] == Relay_flag
     next_addr, dropFlag, typeFlag, delay, next_name = routing[1]
     assert dropFlag == True
