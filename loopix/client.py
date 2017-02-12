@@ -248,7 +248,7 @@ class Client(DatagramProtocol):
             mixList (list): a list of active mixnodes in the network.
         """
         try:
-            self.sendHeartBeat(mixList, time.time())
+            self.sendHeartbeat(mixList, time.time())
             interval = sf.sampleFromExponential(self.EXP_PARAMS_LOOPS)
             reactor.callLater(interval, self.generateLoopTraffic, mixList)
         except Exception, e:
