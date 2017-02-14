@@ -73,6 +73,7 @@ class MixNode(DatagramProtocol):
 		self.pProcessed = 0
 		self.otherProc = 0
 		self.mReceived = 0
+		self.procTime = []
 
 
 		self.measurments = []
@@ -182,13 +183,14 @@ class MixNode(DatagramProtocol):
 	# 	reactor.callLater(0.0, self.sendMessage, msg, (host, port))
 
 	def process_sphinx_packet(self, message):
+		ts = time.time()
 		header, body = message
 		ret_val = sphinx_process(self.params, self.privk, header, body)
+		self.procTime.append(time.time() - ts)
 		return ret_val
 
 	def do_ROUT(self, data, (host, port)):
 		try:
-			# ts = time.time()
 			peeledData = self.process_sphinx_packet(data)
 		except Exception, e:
 			print "ERROR - during message decryption: ", str(e)
@@ -512,10 +514,11 @@ class MixNode(DatagramProtocol):
 		self.saveMeasurments()
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.pProcessed, self.mReceived])
+		self.measurments.append([self.bProcessed, self.pProcessed, self.mReceived, self.procTime])
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.mReceived = 0
+		self.procTime = []
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)
