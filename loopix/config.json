@@ -1,28 +1,27 @@
 {
     "parametersClients": {
         "NOISE_LENGTH": "500", 
-        "TARGETRECIPIENT": "Client05e121b1e7a3b1da", 
-        "EXP_PARAMS_COVER": "None", 
+        "TARGETRECIPIENT": "None", 
+        "EXP_PARAMS_COVER": "20", 
         "PATH_LENGTH": "3", 
         "TARGETUSER": "False", 
-        "EXP_PARAMS_LOOPS": "None", 
-        "EXP_PARAMS_DELAY": "0.0", 
-        "FAKE_MESSAGING": "10", 
+        "EXP_PARAMS_LOOPS": "20", 
+        "EXP_PARAMS_DELAY": "0.001", 
+        "FAKE_MESSAGING": "1", 
         "MEASURE_TIME": "60", 
-        "TESTMODE": "False", 
+        "TESTMODE": "True", 
         "TURN_ON_SENDING": "True", 
         "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "15", 
+        "EXP_PARAMS_PAYLOAD": "20", 
         "SAVE_MEASURMENTS_TIME": "600"
     }, 
     "parametersMixnodes": {
         "NOISE_LENGTH": "500", 
-        "TAGED_HEARTBEATS": "False", 
-        "EXP_PARAMS_COVER": "None", 
+        "TAGED_HEARTBEATS": "True", 
         "MEASURE_TIME": "60", 
-        "EXP_PARAMS_LOOPS": "None", 
+        "EXP_PARAMS_LOOPS": "20", 
         "TIME_ACK": "1600", 
-        "EXP_PARAMS_DELAY": "0.5", 
+        "EXP_PARAMS_DELAY": "0.001", 
         "MAX_DELAY_TIME": "-432000", 
         "SAVE_MEASURMENTS_TIME": "600"
     }
