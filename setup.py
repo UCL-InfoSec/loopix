@@ -20,7 +20,13 @@ setup(name='loopix',
             "pytest >= 2.6.4",
             "twisted >= 15.5.0",
             "msgpack-python >= 0.4.6",
-            "petlib >= 0.0.34"
+            "petlib >= 0.0.34",
+            "sphinxmix>=0.0.6",
+            "fabric>=1.12.0",
+            "boto3>=1.4.0",
+            "matplotlib>=1.4.2",
+            "scipy>=0.16.1",
+            "scapy>=2.3.3"
       ],
       zip_safe=False,
 )
