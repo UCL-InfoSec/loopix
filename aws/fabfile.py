@@ -804,36 +804,7 @@ def killPythonProcess():
     run("pkill -f *.py")
 
 
-@runs_once
-@parallel
-def experiment_numClients(num):
-    execute(start_mixnode, "True")
-    execute(start_provider, "True")
-    clients = get_clients()
-    print "================================================"
-    print clients
-    print "================================================"
-    execute(start_multi_client, num, "True", hosts=clients[0])
-    execute(start_multi_client, num, "True", hosts=clients[1])
-    execute(start_multi_client, num, "True", hosts=clients[2])
-    time.sleep(900)
-    execute(start_multi_client, num, "True", hosts=clients[3])
-    time.sleep(900)
-    execute(start_multi_client, num, "True", hosts=clients[4])
-    time.sleep(900)
-    execute(start_multi_client, num, "True", hosts=clients[5])
-    print "Last called."
-
-
-@roles("providers", "clients", "mixnodes")
-@parallel
-def run_tcpdump(time):
-    with settings(warn_only=True, remote_interrupt=True):
-        run('rm -f tcpOut.pcap')
-        assert(env.remote_interrupt)
-        # --snapshot-length=1000
-        sudo('timeout %ss tcpdump udp -w tcpOut.pcap' % str(time))
-
+#======================================TSHARK========================================
 @roles("mixnodes", "providers")
 @parallel
 def run_tshark(time):
@@ -846,6 +817,8 @@ def run_tshark(time):
         sudo('chmod o=rw tcpOut.pcap')
         # sudo('tshark -n -f udp -e frame.number -e frame.time -e ip.src -e ip.dst -e udp.srcport -e udp.dstport -e udp.port -e udp.length -T fields -a duration:%s -w tcpOut.pcap' % str(time))
         sudo('tshark -n -f udp -e frame.time -e frame.time_delta -e ip.src -e ip.dst -e udp.srcport -e udp.dstport -e udp.port -e udp.length -T fields -a duration:%s -w tcpOut.pcap' % str(time))
+#======================================================================================
+
 
 @roles("providers")
 @parallel
@@ -854,12 +827,14 @@ def get_tcpdumpOutput_provider():
         local('rm -f tcpOut_provider*')
     get('tcpOut.pcap', 'tcpOut_provider_%s.pcap' % env.host)
 
+
 @roles("clients")
 @parallel
 def get_tcpdumpOutput_client():
     with settings(warn_only=True):
         local('rm -f tcpOut_client*')
     get('tcpOut.pcap', 'tcpOut_client_%s.pcap' % env.host)
+
 
 @roles("mixnodes")
 @parallel
@@ -912,55 +887,18 @@ def update_config_file(new_rate_payload, new_rate_loops, new_rate_drop, new_mix_
     with open(configFile, 'w') as f:
         json.dump(_PARAMS, f, indent=4)
 
+
 @roles('mixnodes', 'providers')
 @parallel
 def upload_config_file_servers():
     put('../loopix/config.json', 'loopix/loopix/config.json')
+
 
 @roles('clients')
 @parallel
 def upload_config_file_clients(numClients):
     for i in range(int(numClients)):
         put('../loopix/config.json', 'client%d/loopix/loopix/config.json'%i)
-
-
-def experiment_increasing_payload(numClients):
-    execute(reset_config, int(numClients))
-    execute(update_git, int(numClients), "develop")
-
-    configFile = '../loopix/config.json'
-    with open(configFile) as infile:
-        _PARAMS = json.load(infile)
-        old_rate = float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"])
-
-    C = 2.0
-
-    for i in range(40):
-        if i > 0:
-            new_rate = float(60.0/((60.0/old_rate) + C))
-
-            execute(update_config_file, new_rate)
-            execute(upload_config_file, int(numClients))
-            old_rate = new_rate
-
-        execute(start_mixnode, "True")
-        execute(start_provider, "True")
-        execute(run_clients, int(numClients), "True")
-        time.sleep(1805)
-        execute(getPerformance)
-        execute(getMessagesSent, int(numClients))
-        execute(getLatency)
-        execute(getAnonSet)
-        local('mkdir performance%d_%d' % (int(numClients), i))
-        local("cp performanceProvider*.csv performance%d_%d" % (int(numClients), i))
-        local("cp performanceMixnode*.csv performance%d_%d" % (int(numClients), i))
-        local("cp messagesSent*.csv performance%d_%d" % (int(numClients), i))
-        local("cp latency_provider*.csv performance%d_%d" % (int(numClients), i))
-        local("cp latency_mixnode*.csv performance%d_%d" % (int(numClients), i))
-        local("cp anonSetMixnode-*.csv performance%d_%d" % (int(numClients), i))
-        local("cp anonSetProvider-*.csv performance%d_%d" % (int(numClients), i))    
-        execute(killMultiAll, int(numClients))
-        execute(reset_config, int(numClients))
 
 
 @roles("clients")
@@ -1023,6 +961,7 @@ def run_mixnode(branch):
         pid = run("cat twistd.pid")
         print "Run on %s with PID %s" % (env.host, pid)
 
+
 @roles('providers')
 @parallel
 def run_provider(branch):
@@ -1035,18 +974,6 @@ def run_provider(branch):
 
 
 # ==============================================================================
-
-
-@runs_once
-def exp_Loopix_sec_params(mixnodes, providers, clients):
-    execute(ec2start_mixnode_instance, int(mixnodes))
-    execute(ec2start_provider_instance, int(providers))
-    execute(ec2start_client_instance, int(clients))
-
-@runs_once
-def ec2stop_experiment():
-    execute(ec2stopAll)
-
 
 @parallel
 def exp_setup(client):
@@ -1103,96 +1030,6 @@ def run_all_clients(numClients, branch):
 
 
 # ================================================================================================ 
-@parallel
-def exp_test(clients, delay, payloadParam, loopClientParam=None, dropClientParam=None, loopMixParam=None):
-    
-    configFile = '../loopix/config.json'
-    execute(git_reset_and_update, 'sphinx', int(clients))
-
-    # ---------------------------SETTING UP MIXNODES AND PROVIDERS--------------------
-    with open(configFile) as infile:
-        _PARAMS = json.load(infile)
-        _PARAMS["parametersMixnodes"]["EXP_PARAMS_DELAY"] = str(delay)
-        _PARAMS["parametersMixnodes"]["TAGED_HEARTBEATS"] = "False"
-        if loopMixParam == None:
-            _PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"] = "None"
-        else:
-            _PARAMS["parametersMixnodes"]["EXP_PARAMS_LOOPS"] = str(loopMixParam)
-    with open(configFile, 'w') as outfile:
-        json.dump(_PARAMS, outfile, indent=4)
-    # uploading config file for servers (mixnodes and providers)
-    execute(upload_config_file_servers)
-
-    # ---------------------------------------------------------------------------------
-    mapping = read_in_mapping()
-    # Picks two random users who from now on are the target sender and recipient
-    tS, tR = take_random_users()
-    print "SENDER: ", tS
-    print "RECEIVER: ", tR
-
-    # Set up config for the target sender
-    with open(configFile) as infile:
-        _PARAMS = json.load(infile)
-        _PARAMS["parametersClients"]["EXP_PARAMS_DELAY"] = str(delay)
-        _PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"] = str(payloadParam)
-        _PARAMS["parametersClients"]["TARGETUSER"] = "True"
-        _PARAMS["parametersClients"]["TESTMODE"] = "True"
-        _PARAMS["parametersClients"]["TURN_ON_SENDING"] = "True"
-        _PARAMS["parametersClients"]["TARGETRECIPIENT"] = tR[1]
-        if loopClientParam == None:
-            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = "None"
-        else:
-            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = str(loopClientParam)
-        if dropClientParam == None:
-            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = "None"
-        else:
-            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = str(dropClientParam)
-    with open(configFile, 'w') as f:
-        json.dump(_PARAMS, f, indent=4)
-
-    senderId = tS[1]
-    dircS = mapping[senderId]
-    execute(upload_to_dirc, 'configFile.json', dircS)
-
-    # Setting up usuall clients and the target recipient
-    with open(configFile) as infile:
-        _PARAMS = json.load(infile)
-        _PARAMS["parametersClients"]["EXP_PARAMS_DELAY"] = str(delay)
-        _PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"] = str(payloadParam)
-        _PARAMS["parametersClients"]["TARGETUSER"] = "False"
-        _PARAMS["parametersClients"]["TESTMODE"] = "True"
-        _PARAMS["parametersClients"]["TURN_ON_SENDING"] = "False"
-        _PARAMS["parametersClients"]["TARGETRECIPIENT"] = "None"
-        if loopClientParam == None:
-            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = "None"
-        else:
-            _PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"] = str(loopClientParam)
-        if dropClientParam == None:
-            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = "None"
-        else:
-            _PARAMS["parametersClients"]["EXP_PARAMS_COVER"] = str(dropClientParam)
-    with open(configFile, 'w') as f:
-        json.dump(_PARAMS, f, indent=4)
-
-    receiverId = tR[1]
-    dircR = mapping[receiverId]
-    # execute(upload_to_dirc, 'configFile.json', dircR)
-    execute(upload_non_target, int(clients), dircS)
-
-    execute(run_mixnode, 'sphinx')
-    execute(run_provider, 'sphinx')
-    execute(run_all_clients, int(clients), 'sphinx')
-    # # execute(run_client_id, dircS, 'sphinx')
-    # # execute(run_client_id, dircR, 'sphinx')
-
-    execute(run_tshark, 300)
-    execute(get_tcpdumpOutput_mixnode)
-
-    execute(killMultiAll, int(clients))
-    # reset changes to avoid git commit
-    execute(git_reset_and_update, 'sphinx', int(clients))
-
-
 
 @parallel
 def test_correlation(branch, numC, run_all, delay, loopParam=None, dropParam=None, payloadParam=None, loopMixParam=None):
@@ -1423,15 +1260,6 @@ def exp_correlation_attack(branch, numC):
     local("cp tcpOut_*.pcap correlation_test5")
 
 
-
-    # First case: only Alice1, Alice2, Bob1, Bob2 are using the network. There is no cover traffic,
-    # the delay is 0
-    # Second case: only A, A2, B1, B2; there is no cover traffic but delay is getting bigger
-    # Run for delays: 0.001, 0.005, 0.01, 0.05, 1, 1.5, 5
-    # Third case: we introduce cover traffic and see what happend (different params?)
-    # Forth case: other people in the network
-
-
 @parallel
 def git_reset_and_update(branch, numClients):
     execute(reset_config_clients, int(numClients), branch)
@@ -1516,8 +1344,8 @@ def exp_measure_latency(branch, numC, delay, loopParam, dropParam, payloadParam,
     execute(run_all_clients, int(numC), branch)
 
     time.sleep(3600)
-    #execute(run_tshark, 400)
-    #execute(get_tcpdumpOutput_mixnode)
+    execute(run_tshark, 400)
+    execute(get_tcpdumpOutput_mixnode)
 
     execute(getLatency)
     execute(killMultiAll, int(numC))
@@ -1678,33 +1506,3 @@ def experiment_increasing_payload(branch, numC):
         execute(killMultiAll, int(numC))
         execute(git_reset_and_update, branch, int(numC))
 
-
-
-#         {
-#     "parametersClients": {
-#         "NOISE_LENGTH": "500", 
-#         "TARGETRECIPIENT": "None", 
-#         "EXP_PARAMS_COVER": "4.0", 
-#         "PATH_LENGTH": "3", 
-#         "TARGETUSER": "False", 
-#         "EXP_PARAMS_LOOPS": "4.0", 
-#         "EXP_PARAMS_DELAY": "0.001", 
-#         "FAKE_MESSAGING": "1", 
-#         "MEASURE_TIME": "60", 
-#         "TESTMODE": "True", 
-#         "TURN_ON_SENDING": "True", 
-#         "TIME_PULL": "10", 
-#         "EXP_PARAMS_PAYLOAD": "3.52941176471", 
-#         "SAVE_MEASURMENTS_TIME": "600"
-#     }, 
-#     "parametersMixnodes": {
-#         "NOISE_LENGTH": "500", 
-#         "TAGED_HEARTBEATS": "True", 
-#         "MEASURE_TIME": "60", 
-#         "EXP_PARAMS_LOOPS": "4.0", 
-#         "TIME_ACK": "1600", 
-#         "EXP_PARAMS_DELAY": "0.001", 
-#         "MAX_DELAY_TIME": "-432000", 
-#         "SAVE_MEASURMENTS_TIME": "600"
-#     }
-# }
