@@ -26,8 +26,6 @@ with open('config.json') as infile:
     _PARAMS = json.load(infile)
 
 TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
-TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
-TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
 MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
 NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
 MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
@@ -53,6 +51,7 @@ class Provider(MixNode):
         self.bProcessed = 0
         self.gbSent = 0
         self.otherProc = 0
+        self.mReceived = 0
 
         self.measurments = []
 
@@ -82,6 +81,7 @@ class Provider(MixNode):
         self.processQueue.get().addCallback(self.do_PROCESS)
 
     def datagramReceived(self, data, (host, port)):
+        self.mReceived += 1
         try:
             self.processQueue.put((data, (host, port)))
         except Exception, e:
@@ -89,7 +89,7 @@ class Provider(MixNode):
 
     def do_PROCESS(self, obj):
         self.processMessage(obj)
-        self.bProcessed += 1
+        # self.bProcessed += 1
 
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
@@ -102,6 +102,7 @@ class Provider(MixNode):
     def processMessage(self, (data, (host, port))):
         if data[:8] == "PULL_MSG":
             self.do_PULL(data[8:], (host, port))
+            self.bProcessed += 1
             self.otherProc += 1
         elif data[:4] == "ROUT":
             try:
@@ -117,6 +118,7 @@ class Provider(MixNode):
             pass
         elif data[:4] == "PING":
             self.subscribeClient(data[4:], host, port)
+            self.bProcessed += 1
             self.otherProc += 1
         else:
             print "Processing Message - message not recognized"
@@ -177,12 +179,19 @@ class Provider(MixNode):
                         print "[%s] > Drop message." % self.name
                     else:
                         if next_name in self.clientList:
-                            self.saveInStorage(next_name, petlib.pack.encode((header, body)))
+                            if dropFlag:
+                                print "[%s] > Drop message." % self.name
+                            else:
+                                self.saveInStorage(next_name, petlib.pack.encode((header, body)))
+                                # print "[%s] > Message saved in storage." % self.name
+                                self.bProcessed += 1   
                         else:
                             if typeFlag == 'P':
                                 self.pProcessed += 1
                             try:
                                 reactor.callFromThread(self.send_or_delay, delay, "ROUT" + petlib.pack.encode((header, body)), next_addr)
+                                self.bProcessed += 1
+                                # print "[%s] > Message forwarded." % self.name
                             except Exception, e:
                                 print "ERROR during message processing", str(e)
                 elif routing[0] == Dest_flag:
@@ -194,6 +203,7 @@ class Provider(MixNode):
                         if message.startswith('TAG'):
                             # print "[%s] > Tagged message received" % self.name
                             self.measureLatency(message)
+                        self.bProcessed += 1
                     else:
                         raise Exception("Destination did not match")
 
@@ -269,10 +279,11 @@ class Provider(MixNode):
         lc.start(SAVE_MEASURMENTS_TIME, False)
 
     def takeMeasurments(self):
-        self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
+        self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc, self.mReceived])
         self.bProcessed = 0
         self.pProcessed = 0
         self.otherProc = 0
+        self.mReceived = 0
 
     def save_to_file(self):
         try:

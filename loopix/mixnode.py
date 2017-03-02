@@ -33,8 +33,6 @@ with open('config.json') as infile:
 	_PARAMS = json.load(infile) 
 
 TIME_ACK = float(_PARAMS["parametersMixnodes"]["TIME_ACK"])
-TIME_FLUSH = float(_PARAMS["parametersMixnodes"]["TIME_FLUSH"])
-TIME_CLEAN = float(_PARAMS["parametersMixnodes"]["TIME_CLEAN"])
 MAX_DELAY_TIME = float(_PARAMS["parametersMixnodes"]["MAX_DELAY_TIME"])
 NOISE_LENGTH = float(_PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
 MEASURE_TIME = float(_PARAMS["parametersMixnodes"]["MEASURE_TIME"])
@@ -74,6 +72,7 @@ class MixNode(DatagramProtocol):
 		self.bProcessed = 0
 		self.pProcessed = 0
 		self.otherProc = 0
+		self.mReceived = 0
 
 
 		self.measurments = []
@@ -146,6 +145,7 @@ class MixNode(DatagramProtocol):
 		print "> Mixnode Errback during sending heartbeat: ", failure
 
 	def datagramReceived(self, data, (host, port)):
+		self.mReceived += 1
 		try:
 			self.processQueue.put((data, (host, port)))
 		except Exception, e:
@@ -188,7 +188,6 @@ class MixNode(DatagramProtocol):
 
 	def do_ROUT(self, data, (host, port)):
 		try:
-			ts = time.time()
 			peeledData = self.process_sphinx_packet(data)
 		except Exception, e:
 			print "ERROR - during message decryption: ", str(e)
@@ -207,18 +206,19 @@ class MixNode(DatagramProtocol):
 					print "ERROR during message processing", str(e)
 			elif routing[0] == Dest_flag:
 				dest, message = receive_forward(self.params, body)
+				print "[%s] > Message received" % self.name
 				if dest[-1] == self.name:
 					if message.startswith('TAG'):
 						self.measureLatency(message)
+						print "[%s] > Tagged heartbeat looped pack" % self.name
 					if message.startswith('HT'):
-						# print "[%s] > Heartbeat looped pack" % self.name
-						pass
+						print "[%s] > Heartbeat looped pack" % self.name
 				else:
 					raise Exception("Destionation did not match")
 			else:
 				print 'Flag not recognized' 
-			tp = time.time() - ts
-			print "Sphinx process: ", tp
+			# tp = time.time() - ts
+			# print "Sphinx process: ", tp
 
 	def send_or_delay(self, delay, packet, (xtoHost, xtoPort)):
 		if delay > 0:
@@ -269,7 +269,10 @@ class MixNode(DatagramProtocol):
 		nodes_routing = []
 
 		for i in range(len(path)):
-			delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
+			if float(self.EXP_PARAMS_DELAY[0]) == 0.0:
+				delay = 0.0
+			else:
+				delay = sf.sampleFromExponential(self.EXP_PARAMS_DELAY)
 			nodes_routing.append(Nenc([(path[i].host, path[i].port), False, typeFlag, delay, path[i].name]))
 
 		dest = (self.host, self.port, self.name)
@@ -389,8 +392,8 @@ class MixNode(DatagramProtocol):
 					randomPath = [random.choice(self.prvList), entryMix, middleMix]
 				else:
 					raise Exception('Group does not match the selected topology')
-			print "[%s] > My selected path and my group %d: " % (self.name, self.stratified_group)
-			print randomPath
+			# print "[%s] > My selected path and my group %d: " % (self.name, self.stratified_group)
+			# print randomPath
 			return randomPath
 		except Exception, e:
 			print "[%s] > ERROR: During selecting path %s" % (self.name, str(e))
@@ -508,10 +511,10 @@ class MixNode(DatagramProtocol):
 		self.saveMeasurments()
 
 	def takeMeasurments(self):
-		self.measurments.append([self.bProcessed, self.pProcessed, self.otherProc])
+		self.measurments.append([self.bProcessed, self.pProcessed, self.mReceived])
 		self.bProcessed = 0
 		self.pProcessed = 0
-		self.otherProc = 0
+		self.mReceived = 0
 
 	def saveMeasurments(self):
 		lc = task.LoopingCall(self.save_to_file)

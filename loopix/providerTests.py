@@ -59,10 +59,34 @@ def testProviderStart(testProvider):
 	assert "INFO", ("127.0.0.1", 9998) == provider.transport.written[0]
 
 
-# def testSaveInStorage(testProvider):
-# 	setup, provider = testProvider
-# 	testKey, testValue = 7000, "ABC"
-# 	provider.saveInStorage(testKey, testValue)
-# 	assert testKey in provider.storage.keys()
-# 	assert testValue, _ == petlib.pack.decode(provider.storage[testKey].pop())
+def testSaveInStorage(testProvider):
+ 	setup, provider = testProvider
+ 	testKey, testValue = 7000, "ABC"
+ 	provider.saveInStorage(testKey, testValue)
+ 	assert testKey in provider.storage.keys()
+ 	assert testValue, _ == petlib.pack.decode(provider.storage[testKey].pop())
+
+
+def testDropMessage(testProvider, testParticipants):
+	setup, provider = testProvider
+	client, receiver, provider_r, mix = testParticipants
+	receiverPub = format3.User(receiver.name, receiver.port, receiver.host, receiver.pubk, receiver.provider)
+	client.usersPubs.append(receiverPub)
+
+	mixPub = format3.Mix(mix.name, mix.port, mix.host, mix.pubk, 0)
+	header, body = client.createDropMessage([mixPub])
+
+	ret_val = provider.process_sphinx_packet((header, body))
+	(tag1, info1, (header1, body1)) = ret_val
+	addr, dropFlag, typeFlag, delay, name = petlib.pack.decode(info1)[1]
+	assert dropFlag == False
+
+	ret_val1 = mix.process_sphinx_packet((header1, body1))
+	(tag2, info2, (header2, body2)) = ret_val1
+	addr, dropFlag, typeFlag, delay, name = petlib.pack.decode(info2)[1]
+	assert dropFlag == False
+
+	provider_r.do_ROUT((header2, body2), (mix.port, mix.host))
+	
+
 
