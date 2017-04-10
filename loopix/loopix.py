@@ -1,19 +1,18 @@
-PATH_LENGTH = int(_PARAMS["parametersClients"]["PATH_LENGTH"])
-EXP_PARAMS_PAYLOAD = (
-    float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"]), None)
-
-EXP_PARAMS_LOOPS = (
-    float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
-EXP_PARAMS_COVER = (
-    float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
-EXP_PARAMS_DELAY = (
-    float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
-
+from loopix import supportFunctions as sf
 
 class LoopixClient(object):
-    def __init__(self, setup, name, providerId, privk, pubk):
-        self.setup = setup
-        self.G, self.o, self.g, self.o_bytes = setup
+    PATH_LENGTH = int(_PARAMS["parametersClients"]["PATH_LENGTH"])
+    EXP_PARAMS_PAYLOAD = (
+        float(_PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"]), None)
+
+    EXP_PARAMS_LOOPS = (
+        float(_PARAMS["parametersClients"]["EXP_PARAMS_LOOPS"]), None)
+    EXP_PARAMS_COVER = (
+        float(_PARAMS["parametersClients"]["EXP_PARAMS_COVER"]), None)
+    EXP_PARAMS_DELAY = (
+        float(_PARAMS["parametersClients"]["EXP_PARAMS_DELAY"]), None)
+
+    def __init__(self, name, providerId, privk, pubk):
         self.name = name
         self.providerId = providerId
         self.privk = privk
@@ -25,7 +24,7 @@ class LoopixClient(object):
         return self.makeSphinxPacket(
             receiver, mixers, randomMessage, dropFlag=True)
 
-    def create_loop_messages(self, mixers, timestamp):
+    def create_loop_message(self, mixers, timestamp):
         """ Function creates a heartbeat - a noise message for which the sender and the receiver are the same entity.
 
                 Args:
