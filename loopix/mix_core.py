@@ -15,21 +15,17 @@ class MixCore(object):
         self.privk = privk
         self.pubk = pubk
 
-    def create_loop_message(self):
+    def create_loop_message(self, path):
         loop_message = 'HT' + sf.generateRandomNoise(self.NOISE_LENGTH)
-        path = self.construct_full_path(self)
         header, body = make_sphinx_packet(self, path, loop_message)
         return header, body
-
-    def construct_full_path(self):
-        return self.mixes
 
     def process_packet(self, packet):
         tag, routing, new_header, new_body = decrypt_sphinx_packet(packet, self.params, self.privk)
         routing_flag, meta_info = routing[0], routing[1:]
         if routing_flag == Relay_flag:
             next_addr, dropFlag, typeFlag, delay, next_name = meta_info[0]
-            return "ROUT", [new_header, new_body, next_addr, next_name]
+            return "ROUT", [delay, new_header, new_body, next_addr, next_name]
         elif routing_flag == Dest_flag:
             dest, message = receive_forward(self.params, new_body)
             if dest == [self.host, self.port, self.name]:

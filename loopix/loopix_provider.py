@@ -2,17 +2,16 @@ from loopix_mixnode import LoopixMixNode
 from provider_core import ProviderCore
 from sphinxmix.SphinxParams import SphinxParams
 from processQueue import ProcessQueue
+from core import get_group_characteristics
 
 class LoopixProvider(LoopixMixNode):
     def __init__(self, name, port, host, privk=None, pubk=None):
         LoopixMixNode.__init__(self, name, port, host, privk, pubk)
 
         params = SphinxParams(header_len=1024)
-        gr_order = params.group.G.order()
-        gr_generator = params.group.G.generator()
-
-        self.privk = privk or gr_order.random()
-        self.pubk = pubk or (self.privk * gr_generator)
+        order, generator = get_group_characteristics(params)
+        self.privk = privk or order.random()
+        self.pubk = pubk or (self.privk * generator)
         self.core = ProviderCore(params, self.name, self.port, self.host, self.privk, self.pubk)
 
         self.storage_inbox = {}
@@ -20,15 +19,14 @@ class LoopixProvider(LoopixMixNode):
     def assign_clients(self, clients):
         self.clients = clients
 
-    def datagramReceived(self, data, (host, port)):
-        self.process_queue.put((data, (host, port)))
-
-    def packet_received(self, packet):
+    def read_packet(self, packet):
         flag, packet = self.core.process_packet(packet)
         if flag == "ROUT":
-            new_header, new_body, next_addr, next_name = packet
+            delay, new_header, new_body, next_addr, next_name = packet
             if self.is_assigned_client(next_name):
                 self.put_into_storage(next_name, (new_header, new_body))
+            else:
+                self.reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
         return flag, packet
 
     def is_assigned_client(self, name):

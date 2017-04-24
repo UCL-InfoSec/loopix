@@ -8,6 +8,8 @@ import supportFunctions as sf
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, defer
 import numpy
+from core import get_group_characteristics, sample_from_exponential
+import petlib.pack
 
 class LoopixClient(DatagramProtocol):
     EXP_PARAMS_LOOPS = 2.0
@@ -21,11 +23,9 @@ class LoopixClient(DatagramProtocol):
         self.host = host
 
         params = SphinxParams(header_len=1024)
-        gr_order = params.group.G.order()
-        gr_generator = params.group.G.generator()
-
-        self.privk = privk or gr_order.random()
-        self.pubk = pubk or (self.privk * gr_generator)
+        order, generator = get_group_characteristics(params)
+        self.privk = privk or order.random()
+        self.pubk = pubk or (self.privk * generator)
         self.core = ClientCore(params, self.name, self.port, self.host, self.privk, self.pubk)
 
         self.buffer = Queue()
@@ -58,11 +58,11 @@ class LoopixClient(DatagramProtocol):
         return self.core.process_packet(packet)
 
     def send(self, packet):
+        encoded_packet = petlib.pack.encode(packet)
         self.transport.write(packet, (self.provider.host, self.provider.port))
 
     def schedule_next_call(self, param, method):
-        interval = self.sampleFromExponential(param)
-        print interval
+        interval = sample_from_exponential(param)
         self.reactor.callLater(interval, method)
 
     def make_loop_stream(self):
@@ -98,6 +98,3 @@ class LoopixClient(DatagramProtocol):
 
     def take_random_mix_chain(self, length = 3):
         return self.mixes
-
-    def sampleFromExponential(self, lambdaParam):
-        return numpy.random.exponential(lambdaParam, size=None)
