@@ -1,7 +1,6 @@
 import random
-import supportFunctions as sf
 from sphinxmix.SphinxClient import pki_entry, Nenc, create_forward_message, Relay_flag, Dest_flag, Surb_flag, receive_forward
-from core import decrypt_sphinx_packet, make_sphinx_packet
+from core import decrypt_sphinx_packet, make_sphinx_packet, generate_random_string
 
 class ClientCore(object):
     NOISE_LENGTH = 500
@@ -16,12 +15,12 @@ class ClientCore(object):
         self.pubk = pubk
 
     def create_loop_message(self, path):
-        loop_message = 'HT' + sf.generateRandomNoise(self.NOISE_LENGTH)
+        loop_message = 'HT' + generate_random_string(self.NOISE_LENGTH)
         header, body = make_sphinx_packet(self, path, loop_message)
         return (header, body)
 
     def create_drop_message(self, random_reciever, path):
-        drop_message = sf.generateRandomNoise(self.NOISE_LENGTH)
+        drop_message = generate_random_string(self.NOISE_LENGTH)
         header, body = make_sphinx_packet(self, path, drop_message,drop_flag=True)
         return (header, body)
 
