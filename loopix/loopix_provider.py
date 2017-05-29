@@ -2,9 +2,11 @@ from loopix_mixnode import LoopixMixNode
 from provider_core import ProviderCore
 from sphinxmix.SphinxParams import SphinxParams
 from processQueue import ProcessQueue
-from core import get_group_characteristics
+from core import get_group_characteristics, generate_random_string
 
 class LoopixProvider(LoopixMixNode):
+    MAX_RETRIEVE = 50
+
     def __init__(self, name, port, host, privk=None, pubk=None):
         LoopixMixNode.__init__(self, name, port, host, privk, pubk)
 
@@ -15,9 +17,10 @@ class LoopixProvider(LoopixMixNode):
         self.core = ProviderCore(params, self.name, self.port, self.host, self.privk, self.pubk)
 
         self.storage_inbox = {}
+        self.clients = {}
 
-    def assign_clients(self, clients):
-        self.clients = clients
+    def subscribe_client(self, client):
+        self.clients[client.name] = client
 
     def read_packet(self, packet):
         flag, packet = self.core.process_packet(packet)
@@ -27,34 +30,40 @@ class LoopixProvider(LoopixMixNode):
                 self.put_into_storage(next_name, (new_header, new_body))
             else:
                 self.reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
+        elif flag == "LOOP":
+            print "[%s] > Received loop message" % self.name
+        elif flag == "DROP":
+            print "[%s] > Received drop message" % self.name
         return flag, packet
 
     def is_assigned_client(self, name):
         for c in self.clients:
-            if c.name == name:
+            if c == name:
                 return True
         return False
 
-    def put_into_storage(self, next_name, packet):
+    def put_into_storage(self, client_id, packet):
         try:
-            self.storage_inbox[next_name].append(packet)
+            self.storage_inbox[client_id].append(packet)
         except Exception, e:
-            self.storage_inbox[next_name] = [packet]
+            self.storage_inbox[client_id] = [packet]
 
-    def pull_messages(self, client_name, client_addr):
-        popped_messages = self.get_clients_messages(client_name)
-        if len(popped_messages) < MAX_RETRIEVE:
-            dummy_messages = self.generate_dummy_messages(MAX_RETRIEVE - len(popped_messages))
-        for m in popped_messages + dummy_messages:
-            self.send(m, client_addr)
+    def pull_messages(self, client_id):
+        dummy_messages = []
+        client_addr = (self.clients[client_id].host, self.clients[client_id].port)
+        popped_messages = self.get_clients_messages(client_id)
+        if len(popped_messages) < self.MAX_RETRIEVE:
+            dummy_messages = self.generate_dummy_messages(self.MAX_RETRIEVE - len(popped_messages))
+        return popped_messages + dummy_messages
 
-    def get_clients_messages(client_name):
-        if client_name in self.inboxes.keys():
-            messages = self.inboxes[client_name]
-            popped, rest = messages[:MAX_RETRIEVE], messages[MAX_RETRIEVE:]
-            storage[name] = rest
+    def get_clients_messages(self, client_id):
+        if client_id in self.storage_inbox.keys():
+            messages = self.storage_inbox[client_id]
+            popped, rest = messages[:self.MAX_RETRIEVE], messages[self.MAX_RETRIEVE:]
+            self.storage_inbox[client_id] = rest
             return popped
         return []
 
     def generate_dummy_messages(self, num):
-        return []
+        dummy_messages = [generate_random_string(100) for _ in range(num)]
+        return dummy_messages
