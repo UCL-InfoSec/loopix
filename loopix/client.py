@@ -1,7 +1,7 @@
 from provider import Provider
 
 import csv
-import databaseConnect as dc
+from databaseConnect import DatabaseManager
 import format3
 from hashlib import sha512, sha1
 import hmac
@@ -55,7 +55,7 @@ class Client(DatagramProtocol):
 
         # Provider information
         self.providerId = providerId
-        
+
         # Setup value
         self.G, self.o, self.g, self.o_bytes = setup
         self.setup = setup
@@ -98,7 +98,7 @@ class Client(DatagramProtocol):
 
         # TEST MODE - Each message in this mode is labeled with its type
         self.TESTMODE = True if _PARAMS["parametersClients"]["TESTMODE"] == "True" else False
-        # TARGET USER - This is set only for simulations; means that this users is sending to 
+        # TARGET USER - This is set only for simulations; means that this users is sending to
         # one selected recipient
         self.TARGETUSER = True if _PARAMS["parametersClients"]["TARGETUSER"] == "True" else False
 
@@ -108,14 +108,15 @@ class Client(DatagramProtocol):
         else:
             self.TURN_ON_SENDING = True
 
-        self.DATABASE = "example.db"
+        self.DATABASE = "test.db"
+        self.dbManager = DatabaseManager(self.DATABASE)
 
         #self.receivedQueue = DeferredQueue()
         self.processQueue = ProcessQueue()
 
         self.numMessagesSent = 0
         self.sendMeasurments = []
-        
+
         self.resolvedAdrs = {}
 
     def startProtocol(self):
@@ -312,10 +313,10 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "[%s] > ERROR datagramReceived: %s " % (self.name, str(e))
 
-    def do_PROCESS(self, (data, (host, port))): 
+    def do_PROCESS(self, (data, (host, port))):
         self.processMessage(data, (host, port))
         #self.receivedQueue.get().addCallback(self.do_PROCESS)
-        
+
         try:
             reactor.callFromThread(self.get_and_addCallback, self.do_PROCESS)
         except Exception, e:
@@ -331,7 +332,7 @@ class Client(DatagramProtocol):
             data (str) - a string content of a received packet,
             host (str) - host of the sender,
             port (int) - port of the sender
-        """        
+        """
         if data[:4] == "PMSG":
             self.do_PMSG(data[4:], host, port)
         if data == "NOMSG":
@@ -597,8 +598,8 @@ class Client(DatagramProtocol):
         print "[%s] > Sending to one target recipient %s" % (self.name, r.name)
         if not r:
             raise Exception('[%s] > Could not find the given user' % self.name)
-        
-        (header, body) = self.makeSphinxPacket(r, mixpath, message, dropFlag=False, typeFlag = 'P')            
+
+        (header, body) = self.makeSphinxPacket(r, mixpath, message, dropFlag=False, typeFlag = 'P')
         self.buffer.append((("ROUT" + petlib.pack.encode((header, body))), (self.provider.host, self.provider.port)))
 
         # interval = sf.sampleFromExponential(self.EXP_PARAMS_FAKEGEN)
@@ -632,7 +633,7 @@ class Client(DatagramProtocol):
                 mixpath = self.takePathSequence(self.mixnet, self.PATH_LENGTH)
                 r = random.choice(friendsGroup)
                 msgF = "TESTMESSAGE" + self.name + sf.generateRandomNoise(NOISE_LENGTH)
-            
+
                 header, body = self.makeSphinxPacket(r, mixpath, msgF, dropFlag = False, typeFlag = 'P')
                 self.testPayload.add(petlib.pack.encode((header, body)))
 
@@ -667,8 +668,7 @@ class Client(DatagramProtocol):
                 database (str) - dir and name of the database.
         """
         try:
-            db = sqlite3.connect(database)
-            c = db.cursor()
+            c = self.dbManager.cursor
             c.execute('''CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY, name text, port integer, host text, pubk blob, provider blob)''')
             insertQuery = "INSERT INTO Users VALUES(?, ?, ?, ?, ?, ?)"
             c.execute(insertQuery, [None, self.name, self.port, self.host,
@@ -688,8 +688,7 @@ class Client(DatagramProtocol):
                 idt (int) - identifier of the client.
         """
         try:
-            db = sqlite3.connect(database)
-            c = db.cursor()
+            c = self.dbManager.cursor
             u = dc.selectByIdx(db, "Users", idt)
             if u[1] != self.name:
                 p = petlib.pack.decode(u[5])
@@ -708,8 +707,7 @@ class Client(DatagramProtocol):
         """
         usersList = []
         try:
-            db = sqlite3.connect(database)
-            c = db.cursor()
+            c = self.dbManager.cursor
             c.execute("SELECT * FROM %s" % "Users")
             users = c.fetchall()
             for u in users:
@@ -724,7 +722,7 @@ class Client(DatagramProtocol):
     def takeProvidersData(self, database, providerId):
         """ Function takes public information about a selected provider
             if providerId specified or about all registered providers
-            from the database. 
+            from the database.
 
                 Args:
                 database (str) - dir and name of the database,
@@ -733,9 +731,7 @@ class Client(DatagramProtocol):
         """
         providers = []
         try:
-            db = sqlite3.connect(database)
-            c = db.cursor()
-            
+            c = self.dbManager.cursor
             c.execute("SELECT * FROM %s WHERE name='%s'" % ("Providers", unicode(providerId)))
             fetchData = c.fetchall()
             pData = fetchData.pop()
@@ -744,7 +740,7 @@ class Client(DatagramProtocol):
         except Exception, e:
             print "ERROR takeProvidersData: ", str(e)
         finally:
-            db.close()
+            self.dbManager.close_connection()
 
     def takeMixnodesData(self, database):
         """ Function takes public information about all registered mixnodes
@@ -754,8 +750,7 @@ class Client(DatagramProtocol):
                 database (str) - dir and name of the database.
         """
         try:
-            db = sqlite3.connect(database)
-            c = db.cursor()
+            c = self.dbManager.cursor
             c.execute("SELECT * FROM %s" % "Mixnodes")
             mixdata = c.fetchall()
             for m in mixdata:
@@ -802,5 +797,3 @@ class Client(DatagramProtocol):
             csvW = csv.writer(outfile, delimiter='\n')
             csvW.writerow(self.sendMeasurments)
         self.sendMeasurments = []
-
-
