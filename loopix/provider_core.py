@@ -19,7 +19,7 @@ class ProviderCore():
             if drop_flag:
                 return "DROP", []
             else:
-                return "ROUT", [new_header, new_body, next_addr, next_name]
+                return "ROUT", [delay, new_header, new_body, next_addr, next_name]
         elif routing_flag == Dest_flag:
             dest, message = receive_forward(self.params, body)
             if dest == [self.host, self.port, self.name]:
