@@ -7,7 +7,7 @@ from processQueue import ProcessQueue
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, defer, task
 import numpy
-from core import get_group_characteristics, sample_from_exponential
+from core import get_group_characteristics, sample_from_exponential, group_layered_topology
 import petlib.pack
 from databaseConnect import DatabaseManager
 from format3 import Provider, Params
@@ -57,10 +57,10 @@ class LoopixClient(DatagramProtocol):
         self.register_friends(clients)
 
     def register_mixes(self, mixes):
-        self.mixes = mixes
+        self.pubs_mixes = group_layered_topology(mixes)
 
     def register_providers(self, providers):
-        self.providers = providers
+        self.pubs_providers = providers
 
     def register_friends(self, clients):
         self.befriended_clients = clients
@@ -129,7 +129,12 @@ class LoopixClient(DatagramProtocol):
         return [self.provider] + mix_chain + [receiver.provider] + [receiver]
 
     def take_random_mix_chain(self, length = 3):
-        return self.mixes
+        mix_chain = []
+        num_all_layers = len(self.pubs_mixes)
+        for i in range(num_all_layers):
+            mix = random.choice(self.pubs_mixes[i])
+            mix_chain.append(mix)
+        return mix_chain
 
     def stopProtocol(self):
         print "[%s] > Stopped" % self.name

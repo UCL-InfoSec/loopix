@@ -24,8 +24,9 @@ class LoopixMixNode(DatagramProtocol):
         self.privk = privk or order.random()
         self.pubk = pubk or (self.privk * generator)
         self.core = MixCore(params, self.name, self.port, self.host, self.privk, self.pubk)
-        self.process_queue = ProcessQueue()
         self.reactor = reactor
+
+        self.process_queue = ProcessQueue()
 
     def startProtocol(self):
         print "[%s] > Started" % self.name
