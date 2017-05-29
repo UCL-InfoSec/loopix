@@ -1,7 +1,7 @@
 from sphinxmix.SphinxParams import SphinxParams
 from sphinxmix.SphinxNode import sphinx_process
 from sphinxmix.SphinxClient import receive_forward, PFdecode, Relay_flag, Dest_flag
-from core import decrypt_sphinx_packet, make_sphinx_packet
+from core import decrypt_sphinx_packet, make_sphinx_packet, generate_random_string
 
 class MixCore(object):
     NOISE_LENGTH = 500
@@ -16,8 +16,9 @@ class MixCore(object):
         self.pubk = pubk
 
     def create_loop_message(self, path):
-        loop_message = 'HT' + sf.generateRandomNoise(self.NOISE_LENGTH)
-        header, body = make_sphinx_packet(self, path, loop_message)
+        path = path + [self]
+        loop_message = 'HT' + generate_random_string(self.NOISE_LENGTH)
+        header, body = make_sphinx_packet(receiver=self, path=path, message=loop_message)
         return header, body
 
     def process_packet(self, packet):
@@ -30,7 +31,7 @@ class MixCore(object):
             dest, message = receive_forward(self.params, new_body)
             if dest == [self.host, self.port, self.name]:
                 if message.startswith('HT'):
-                    return "LOOP", []
+                    return "LOOP", message
             else:
                 print "[%s] > Destination does not match" % self.name
                 return "ERROR", []
