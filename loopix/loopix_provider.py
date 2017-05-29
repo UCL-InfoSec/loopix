@@ -3,6 +3,7 @@ from provider_core import ProviderCore
 from sphinxmix.SphinxParams import SphinxParams
 from processQueue import ProcessQueue
 from core import get_group_characteristics, generate_random_string
+import random
 
 class LoopixProvider(LoopixMixNode):
     MAX_RETRIEVE = 50
@@ -36,11 +37,8 @@ class LoopixProvider(LoopixMixNode):
             print "[%s] > Received drop message" % self.name
         return flag, packet
 
-    def is_assigned_client(self, name):
-        for c in self.clients:
-            if c == name:
-                return True
-        return False
+    def is_assigned_client(self, client_id):
+        return any(c == client_id for c in self.clients)
 
     def put_into_storage(self, client_id, packet):
         try:
@@ -67,3 +65,14 @@ class LoopixProvider(LoopixMixNode):
     def generate_dummy_messages(self, num):
         dummy_messages = [generate_random_string(100) for _ in range(num)]
         return dummy_messages
+
+    def generate_random_path(self):
+        return self.construct_full_path
+
+    def construct_full_path(self):
+        sequence = []
+        num_all_layers = len(self.pubs_mixes)
+        for i in range(num_all_layers):
+            mix = random.choice(self.pubs_mixes[i])
+            sequence.append(mix)
+        return sequence

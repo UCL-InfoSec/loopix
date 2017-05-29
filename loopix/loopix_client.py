@@ -67,7 +67,7 @@ class LoopixClient(DatagramProtocol):
 
     def turn_on_processing(self):
         self.retrieve_messages()
-        self.reactor.callLater(20.0, self.get_and_addCallback, self.process_packet)
+        self.reactor.callLater(20.0, self.get_and_addCallback, self.handle_packet)
 
     def retrieve_messages(self):
         lc = task.LoopingCall(self.send, 'PULL%s' % self.name)
@@ -79,10 +79,10 @@ class LoopixClient(DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
         self.process_queue.put((data, (host, port)))
 
-    def process_packet(self, packet):
+    def handle_packet(self, packet):
         self.read_packet(packet)
         try:
-            self.reactor.callFromThread(self.get_and_addCallback, self.process_packet)
+            self.reactor.callFromThread(self.get_and_addCallback, self.handle_packet)
         except Exception, e:
             print "[%s] > Exception during scheduling next get: %s" % (self.name, str(e))
 
