@@ -34,11 +34,3 @@ Params = namedtuple('Params',
     'TIME_PULL'])
 
 Params.__new__.__defaults__ = (None,) * len(Params._fields)
-
-def setup():
-    ''' Setup the parameters of the mix crypto-system '''
-    G = EcGroup()
-    o = G.order()
-    g = G.generator()
-    o_bytes = int(math.ceil(math.log(float(int(o))) / math.log(256)))
-    return G, o, g, o_bytes

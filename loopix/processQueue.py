@@ -31,6 +31,9 @@ class ProcessQueue():
 		self.lock = threading.Lock()
 		self.logs = []
 
+	def __contains__(self, key):
+		return key in self.queue
+
 	def put(self, obj):
 		insert_t = time.time()
 		self.queue.append((insert_t, obj))
@@ -91,9 +94,9 @@ class ProcessQueue():
 			del self.queue[:int(tmp)]
 
 
-		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings) 
+		# print "===== Delay: %.2f ==== Latency: %.2f ===== Estimate: %.2f =====" % (start_time - inserted_time, end_time - start_time, self.timings)
 		# print "====Before queue len: %.2f ==== Queue Len: %.2f ==== Drop Len: %.2f ======" % (q_len, len(self.queue), self.drop)
-		
+
 			dataTmp = [tmp, P, I, D, q_len, start_time - inserted_time]
 			self.log(dataTmp)
 
@@ -105,7 +108,3 @@ class ProcessQueue():
 				csvW = csv.writer(outfile, delimiter=',')
 				csvW.writerows(self.logs)
 			self.logs = []
-		
-
-
-

@@ -24,7 +24,7 @@ class ClientCore(object):
         header, body = make_sphinx_packet(self, path, drop_message,drop_flag=True)
         return (header, body)
 
-    def create_real_message(self, message, receiver, path):
+    def pack_real_message(self, message, receiver, path):
         header, body = make_sphinx_packet(receiver, path, message)
         return header, body
 
@@ -33,6 +33,7 @@ class ClientCore(object):
         routing_flag, meta_info = routing[0], routing[1:]
         if routing_flag == Dest_flag:
             dest, message = receive_forward(self.params, new_body)
+            print self.name
             if dest == [self.host, self.port, self.name]:
                 return "NEW", message
             else:

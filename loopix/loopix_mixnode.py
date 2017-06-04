@@ -7,7 +7,6 @@ from core import get_group_characteristics, sample_from_exponential, group_layer
 from databaseConnect import DatabaseManager
 import petlib.pack
 import random
-import pybloom
 
 class LoopixMixNode(DatagramProtocol):
     EXP_PARAMS_LOOPS = 2.0
@@ -82,7 +81,7 @@ class LoopixMixNode(DatagramProtocol):
         self.reactor.callLater(interval, method)
 
     def datagramReceived(self, data, (host, port)):
-        self.process_queue.put((data, (host, port)))
+        self.process_queue.put(data)
 
     def handle_packet(self, packet):
         self.read_packet(packet)
@@ -92,9 +91,10 @@ class LoopixMixNode(DatagramProtocol):
             print "[%s] > Exception during scheduling next get: %s" % (self.name, str(e))
 
     def read_packet(self, packet):
-        flag, packet = self.core.process_packet(packet)
+        decoded_packet = petlib.pack.decode(packet)
+        flag, decrypted_packet = self.core.process_packet(decoded_packet)
         if flag == "ROUT":
-            delay, new_header, new_body, next_addr, next_name = packet
+            delay, new_header, new_body, next_addr, next_name = decrypted_packet
             reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
         elif flag == "LOOP":
             print "[%s] > Received loop message" % self.name

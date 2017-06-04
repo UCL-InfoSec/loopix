@@ -16,6 +16,7 @@ if __name__ == "__main__":
 		port = int(sys.argv[1])
 		host = sys.argv[2]
 		name = sys.argv[3]
+		group = int(sys.argv[4])
 
 		setup = format3.setup()
 		G, o, g, o_bytes = setup
@@ -24,9 +25,7 @@ if __name__ == "__main__":
 		file("secretMixnode.prv", "wb").write(petlib.pack.encode(secret))
 
 		pub = secret * g
-		file("publicMixnode.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, pub]))
+		file("publicMixnode.bin", "wb").write(petlib.pack.encode(["mixnode", name, port, host, group, pub]))
 
 	else:
 		print "Files exist"
-
-		

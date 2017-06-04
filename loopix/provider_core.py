@@ -1,9 +1,12 @@
+from mix_core import MixCore
 from sphinxmix.SphinxNode import sphinx_process
 from sphinxmix.SphinxClient import receive_forward, PFdecode, Relay_flag, Dest_flag
 from core import decrypt_sphinx_packet, make_sphinx_packet
 
-class ProviderCore():
+class ProviderCore(MixCore):
     def __init__(self, params, name, port, host, privk, pubk):
+        MixCore.__init__(self, params, name, port, host, privk, pubk)
+
         self.params = params
         self.name = name
         self.port = port
@@ -21,6 +24,7 @@ class ProviderCore():
             else:
                 return "ROUT", [delay, new_header, new_body, next_addr, next_name]
         elif routing_flag == Dest_flag:
+            print "Dest, Hello"
             dest, message = receive_forward(self.params, body)
             if dest == [self.host, self.port, self.name]:
                 if message.startswith('HT'):

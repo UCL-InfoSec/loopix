@@ -1,27 +1,24 @@
 import sqlite3
 from format3 import Mix, Provider, User
 import petlib.pack
+import pytest
 
 class DatabaseManager(object):
 	def __init__(self, databaseName):
 		self.db = sqlite3.connect(databaseName)
 		self.cursor = self.db.cursor()
 
-	def connectToDatabase(self, databaseName):
-		conn = sqlite3.connect(databaseName)
-		return conn
-
-	def createUsersTable(self, tableName):
+	def create_users_table(self, tableName):
 		self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name blob, port integer, host text, pubk blob, provider blob)'''%tableName)
 		self.db.commit()
 		print "Table [%s] created succesfully." % tableName
 
-	def createProvidersTable(self, tableName):
+	def create_providers_table(self, tableName):
 		self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name blob, port integer, host text, pubk blob)'''%tableName)
 		self.db.commit()
 		print "Table [%s] created succesfully." % tableName
 
-	def createMixnodesTable(self, tableName):
+	def create_mixnodes_table(self, tableName):
 		self.cursor.execute('''CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY, name blob, port integer, host text, pubk blob, groupId integer)'''%tableName)
 		self.db.commit()
 		print "Table [%s] created succesfully." % tableName
@@ -41,7 +38,7 @@ class DatabaseManager(object):
 
 	def selectByIdx(self, tableName, idx):
 		self.cursor.execute("SELECT * FROM %s WHERE id=%d" % (tableName, idx))
-		return c.fetchone()
+		return self.cursor.fetchone()
 
 	def select_all_mixnodes(self):
 		mixesInfo = self.selectAll('Mixnodes')
@@ -67,7 +64,53 @@ class DatabaseManager(object):
 
 	def countRows(self, tableName):
 		self.cursor.execute("SELECT Count(*) FROM %s" % tableName)
-		return int(c.fetchone()[0])
+		return int(self.cursor.fetchone()[0])
 
 	def close_connection(self):
 		self.db.close()
+
+
+
+import os.path
+if os.path.isfile('testdb.db'):
+    os.remove('testdb.db')
+
+def test_init():
+	dbManager = DatabaseManager('testdb.db')
+	return dbManager
+
+dbManager = test_init()
+
+def test_createUsersTable():
+	dbManager.create_users_table('Table_Users')
+	dbManager.cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='Table_Users';")
+	assert dbManager.cursor.fetchone()[0] == 1
+
+def test_createProvidersTable():
+	dbManager.create_providers_table('Table_Providers')
+	dbManager.cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='Table_Providers';")
+	assert dbManager.cursor.fetchone()[0] == 1
+
+def test_createMixnodesTable():
+	dbManager.create_mixnodes_table('Table_Mixnodes')
+	dbManager.cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='Table_Mixnodes';")
+	assert dbManager.cursor.fetchone()[0] == 1
+
+def test_dropTable():
+	dbManager.dropTabel('Table_Users')
+	dbManager.cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='Table_Users';")
+	assert dbManager.cursor.fetchone()[0] == 0
+
+def test_insertRowIntoTable():
+	import petlib.pack
+	params = [None, 'Test', 1234, '1.2.3.4', '0000', 1]
+	dbManager.insertRowIntoTable('Table_Mixnodes', params)
+	data = dbManager.selectAll('Table_Mixnodes')
+	assert data[0][1:] == ('Test', 1234, '1.2.3.4', '0000', 1)
+
+def test_selectByIdx():
+	data = dbManager.selectByIdx('Table_Mixnodes', 1)
+	assert data == (1, 'Test', 1234, '1.2.3.4', '0000', 1)
+
+def test_countRows():
+	assert dbManager.countRows('Table_Mixnodes') == 1

@@ -4,6 +4,7 @@ from sphinxmix.SphinxParams import SphinxParams
 from processQueue import ProcessQueue
 from core import get_group_characteristics, generate_random_string
 import random
+import petlib.pack
 
 class LoopixProvider(LoopixMixNode):
     MAX_RETRIEVE = 50
@@ -24,18 +25,18 @@ class LoopixProvider(LoopixMixNode):
         self.clients[client.name] = client
 
     def read_packet(self, packet):
-        flag, packet = self.core.process_packet(packet)
+        decoded_packet = petlib.pack.decode(packet)
+        flag, decrypted_packet = self.core.process_packet(decoded_packet)
         if flag == "ROUT":
-            delay, new_header, new_body, next_addr, next_name = packet
+            delay, new_header, new_body, next_addr, next_name = decrypted_packet
             if self.is_assigned_client(next_name):
-                self.put_into_storage(next_name, (new_header, new_body))
+                self.put_into_storage(next_name, petlib.pack.encode(new_header, new_body))
             else:
                 self.reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
         elif flag == "LOOP":
             print "[%s] > Received loop message" % self.name
         elif flag == "DROP":
             print "[%s] > Received drop message" % self.name
-        return flag, packet
 
     def is_assigned_client(self, client_id):
         return any(c == client_id for c in self.clients)
@@ -67,7 +68,7 @@ class LoopixProvider(LoopixMixNode):
         return dummy_messages
 
     def generate_random_path(self):
-        return self.construct_full_path
+        return self.construct_full_path()
 
     def construct_full_path(self):
         sequence = []

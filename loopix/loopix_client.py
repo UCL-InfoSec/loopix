@@ -13,6 +13,7 @@ from databaseConnect import DatabaseManager
 from format3 import Provider, Params
 from core import make_sphinx_packet
 
+
 class LoopixClient(DatagramProtocol):
     EXP_PARAMS_LOOPS = 2.0
     EXP_PARAMS_DROP = 2.0
@@ -87,7 +88,14 @@ class LoopixClient(DatagramProtocol):
             print "[%s] > Exception during scheduling next get: %s" % (self.name, str(e))
 
     def read_packet(self, packet):
-        return self.core.process_packet(packet)
+        decoded_packet = petlib.pack.decode(packet)
+        flag, decrypted_packet = self.core.process_packet(decoded_packet)
+        return (flag, decrypted_packet)
+
+    def send_message(self, message, receiver):
+        path = self.construct_full_path(receiver)
+        header, body = self.core.pack_real_message(message, receiver, path)
+        self.send((header, body))
 
     def send(self, packet):
         encoded_packet = petlib.pack.encode(packet)
