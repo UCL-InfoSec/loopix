@@ -12,7 +12,7 @@ class JSONReader(object):
         exp_params_payload = float(self._PARAMS["parametersClients"]["EXP_PARAMS_PAYLOAD"])
         exp_params_delay = float(self._PARAMS["parametersClients"]["EXP_PARAMS_DELAY"])
         database_name = self._PARAMS["parametersClients"]["DATABASE_NAME"]
-        time_pull = float(self._PARAMS["parametersClients"]["TIME_PULL"]),
+        time_pull = float(self._PARAMS["parametersClients"]["TIME_PULL"])
         noise_length = int(self._PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
 
         config_params = Params(EXP_PARAMS_LOOPS = exp_params_loops,
@@ -43,6 +43,3 @@ class JSONReader(object):
         max_retrieve = int(self._PARAMS["parametersProviders"]["MAX_RETRIEVE"])
         config_params = config_params._replace(MAX_RETRIEVE = max_retrieve)
         return config_params
-
-
-JSONReader('config.json')

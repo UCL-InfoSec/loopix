@@ -69,7 +69,7 @@ class LoopixClient(DatagramProtocol):
         self.reactor.callLater(20.0, self.get_and_addCallback, self.handle_packet)
 
     def retrieve_messages(self):
-        lc = task.LoopingCall(self.send, 'PULL%s' % self.name)
+        lc = task.LoopingCall(self.send, 'PULL' + self.name)
         lc.start(self.config.TIME_PULL, now=True)
 
     def get_and_addCallback(self, f):
