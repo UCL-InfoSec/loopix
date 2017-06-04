@@ -5,15 +5,18 @@ from processQueue import ProcessQueue
 from core import get_group_characteristics, generate_random_string
 import random
 import petlib.pack
+from json_reader import JSONReader
 
 class LoopixProvider(LoopixMixNode):
-    MAX_RETRIEVE = 50
+    jsonReader = JSONReader('config.json')
+    config = jsonReader.get_provider_config_params()
 
     def __init__(self, name, port, host, privk=None, pubk=None):
         LoopixMixNode.__init__(self, name, port, host, privk, pubk)
 
-        params = SphinxParams(header_len=1024)
-        order, generator = get_group_characteristics(params)
+        sec_params = SphinxParams(header_len=1024)
+        params = (sec_params, self.config)
+        order, generator = get_group_characteristics(sec_params)
         self.privk = privk or order.random()
         self.pubk = pubk or (self.privk * generator)
         self.core = ProviderCore(params, self.name, self.port, self.host, self.privk, self.pubk)
@@ -51,20 +54,20 @@ class LoopixProvider(LoopixMixNode):
         dummy_messages = []
         client_addr = (self.clients[client_id].host, self.clients[client_id].port)
         popped_messages = self.get_clients_messages(client_id)
-        if len(popped_messages) < self.MAX_RETRIEVE:
-            dummy_messages = self.generate_dummy_messages(self.MAX_RETRIEVE - len(popped_messages))
+        if len(popped_messages) < self.config.MAX_RETRIEVE:
+            dummy_messages = self.generate_dummy_messages(self.config.MAX_RETRIEVE - len(popped_messages))
         return popped_messages + dummy_messages
 
     def get_clients_messages(self, client_id):
         if client_id in self.storage_inbox.keys():
             messages = self.storage_inbox[client_id]
-            popped, rest = messages[:self.MAX_RETRIEVE], messages[self.MAX_RETRIEVE:]
+            popped, rest = messages[:self.config.MAX_RETRIEVE], messages[self.config.MAX_RETRIEVE:]
             self.storage_inbox[client_id] = rest
             return popped
         return []
 
     def generate_dummy_messages(self, num):
-        dummy_messages = [generate_random_string(100) for _ in range(num)]
+        dummy_messages = [generate_random_string(self.config.NOISE_LENGTH) for _ in range(num)]
         return dummy_messages
 
     def generate_random_path(self):

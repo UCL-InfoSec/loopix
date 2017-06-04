@@ -1,28 +1,27 @@
 {
     "parametersClients": {
-        "NOISE_LENGTH": "500", 
-        "TARGETRECIPIENT": "None", 
-        "EXP_PARAMS_COVER": "20", 
-        "PATH_LENGTH": "3", 
-        "TARGETUSER": "False", 
-        "EXP_PARAMS_LOOPS": "20", 
-        "EXP_PARAMS_DELAY": "0.001", 
-        "FAKE_MESSAGING": "1", 
-        "MEASURE_TIME": "60", 
-        "TESTMODE": "True", 
-        "TURN_ON_SENDING": "True", 
-        "TIME_PULL": "10", 
-        "EXP_PARAMS_PAYLOAD": "20", 
-        "SAVE_MEASURMENTS_TIME": "600"
-    }, 
+        "NOISE_LENGTH": "500",
+        "EXP_PARAMS_DROP": "2.0",
+        "PATH_LENGTH": "3",
+        "EXP_PARAMS_LOOPS": "2.0",
+        "EXP_PARAMS_DELAY": "0.001",
+        "TIME_PULL": "10",
+        "EXP_PARAMS_PAYLOAD": "2.0",
+        "DATABASE_NAME":"example.db"
+    },
     "parametersMixnodes": {
-        "NOISE_LENGTH": "500", 
-        "TAGED_HEARTBEATS": "True", 
-        "MEASURE_TIME": "60", 
-        "EXP_PARAMS_LOOPS": "20", 
-        "TIME_ACK": "1600", 
-        "EXP_PARAMS_DELAY": "0.001", 
-        "MAX_DELAY_TIME": "-432000", 
-        "SAVE_MEASURMENTS_TIME": "600"
+        "NOISE_LENGTH": "500",
+        "EXP_PARAMS_LOOPS": "2.0",
+        "EXP_PARAMS_DELAY": "0.001",
+        "MAX_DELAY_TIME": "-432000",
+        "DATABASE_NAME":"example.db"
+    },
+    "parametersProviders": {
+      "MAX_RETRIEVE": "50",
+      "NOISE_LENGTH": "500",
+      "EXP_PARAMS_LOOPS": "2.0",
+      "EXP_PARAMS_DELAY": "0.001",
+      "MAX_DELAY_TIME": "-432000",
+      "DATABASE_NAME":"example.db"
     }
 }

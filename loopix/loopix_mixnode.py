@@ -7,10 +7,11 @@ from core import get_group_characteristics, sample_from_exponential, group_layer
 from databaseConnect import DatabaseManager
 import petlib.pack
 import random
+from json_reader import JSONReader
 
 class LoopixMixNode(DatagramProtocol):
-    EXP_PARAMS_LOOPS = 2.0
-    DATABSE_NAME = "example.db"
+    jsonReader = JSONReader('config.json')
+    config = jsonReader.get_mixnode_config_params()
 
     def __init__(self, name, port, host, group, privk=None, pubk=None):
         self.name = name
@@ -18,8 +19,9 @@ class LoopixMixNode(DatagramProtocol):
         self.host = host
         self.group = group
 
-        params = SphinxParams(header_len=1024)
-        order, generator = get_group_characteristics(params)
+        sec_params = SphinxParams(header_len=1024)
+        params = (sec_params, self.config)
+        order, generator = get_group_characteristics(sec_params)
         self.privk = privk or order.random()
         self.pubk = pubk or (self.privk * generator)
         self.core = MixCore(params, self.name, self.port, self.host, self.privk, self.pubk)
@@ -34,7 +36,7 @@ class LoopixMixNode(DatagramProtocol):
         # turn on sending heartbeats for mixes and providers (by default)
 
     def get_network_info(self):
-        self.dbManager = DatabaseManager(self.DATABASE_NAME)
+        self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
         mixes = self.dbManager.select_all_mixnodes()
         providers = self.dbManager.select_all_providers()
         self.register_mixes([m for m in mixes if not m.name == self.name ])
@@ -54,7 +56,7 @@ class LoopixMixNode(DatagramProtocol):
 
     def make_loop_stream(self):
         self.send_loop_message()
-        self.schedule_next_call(self.EXP_PARAMS_LOOPS, self.make_loop_stream)
+        self.schedule_next_call(self.config.EXP_PARAMS_LOOPS, self.make_loop_stream)
 
     def send_loop_message(self):
         path = self.generate_random_path()

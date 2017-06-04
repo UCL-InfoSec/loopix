@@ -10,17 +10,14 @@ import numpy
 from core import get_group_characteristics, sample_from_exponential, group_layered_topology
 import petlib.pack
 from databaseConnect import DatabaseManager
-from format3 import Provider, Params
+from support_formats import Provider
 from core import make_sphinx_packet
+from json_reader import JSONReader
 
 
 class LoopixClient(DatagramProtocol):
-    EXP_PARAMS_LOOPS = 2.0
-    EXP_PARAMS_DROP = 2.0
-    EXP_PARAMS_PAYLOAD = 2.0
-    EXP_PARAMS_DELAY = 2.0
-    DATABASE_NAME = 'example.db'
-    TIME_PULL = 60.0
+    jsonReader = JSONReader('config.json')
+    config = jsonReader.get_client_config_params()
 
     def __init__(self, name, port, host, providerInfo, privk = None, pubk=None):
         self.name = name
@@ -28,8 +25,9 @@ class LoopixClient(DatagramProtocol):
         self.host = host
         self.provider = Provider(*providerInfo)
 
-        params = SphinxParams(header_len=1024)
-        order, generator = get_group_characteristics(params)
+        sec_params = SphinxParams(header_len=1024)
+        params = (sec_params, self.config)
+        order, generator = get_group_characteristics(sec_params)
         self.privk = privk or order.random()
         self.pubk = pubk or (self.privk * generator)
         self.core = ClientCore(params, self.name, self.port, self.host, self.privk, self.pubk)
@@ -49,7 +47,7 @@ class LoopixClient(DatagramProtocol):
         self.send(ping_packet)
 
     def get_network_info(self):
-        self.dbManager = DatabaseManager(self.DATABASE_NAME)
+        self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
         mixes = self.dbManager.select_all_mixnodes()
         providers = self.dbManager.select_all_providers()
         clients = self.dbManager.select_all_clients()
@@ -72,7 +70,7 @@ class LoopixClient(DatagramProtocol):
 
     def retrieve_messages(self):
         lc = task.LoopingCall(self.send, 'PULL%s' % self.name)
-        lc.start(self.TIME_PULL, now=True)
+        lc.start(self.config.TIME_PULL, now=True)
 
     def get_and_addCallback(self, f):
         self.process_queue.get().addCallback(f)
@@ -107,7 +105,7 @@ class LoopixClient(DatagramProtocol):
 
     def make_loop_stream(self):
         self.send_loop_message()
-        self.schedule_next_call(self.EXP_PARAMS_LOOPS, self.make_loop_stream)
+        self.schedule_next_call(self.config.EXP_PARAMS_LOOPS, self.make_loop_stream)
 
     def send_loop_message(self):
         path = self.construct_full_path(self)
@@ -116,7 +114,7 @@ class LoopixClient(DatagramProtocol):
 
     def make_drop_stream(self):
         self.send_drop_message()
-        self.schedule_next_call(self.EXP_PARAMS_DROP, self.make_drop_stream)
+        self.schedule_next_call(self.config.EXP_PARAMS_DROP, self.make_drop_stream)
 
     def send_drop_message(self):
         random_receiver = random.choice(self.befriended_clients)
@@ -130,7 +128,7 @@ class LoopixClient(DatagramProtocol):
             self.send(packet)
         else:
             self.send_drop_message()
-        self.schedule_next_call(self.EXP_PARAMS_PAYLOAD, self.make_real_stream)
+        self.schedule_next_call(self.config.EXP_PARAMS_PAYLOAD, self.make_real_stream)
 
     def construct_full_path(self, receiver):
         mix_chain = self.take_random_mix_chain()

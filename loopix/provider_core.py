@@ -7,7 +7,7 @@ class ProviderCore(MixCore):
     def __init__(self, params, name, port, host, privk, pubk):
         MixCore.__init__(self, params, name, port, host, privk, pubk)
 
-        self.params = params
+        self.params, self.config = params
         self.name = name
         self.port = port
         self.host = host

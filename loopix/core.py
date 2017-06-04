@@ -4,9 +4,12 @@ import numpy
 from sphinxmix.SphinxParams import SphinxParams
 from operator import attrgetter
 import itertools
+from json_reader import JSONReader
+from support_formats import Params
+# import json
 
-EXP_PARAMS_DELAY = 3
-params = SphinxParams(header_len=1024) # this should be removed and passed as an argument
+jsonReader = JSONReader('config.json')
+config = jsonReader.get_client_config_params()
 
 def setup():
     ''' Setup the parameters of the mix crypto-system '''
@@ -27,7 +30,7 @@ def sample_from_exponential(lambdaParam):
 def generate_random_string(length):
     return numpy.random.bytes(length)
 
-def make_sphinx_packet(receiver, path, message, drop_flag=False, type_flag=None):
+def make_sphinx_packet(params, receiver, path, message, drop_flag=False, type_flag=None):
     keys_nodes = take_nodes_keys(path)
     routing_info = take_nodes_routing(path, drop_flag, type_flag)
     dest = (receiver.host, receiver.port, receiver.name)
@@ -40,7 +43,7 @@ def take_nodes_keys(nodes):
 def take_nodes_routing(nodes, drop_flag, type_flag):
     nodes_routing = []
     for i, n in enumerate(nodes):
-        delay = generate_random_delay(EXP_PARAMS_DELAY)
+        delay = generate_random_delay(config.EXP_PARAMS_DELAY)
         drop = (i == len(nodes) - 1) and drop_flag
         nodes_routing.append(Nenc([(n.host, n.port), drop, type_flag, delay, n.name]))
     return nodes_routing
@@ -49,7 +52,7 @@ def generate_random_delay(param):
     if float(param) == 0.0:
         return 0.0
     else:
-        return sample_from_exponential(EXP_PARAMS_DELAY)
+        return sample_from_exponential(config.EXP_PARAMS_DELAY)
 
 def decrypt_sphinx_packet(packet, params, key):
     header, body = packet

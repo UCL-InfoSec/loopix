@@ -4,10 +4,9 @@ from sphinxmix.SphinxClient import receive_forward, PFdecode, Relay_flag, Dest_f
 from core import decrypt_sphinx_packet, make_sphinx_packet, generate_random_string
 
 class MixCore(object):
-    NOISE_LENGTH = 500
 
     def __init__(self, params, name, port, host, privk, pubk):
-        self.params = params
+        self.params, self.config = params
         self.name = name
         self.port = port
         self.host = host
@@ -17,8 +16,8 @@ class MixCore(object):
 
     def create_loop_message(self, path):
         path = path + [self]
-        loop_message = 'HT' + generate_random_string(self.NOISE_LENGTH)
-        header, body = make_sphinx_packet(receiver=self, path=path, message=loop_message)
+        loop_message = 'HT' + generate_random_string(self.config.NOISE_LENGTH)
+        header, body = make_sphinx_packet(self.params, receiver=self, path=path, message=loop_message)
         return header, body
 
     def process_packet(self, packet):
