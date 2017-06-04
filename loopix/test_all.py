@@ -33,7 +33,7 @@ def loopix_mixes():
     for i in range(3):
         mix = LoopixMixNode('Mix%d'%(i+1), 9999-i, '1.2.3.%d'%i, i)
         mix.transport = proto_helpers.FakeDatagramTransport()
-        mix.DATABASE_NAME = 'test.db'
+        mix.config = mix.config._replace(DATABASE_NAME = 'test.db')
         mixes.append(mix)
         dbManager.insertRowIntoTable('Mixnodes',
                 [None, mix.name, mix.port, mix.host,
@@ -50,7 +50,7 @@ def loopix_providers():
     for i in range(3):
         p = LoopixProvider('Provider%d'%(i+1), 9995-i, '1.2.%d.4'%i)
         p.transport = proto_helpers.FakeDatagramTransport()
-        p.DATABASE_NAME = 'test.db'
+        p.config = p.config._replace(DATABASE_NAME = 'test.db')
         providers.append(p)
         dbManager.insertRowIntoTable('Providers',
             [None, p.name, p.port, p.host,
@@ -68,7 +68,7 @@ def loopix_clients(pubs_providers, pubs_mixes):
         c = LoopixClient('Client%d'%(i+1), 9993 - i, '1.%d.3.4'%i, provider)
         c.register_mixes(pubs_mixes)
         c.transport = proto_helpers.FakeDatagramTransport()
-        c.DATABASE_NAME = 'test.db'
+        c.config = c.config._replace(DATABASE_NAME = 'test.db')
         clients.append(c)
         dbManager.insertRowIntoTable('Users',
             [None, c.name, c.port, c.host,
@@ -446,7 +446,7 @@ def test_provider_pull_messages():
     stored_messages = provider.storage_inbox[subs_client.name]
     pulled_messages = provider.pull_messages(subs_client.name)
 
-    assert len(pulled_messages) == provider.MAX_RETRIEVE
+    assert len(pulled_messages) == provider.config.MAX_RETRIEVE
     assert set(stored_messages) < set(pulled_messages)
 
 
@@ -483,10 +483,10 @@ def test_provider_get_clients_messages():
 
     [provider.put_into_storage(subs_client.name, x) for x in test_set]
     msgs = provider.get_clients_messages(subs_client.name)
-    assert len(msgs) == provider.MAX_RETRIEVE
-    assert len(provider.storage_inbox[subs_client.name]) == 120 - provider.MAX_RETRIEVE
-    assert msgs == test_set[:provider.MAX_RETRIEVE]
-    assert provider.storage_inbox[subs_client.name] == test_set[provider.MAX_RETRIEVE:]
+    assert len(msgs) == provider.config.MAX_RETRIEVE
+    assert len(provider.storage_inbox[subs_client.name]) == 120 - provider.config.MAX_RETRIEVE
+    assert msgs == test_set[:provider.config.MAX_RETRIEVE]
+    assert provider.storage_inbox[subs_client.name] == test_set[provider.config.MAX_RETRIEVE:]
 
     provider.storage_inbox[subs_client.name] = []
     [provider.put_into_storage(subs_client.name, x) for x in test_set[:10]]
