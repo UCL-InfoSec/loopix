@@ -7,11 +7,10 @@ from processQueue import ProcessQueue
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, defer, task
 import numpy
-from core import get_group_characteristics, sample_from_exponential, group_layered_topology
+from core import get_group_characteristics, sample_from_exponential, group_layered_topology, make_sphinx_packet
 import petlib.pack
 from databaseConnect import DatabaseManager
 from support_formats import Provider
-from core import make_sphinx_packet
 from json_reader import JSONReader
 
 

@@ -2,7 +2,7 @@ import pytest
 from loopix_client import LoopixClient
 from loopix_mixnode import LoopixMixNode
 from loopix_provider import LoopixProvider
-from format3 import Mix, Provider, User
+from support_formats import Mix, Provider, User
 from collections import namedtuple
 import petlib.pack
 from databaseConnect import DatabaseManager
