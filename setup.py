@@ -14,6 +14,14 @@ setup(name='loopix',
       license="2-clause BSD",
       long_description="""The Loopix mix system for anonymous communications.""",
       # setup_requires=["pytest >= 2.6.4"],
+      setup_requires=['pytest-runner', "pytest"],
+      tests_require=[
+        "pytest",
+        "future >= 0.14.3",
+        "pytest >= 3.0.0",
+        "msgpack-python >= 0.4.6",
+        "petlib >= 0.0.38",
+      ],
       install_requires=[
             #"future >= 0.14.3",
             "numpy >= 1.9.1",
@@ -26,7 +34,8 @@ setup(name='loopix',
             "boto3>=1.4.0",
             "matplotlib>=1.4.2",
             "scipy>=0.16.1",
-            "scapy>=2.3.3"
+            "scapy>=2.3.3",
+            "pybloom>=1.1"
       ],
       zip_safe=False,
 )
