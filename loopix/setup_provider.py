@@ -1,5 +1,5 @@
-from provider import Provider
-import format3
+from loopix_provider import LoopixProvider
+import core
 from twisted.internet import reactor, stdio
 from twisted.protocols import basic
 import sys
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 		host = sys.argv[2]
 		name = sys.argv[3]
 
-		setup = format3.setup()
+		setup = core.setup()
 		G, o, g, o_bytes = setup
 
 		secret = o.random()
