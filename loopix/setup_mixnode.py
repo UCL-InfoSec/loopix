@@ -1,11 +1,6 @@
-from loopix_mixnode import LoopixMixNode
-from twisted.protocols import basic
-from twisted.internet import stdio, reactor
 import sys
 import core
-
 import petlib.pack
-from binascii import hexlify
 import os.path
 
 

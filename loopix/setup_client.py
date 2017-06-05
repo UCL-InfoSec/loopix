@@ -1,10 +1,6 @@
-import format3
-from twisted.protocols import basic
-from twisted.internet import stdio, reactor
+import core
 import sys
-
 import petlib.pack
-from binascii import hexlify
 import os.path
 
 if __name__ == "__main__":
@@ -16,7 +12,7 @@ if __name__ == "__main__":
 
 	if not (os.path.exists("secretClient.prv") or os.path.exists("publicClient.bin")):
 
-		setup = format3.setup()
+		setup = core.setup()
 		G, o, g, o_bytes = setup
 
 		secret = o.random()

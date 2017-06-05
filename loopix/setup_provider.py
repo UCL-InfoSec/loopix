@@ -1,7 +1,4 @@
-from loopix_provider import LoopixProvider
 import core
-from twisted.internet import reactor, stdio
-from twisted.protocols import basic
 import sys
 import petlib.pack
 import os.path
