@@ -6,7 +6,10 @@ from operator import attrgetter
 import itertools
 from json_reader import JSONReader
 from support_formats import Params
-# import json
+from petlib.ec import EcGroup
+from petlib.ec import EcPt
+from petlib.bn import Bn
+import math
 
 jsonReader = JSONReader('config.json')
 config = jsonReader.get_client_config_params()
@@ -18,11 +21,6 @@ def setup():
     g = G.generator()
     o_bytes = int(math.ceil(math.log(float(int(o))) / math.log(256)))
     return G, o, g, o_bytes
-
-def get_group_characteristics(params):
-    order = params.group.G.order()
-    generator = params.group.G.generator()
-    return order, generator
 
 def sample_from_exponential(lambdaParam):
     return numpy.random.exponential(lambdaParam, size=None)

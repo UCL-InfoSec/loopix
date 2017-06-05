@@ -1,24 +1,4 @@
-# format 3
-from os import urandom
 from collections import namedtuple
-from binascii import hexlify
-from copy import copy
-import math
-
-from hashlib import sha512, sha1
-import hmac
-
-import msgpack
-
-from petlib.ec import EcGroup
-from petlib.ec import EcPt
-from petlib.bn import Bn
-from petlib.cipher import Cipher
-import base64
-import petlib.pack
-import binascii
-
-import time
 
 Keys = namedtuple('Keys', ['b', 'iv', 'kmac', 'kenc'])
 Mix = namedtuple('Mix', ['name', 'port', 'host', 'pubk', 'group'])

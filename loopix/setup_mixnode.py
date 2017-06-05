@@ -1,8 +1,8 @@
-from mixnode import MixNode
-import format3
+from loopix_mixnode import LoopixMixNode
 from twisted.protocols import basic
 from twisted.internet import stdio, reactor
 import sys
+import core
 
 import petlib.pack
 from binascii import hexlify
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 		name = sys.argv[3]
 		group = int(sys.argv[4])
 
-		setup = format3.setup()
+		setup = core.setup()
 		G, o, g, o_bytes = setup
 
 		secret = o.random()
