@@ -27,7 +27,6 @@ class LoopixClient(DatagramProtocol):
         self.name = name
         self.port = port
         self.host = host
-        self.sec_params = sec_params
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
         self.crypto_client = ClientCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
@@ -37,7 +36,7 @@ class LoopixClient(DatagramProtocol):
         log.msg("[%s] > Started" % self.name)
         self.get_network_info()
         self.subscribe_to_provider()
-        self.turn_on_processing()
+        self.turn_on_packet_processing()
         self.make_loop_stream()
         self.make_drop_stream()
         self.make_real_stream()
@@ -62,7 +61,7 @@ class LoopixClient(DatagramProtocol):
     def register_friends(self, clients):
         self.befriended_clients = clients
 
-    def turn_on_processing(self):
+    def turn_on_packet_processing(self):
         self.retrieve_messages()
         self.reactor.callLater(20.0, self.get_and_addCallback, self.handle_packet)
         log.msg("[%s] > Turned on retrieving and processing of messages" % self.name)
@@ -138,7 +137,7 @@ class LoopixClient(DatagramProtocol):
         mix_chain = self.take_random_mix_chain()
         return [self.provider] + mix_chain + [receiver.provider] + [receiver]
 
-    def take_random_mix_chain(self, length = 3):
+    def take_random_mix_chain(self):
         mix_chain = []
         num_all_layers = len(self.pubs_mixes)
         for i in range(num_all_layers):

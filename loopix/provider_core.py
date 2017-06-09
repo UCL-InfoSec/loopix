@@ -6,8 +6,7 @@ class ProviderCore(MixCore):
     def __init__(self, params, name, port, host, privk, pubk):
         MixCore.__init__(self, params, name, port, host, privk, pubk)
 
-        self.params, self.config = params
-        self.packer = SphinxPacker(self.params, self.config)
+        self.packer = SphinxPacker(params)
         self.name = name
         self.port = port
         self.host = host
@@ -24,7 +23,7 @@ class ProviderCore(MixCore):
             else:
                 return "ROUT", [delay, new_header, new_body, next_addr, next_name]
         elif routing_flag == Dest_flag:
-            dest, message = self.packer.handle_received_forward(self.params, body)
+            dest, message = self.packer.handle_received_forward(body)
             if dest == [self.host, self.port, self.name]:
                 if message.startswith('HT'):
                     return "LOOP", [message]

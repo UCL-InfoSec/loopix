@@ -4,8 +4,8 @@ from core import SphinxPacker, generate_random_string
 class MixCore(object):
 
     def __init__(self, params, name, port, host, privk, pubk):
-        self.params, self.config = params
-        self.packer = SphinxPacker(self.params, self.config)
+        self.sec_params, self.config = params
+        self.packer = SphinxPacker((self.sec_params, self.config))
         self.name = name
         self.port = port
         self.host = host
@@ -25,7 +25,7 @@ class MixCore(object):
             next_addr, dropFlag, typeFlag, delay, next_name = meta_info[0]
             return "ROUT", [delay, new_header, new_body, next_addr, next_name]
         elif routing_flag == Dest_flag:
-            dest, message = self.packer.handle_received_forward(self.params, new_body)
+            dest, message = self.packer.handle_received_forward(new_body)
             if dest == [self.host, self.port, self.name]:
                 if message.startswith('HT'):
                     return "LOOP", message

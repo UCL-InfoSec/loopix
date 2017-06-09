@@ -43,9 +43,8 @@ def group_layered_topology(mixes):
 
 
 class SphinxPacker(object):
-    def __init__(self, params, config):
-        self.params = params
-        self.config = config
+    def __init__(self, params):
+        self.params, self.config = params
 
     def make_sphinx_packet(self, receiver, path, message, drop_flag=False, type_flag=None):
         keys_nodes = self.take_nodes_keys(path)
@@ -77,5 +76,5 @@ class SphinxPacker(object):
         routing = PFdecode(self.params, info)
         return tag, routing, new_header, new_body
 
-    def handle_received_forward(self, params, packet):
+    def handle_received_forward(self, packet):
         return receive_forward(self.params, packet)

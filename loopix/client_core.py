@@ -9,8 +9,8 @@ from twisted.python.logfile import DailyLogFile
 class ClientCore(object):
 
     def __init__(self, params, name, port, host, privk=None, pubk = None):
-        self.params, self.config = params
-        self.packer = SphinxPacker(self.params, self.config)
+        self.sec_params, self.config = params
+        self.packer = SphinxPacker((self.sec_params, self.config))
         self.name = name
         self.port = port
         self.host = host
@@ -39,7 +39,7 @@ class ClientCore(object):
         tag, routing, new_header, new_body = self.packer.decrypt_sphinx_packet(packet, self.privk)
         routing_flag, meta_info = routing[0], routing[1:]
         if routing_flag == Dest_flag:
-            dest, message = self.packer.handle_received_forward(self.params, new_body)
+            dest, message = self.packer.handle_received_forward(new_body)
             if dest == [self.host, self.port, self.name]:
                 return "NEW", message
             else:
