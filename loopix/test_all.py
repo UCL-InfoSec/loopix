@@ -9,7 +9,8 @@ from databaseConnect import DatabaseManager
 import random
 import sqlite3
 import os
-from core import group_layered_topology, group_layered_topology, generate_random_delay, take_mix_sequence
+from core import group_layered_topology, take_mix_sequence, SphinxPacker
+from sphinxmix.SphinxParams import SphinxParams
 
 from twisted.test import proto_helpers
 from twisted.internet import task, defer
@@ -27,11 +28,13 @@ dbManager = DatabaseManager('test.db')
 
 @pytest.fixture
 def loopix_mixes():
+    sec_params = SphinxParams(header_len=1024)
+
     dbManager.create_mixnodes_table('Mixnodes')
     mixes = []
     pubs_mixes = []
     for i in range(3):
-        mix = LoopixMixNode('Mix%d'%(i+1), 9999-i, '1.2.3.%d'%i, i)
+        mix = LoopixMixNode(sec_params, 'Mix%d'%(i+1), 9999-i, '1.2.3.%d'%i, i)
         mix.transport = proto_helpers.FakeDatagramTransport()
         mix.config = mix.config._replace(DATABASE_NAME = 'test.db')
         mixes.append(mix)
@@ -39,16 +42,17 @@ def loopix_mixes():
                 [None, mix.name, mix.port, mix.host,
                 sqlite3.Binary(petlib.pack.encode(mix.pubk)), mix.group])
     pubs_mixes = [Mix(m.name, m.port, m.host, m.pubk, m.group) for m in mixes]
-    print pubs_mixes
     return mixes, pubs_mixes
 
 @pytest.fixture
 def loopix_providers():
+    sec_params = SphinxParams(header_len=1024)
+
     dbManager.create_providers_table('Providers')
     providers = []
     pubs_providers = []
     for i in range(3):
-        p = LoopixProvider('Provider%d'%(i+1), 9995-i, '1.2.%d.4'%i)
+        p = LoopixProvider(sec_params, 'Provider%d'%(i+1), 9995-i, '1.2.%d.4'%i)
         p.transport = proto_helpers.FakeDatagramTransport()
         p.config = p.config._replace(DATABASE_NAME = 'test.db')
         providers.append(p)
@@ -60,12 +64,15 @@ def loopix_providers():
 
 @pytest.fixture
 def loopix_clients(pubs_providers, pubs_mixes):
+
+    sec_params = SphinxParams(header_len=1024)
+
     dbManager.create_users_table('Users')
     clients = []
     pubs_clients = []
     for i in range(3):
         provider = pubs_providers[i]
-        c = LoopixClient('Client%d'%(i+1), 9993 - i, '1.%d.3.4'%i, provider)
+        c = LoopixClient(sec_params, 'Client%d'%(i+1), 9993 - i, '1.%d.3.4'%i, provider)
         c.register_mixes(pubs_mixes)
         c.transport = proto_helpers.FakeDatagramTransport()
         c.config = c.config._replace(DATABASE_NAME = 'test.db')
@@ -100,15 +107,11 @@ def test_client_startProtocol():
 
     pkt, addr = alice.transport.written[1]
     assert pkt == petlib.pack.encode('PULL' + alice.name)
-    call = alice.reactor.getDelayedCalls()
-    assert call.pop().func == alice.get_and_addCallback
-
-    alice.transport.written = []
 
 def test_client_send_loop_message():
     alice = env.clients[0]
     alice.send_loop_message()
-    packet, addr = alice.transport.written[0]
+    packet, addr = alice.transport.written[-1]
 
     alice_provider = [p for p in env.providers if p.name == alice.provider.name]
     header, body = client_process_message(packet, env.mixes, alice_provider.pop())
@@ -121,7 +124,7 @@ def client_process_message(packet, mixes, provider):
     header, body = petlib.pack.decode(packet)
     path = [provider] + mixes + [provider]
     for e in path:
-        flag, new_packet = e.core.process_packet((header, body))
+        flag, new_packet = e.crypto_node.process_packet((header, body))
         if flag == "ROUT":
             delay, header, body, next_addr, next_name = new_packet
     return header, body
@@ -144,7 +147,7 @@ def test_client_create_drop_message():
     friend = env.pubs_clients[1]
     alice.register_friends([friend])
     alice.send_drop_message()
-    packet, addr = alice.transport.written[0]
+    packet, addr = alice.transport.written[-1]
     alice_provider = [p for p in env.providers if p.name == alice.provider.name].pop()
     friend_provider = [p for p in env.providers if p.name == friend.provider.name].pop()
     assert client_process_drop_message(packet, env.mixes, [alice_provider, friend_provider])
@@ -154,7 +157,7 @@ def client_process_drop_message(packet, mixes, providers):
     path = [sender_provider] + mixes + [receiver_provider]
     header, body = petlib.pack.decode(packet)
     for i, e in enumerate(path):
-        flag, new_packet = e.core.process_packet((header, body))
+        flag, new_packet = e.crypto_node.process_packet((header, body))
         if flag == "ROUT":
             delay, header, body, next_addr, next_name = new_packet
         if flag == "DROP" and not i == len(path)-1:
@@ -178,7 +181,7 @@ def test_client_subscribe():
     alice = env.clients[0]
     alice.transport.written = []
     alice.subscribe_to_provider()
-    packet, addr =  alice.transport.written[0]
+    packet, addr =  alice.transport.written[-1]
     assert petlib.pack.decode(packet) == 'PING%s' % alice.name
     assert addr == (alice.provider.host, alice.provider.port)
 
@@ -326,15 +329,15 @@ def test_mix_send_loop_message():
     mix = env.mixes[0]
     mix.transport.written = []
     path = [m for m in env.pubs_mixes if m.name != mix.name]
-    packet = mix.core.create_loop_message(path)
+    packet = mix.crypto_node.create_loop_message(path)
 
     process_route = [m for m in env.mixes if m.name != mix.name]
     header, body = packet
     for e in process_route:
-        flag, new_packet = e.core.process_packet((header, body))
+        flag, new_packet = e.crypto_node.process_packet((header, body))
         if flag == 'ROUT':
             delay, header, body, next_addr, next_name = new_packet
-    flag, packet = mix.core.process_packet((header, body))
+    flag, packet = mix.crypto_node.process_packet((header, body))
     assert flag == 'LOOP'
     assert packet[:2] == 'HT'
 
@@ -515,7 +518,7 @@ def test_provider_mix_sending():
     mixes = env.mixes
 
     provider.send_loop_message()
-    packet, addr = provider.transport.written[0]
+    packet, addr = provider.transport.written[-1]
     assert addr == (mixes[0].host, mixes[0].port)
     mixes[0].datagramReceived(packet, addr)
     time, pop_packet = mixes[0].process_queue.queue.pop()
@@ -535,7 +538,9 @@ def test_mix_mix_sending():
     mix2.read_packet(pop_packet)
 
 def test_generate_random_delay():
-    delay = generate_random_delay(0.0)
+    client = env.clients[0]
+    packer = SphinxPacker(client.sec_params, client.config)
+    delay = packer.generate_random_delay(0.0)
     assert delay == 0.0
 
 def test_take_mix_sequence():

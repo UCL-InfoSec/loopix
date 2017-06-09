@@ -1,8 +1,7 @@
 from loopix_mixnode import LoopixMixNode
 from provider_core import ProviderCore
-from sphinxmix.SphinxParams import SphinxParams
 from processQueue import ProcessQueue
-from core import get_group_characteristics, generate_random_string
+from core import generate_random_string
 import random
 import petlib.pack
 from json_reader import JSONReader
@@ -10,26 +9,22 @@ from json_reader import JSONReader
 class LoopixProvider(LoopixMixNode):
     jsonReader = JSONReader('config.json')
     config = jsonReader.get_provider_config_params()
+    storage_inbox = {}
+    clients = {}
 
-    def __init__(self, name, port, host, privk=None, pubk=None):
-        LoopixMixNode.__init__(self, name, port, host, privk, pubk)
+    def __init__(self, sec_params, name, port, host, privk=None, pubk=None):
+        LoopixMixNode.__init__(self, sec_params, name, port, host, privk, pubk)
 
-        sec_params = SphinxParams(header_len=1024)
-        params = (sec_params, self.config)
-        order, generator = get_group_characteristics(sec_params)
-        self.privk = privk or order.random()
-        self.pubk = pubk or (self.privk * generator)
-        self.core = ProviderCore(params, self.name, self.port, self.host, self.privk, self.pubk)
-
-        self.storage_inbox = {}
-        self.clients = {}
+        self.privk = privk or sec_params.group.G.order().random()
+        self.pubk = pubk or (self.privk * sec_params.group.G.generator())
+        self.crypto_node = ProviderCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
 
     def subscribe_client(self, client):
         self.clients[client.name] = client
 
     def read_packet(self, packet):
         decoded_packet = petlib.pack.decode(packet)
-        flag, decrypted_packet = self.core.process_packet(decoded_packet)
+        flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
         if flag == "ROUT":
             delay, new_header, new_body, next_addr, next_name = decrypted_packet
             if self.is_assigned_client(next_name):

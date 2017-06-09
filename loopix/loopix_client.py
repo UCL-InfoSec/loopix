@@ -1,58 +1,57 @@
 from client_core import ClientCore
-from sphinxmix.SphinxParams import SphinxParams
 import random
 from Queue import Queue
 import time
 from processQueue import ProcessQueue
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, defer, task
+from twisted.python import log
+from twisted.python.logfile import DailyLogFile
 import numpy
-from core import get_group_characteristics, sample_from_exponential, group_layered_topology, make_sphinx_packet
+from core import sample_from_exponential, group_layered_topology
 import petlib.pack
 from databaseConnect import DatabaseManager
 from support_formats import Provider
 from json_reader import JSONReader
 
+#log.startLogging(DailyLogFile.fromFullPath("foo_log.log"))
 
 class LoopixClient(DatagramProtocol):
     jsonReader = JSONReader('config.json')
     config = jsonReader.get_client_config_params()
+    output_buffer = Queue()
+    process_queue = ProcessQueue()
+    reactor = reactor
 
-    def __init__(self, name, port, host, providerInfo, privk = None, pubk=None):
+    def __init__(self, sec_params, name, port, host, providerInfo, privk = None, pubk=None):
         self.name = name
         self.port = port
         self.host = host
+        self.sec_params = sec_params
+        self.privk = privk or sec_params.group.G.order().random()
+        self.pubk = pubk or (self.privk * sec_params.group.G.generator())
+        self.crypto_client = ClientCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
         self.provider = Provider(*providerInfo)
 
-        sec_params = SphinxParams(header_len=1024)
-        params = (sec_params, self.config)
-        order, generator = get_group_characteristics(sec_params)
-        self.privk = privk or order.random()
-        self.pubk = pubk or (self.privk * generator)
-        self.core = ClientCore(params, self.name, self.port, self.host, self.privk, self.pubk)
-
-        self.output_buffer = Queue()
-        self.process_queue = ProcessQueue()
-        self.reactor = reactor
-
     def startProtocol(self):
-        print "[%s] > Started" % self.name
-        self.subscribe_to_provider()
+        log.msg("[%s] > Started" % self.name)
         self.get_network_info()
+        self.subscribe_to_provider()
         self.turn_on_processing()
+        self.make_loop_stream()
+        self.make_drop_stream()
+        self.make_real_stream()
+
+    def get_network_info(self):
+        self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
+        self.register_mixes(self.dbManager.select_all_mixnodes())
+        self.register_providers(self.dbManager.select_all_providers())
+        self.register_friends(self.dbManager.select_all_clients())
+        log.msg("[%s] > Registered network information" % self.name)
 
     def subscribe_to_provider(self):
         ping_packet = 'PING%s'%self.name
         self.send(ping_packet)
-
-    def get_network_info(self):
-        self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
-        mixes = self.dbManager.select_all_mixnodes()
-        providers = self.dbManager.select_all_providers()
-        clients = self.dbManager.select_all_clients()
-        self.register_mixes(mixes)
-        self.register_providers(providers)
-        self.register_friends(clients)
 
     def register_mixes(self, mixes):
         self.pubs_mixes = group_layered_topology(mixes)
@@ -66,6 +65,7 @@ class LoopixClient(DatagramProtocol):
     def turn_on_processing(self):
         self.retrieve_messages()
         self.reactor.callLater(20.0, self.get_and_addCallback, self.handle_packet)
+        log.msg("[%s] > Turned on retrieving and processing of messages" % self.name)
 
     def retrieve_messages(self):
         lc = task.LoopingCall(self.send, 'PULL' + self.name)
@@ -82,50 +82,55 @@ class LoopixClient(DatagramProtocol):
         try:
             self.reactor.callFromThread(self.get_and_addCallback, self.handle_packet)
         except Exception, e:
-            print "[%s] > Exception during scheduling next get: %s" % (self.name, str(e))
+            log.err("[%s] > Exception during scheduling next get: %s" % (self.name, str(e)))
 
     def read_packet(self, packet):
         decoded_packet = petlib.pack.decode(packet)
-        flag, decrypted_packet = self.core.process_packet(decoded_packet)
+        flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
         return (flag, decrypted_packet)
 
     def send_message(self, message, receiver):
         path = self.construct_full_path(receiver)
-        header, body = self.core.pack_real_message(message, receiver, path)
+        header, body = self.crypto_client.pack_real_message(message, receiver, path)
         self.send((header, body))
 
     def send(self, packet):
         encoded_packet = petlib.pack.encode(packet)
         self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
+        log.msg("[%s] > Packet sent." % self.name)
 
     def schedule_next_call(self, param, method):
         interval = sample_from_exponential(param)
         self.reactor.callLater(interval, method)
 
     def make_loop_stream(self):
+        log.msg("[%s] > Sending loop packet." % self.name)
         self.send_loop_message()
         self.schedule_next_call(self.config.EXP_PARAMS_LOOPS, self.make_loop_stream)
 
     def send_loop_message(self):
         path = self.construct_full_path(self)
-        header, body = self.core.create_loop_message(path)
+        header, body = self.crypto_client.create_loop_message(path)
         self.send((header, body))
 
     def make_drop_stream(self):
+        log.msg("[%s] > Sending drop packet." % self.name)
         self.send_drop_message()
         self.schedule_next_call(self.config.EXP_PARAMS_DROP, self.make_drop_stream)
 
     def send_drop_message(self):
         random_receiver = random.choice(self.befriended_clients)
         path = self.construct_full_path(random_receiver)
-        header, body = self.core.create_drop_message(random_receiver, path)
+        header, body = self.crypto_client.create_drop_message(random_receiver, path)
         self.send((header, body))
 
     def make_real_stream(self):
         if not self.output_buffer.empty():
+            log.msg("[%s] > Sending message from buffer." % self.name)
             packet = self.output_buffer.get()
             self.send(packet)
         else:
+            log.msg("[%s] > Sending substituting drop message." % self.name)
             self.send_drop_message()
         self.schedule_next_call(self.config.EXP_PARAMS_PAYLOAD, self.make_real_stream)
 
@@ -142,4 +147,4 @@ class LoopixClient(DatagramProtocol):
         return mix_chain
 
     def stopProtocol(self):
-        print "[%s] > Stopped" % self.name
+        log.msg("[%s] > Stopped" % self.name)

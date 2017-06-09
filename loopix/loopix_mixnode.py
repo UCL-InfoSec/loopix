@@ -1,39 +1,37 @@
 from mix_core import MixCore
-from sphinxmix.SphinxParams import SphinxParams
 from processQueue import ProcessQueue
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, defer
-from core import get_group_characteristics, sample_from_exponential, group_layered_topology
+from core import sample_from_exponential, group_layered_topology
 from databaseConnect import DatabaseManager
 import petlib.pack
 import random
 from json_reader import JSONReader
+from twisted.python import log
+from twisted.python.logfile import DailyLogFile
 
 class LoopixMixNode(DatagramProtocol):
     jsonReader = JSONReader('config.json')
     config = jsonReader.get_mixnode_config_params()
+    reactor = reactor
+    process_queue = ProcessQueue()
 
-    def __init__(self, name, port, host, group, privk=None, pubk=None):
+    def __init__(self, sec_params, name, port, host, group, privk=None, pubk=None):
         self.name = name
         self.port = port
         self.host = host
         self.group = group
 
-        sec_params = SphinxParams(header_len=1024)
-        params = (sec_params, self.config)
-        order, generator = get_group_characteristics(sec_params)
-        self.privk = privk or order.random()
-        self.pubk = pubk or (self.privk * generator)
-        self.core = MixCore(params, self.name, self.port, self.host, self.privk, self.pubk)
-        self.reactor = reactor
-
-        self.process_queue = ProcessQueue()
+        self.privk = privk or sec_params.group.G.order().random()
+        self.pubk = pubk or (self.privk * sec_params.group.G.generator())
+        self.crypto_node = MixCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
 
     def startProtocol(self):
+        log.startLogging(DailyLogFile.fromFullPath("foo_log.log"))
         print "[%s] > Started" % self.name
         self.get_network_info()
         self.turn_on_processing()
-        # turn on sending heartbeats for mixes and providers (by default)
+        self.make_loop_stream()
 
     def get_network_info(self):
         self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
@@ -60,7 +58,7 @@ class LoopixMixNode(DatagramProtocol):
 
     def send_loop_message(self):
         path = self.generate_random_path()
-        packet = self.core.create_loop_message(path)
+        packet = self.crypto_node.create_loop_message(path)
         addr = (path[0].host, path[0].port)
         self.send(packet, addr)
 
@@ -94,7 +92,7 @@ class LoopixMixNode(DatagramProtocol):
 
     def read_packet(self, packet):
         decoded_packet = petlib.pack.decode(packet)
-        flag, decrypted_packet = self.core.process_packet(decoded_packet)
+        flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
         if flag == "ROUT":
             delay, new_header, new_body, next_addr, next_name = decrypted_packet
             reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
