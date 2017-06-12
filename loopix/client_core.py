@@ -4,7 +4,6 @@ from core import SphinxPacker, generate_random_string
 from json_reader import JSONReader
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
-# log.startLogging(DailyLogFile.fromFullPath("foo_log.log"))
 
 class ClientCore(object):
 

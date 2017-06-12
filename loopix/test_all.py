@@ -72,15 +72,16 @@ def loopix_clients(pubs_providers, pubs_mixes):
     pubs_clients = []
     for i in range(3):
         provider = pubs_providers[i]
-        c = LoopixClient(sec_params, 'Client%d'%(i+1), 9993 - i, '1.%d.3.4'%i, provider)
+        c = LoopixClient(sec_params, 'Client%d'%(i+1), 9993 - i, '1.%d.3.4'%i, provider.name)
         c.register_mixes(pubs_mixes)
         c.transport = proto_helpers.FakeDatagramTransport()
         c.config = c.config._replace(DATABASE_NAME = 'test.db')
+        c.provider = dbManager.select_provider_by_name(provider.name)
         clients.append(c)
         dbManager.insertRowIntoTable('Users',
             [None, c.name, c.port, c.host,
             sqlite3.Binary(petlib.pack.encode(c.pubk)),
-            sqlite3.Binary(petlib.pack.encode(c.provider))])
+            c.provider.name])
     pubs_clients = [User(c.name, c.port, c.host, c.pubk, c.provider) for c in clients]
     return clients, pubs_clients
 
@@ -538,8 +539,9 @@ def test_mix_mix_sending():
     mix2.read_packet(pop_packet)
 
 def test_generate_random_delay():
+    sec_params = SphinxParams(header_len=1024)
     client = env.clients[0]
-    packer = SphinxPacker(client.sec_params, client.config)
+    packer = SphinxPacker((sec_params, client.config))
     delay = packer.generate_random_delay(0.0)
     assert delay == 0.0
 

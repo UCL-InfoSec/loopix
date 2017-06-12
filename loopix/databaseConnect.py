@@ -36,10 +36,6 @@ class DatabaseManager(object):
 		self.cursor.execute("SELECT * FROM %s" % tableName)
 		return self.cursor.fetchall()
 
-	def selectByIdx(self, tableName, idx):
-		self.cursor.execute("SELECT * FROM %s WHERE id=%d" % (tableName, idx))
-		return self.cursor.fetchone()
-
 	def select_all_mixnodes(self):
 		mixesInfo = self.selectAll('Mixnodes')
 		mixes = []
@@ -58,9 +54,14 @@ class DatabaseManager(object):
 		clientsInfo = self.selectAll('Users')
 		clients = []
 		for c in clientsInfo:
-			provider = Provider(*petlib.pack.decode(c[5]))
+			provider = self.select_provider_by_name(c[5])
 			clients.append(User(str(c[1]), c[2], c[3], petlib.pack.decode(c[4]), provider))
 		return clients
+
+	def select_provider_by_name(self, paramVal):
+		self.cursor.execute("SELECT * FROM Providers WHERE name = ?", [str(paramVal)])
+		p = self.cursor.fetchone()
+		return Provider(str(p[1]), p[2], str(p[3]), petlib.pack.decode(p[4]))
 
 	def countRows(self, tableName):
 		self.cursor.execute("SELECT Count(*) FROM %s" % tableName)

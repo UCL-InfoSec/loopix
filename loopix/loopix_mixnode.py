@@ -27,7 +27,6 @@ class LoopixMixNode(DatagramProtocol):
         self.crypto_node = MixCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
 
     def startProtocol(self):
-        log.startLogging(DailyLogFile.fromFullPath("foo_log.log"))
         print "[%s] > Started" % self.name
         self.get_network_info()
         self.turn_on_processing()
@@ -91,13 +90,16 @@ class LoopixMixNode(DatagramProtocol):
             print "[%s] > Exception during scheduling next get: %s" % (self.name, str(e))
 
     def read_packet(self, packet):
-        decoded_packet = petlib.pack.decode(packet)
-        flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
-        if flag == "ROUT":
-            delay, new_header, new_body, next_addr, next_name = decrypted_packet
-            reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
-        elif flag == "LOOP":
-            print "[%s] > Received loop message" % self.name
+        try:
+            decoded_packet = petlib.pack.decode(packet)
+            flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
+            if flag == "ROUT":
+                delay, new_header, new_body, next_addr, next_name = decrypted_packet
+                reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
+            elif flag == "LOOP":
+                print "[%s] > Received loop message" % self.name
+        except Exception, e:
+            print "ERROR: ", str(e)
 
     def send_or_delay(self, delay, packet, addr):
         self.reactor.callLater(delay, self.send, packet, addr)

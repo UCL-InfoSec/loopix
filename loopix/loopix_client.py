@@ -14,8 +14,6 @@ from databaseConnect import DatabaseManager
 from support_formats import Provider
 from json_reader import JSONReader
 
-#log.startLogging(DailyLogFile.fromFullPath("foo_log.log"))
-
 class LoopixClient(DatagramProtocol):
     jsonReader = JSONReader('config.json')
     config = jsonReader.get_client_config_params()
@@ -23,14 +21,14 @@ class LoopixClient(DatagramProtocol):
     process_queue = ProcessQueue()
     reactor = reactor
 
-    def __init__(self, sec_params, name, port, host, providerInfo, privk = None, pubk=None):
+    def __init__(self, sec_params, name, port, host, providerId, privk = None, pubk=None):
         self.name = name
         self.port = port
         self.host = host
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
         self.crypto_client = ClientCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
-        self.provider = Provider(*providerInfo)
+        self.providerId = providerId
 
     def startProtocol(self):
         log.msg("[%s] > Started" % self.name)
@@ -43,6 +41,7 @@ class LoopixClient(DatagramProtocol):
 
     def get_network_info(self):
         self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
+        self.provider = self.dbManager.select_provider_by_name(self.providerId)
         self.register_mixes(self.dbManager.select_all_mixnodes())
         self.register_providers(self.dbManager.select_all_providers())
         self.register_friends(self.dbManager.select_all_clients())
@@ -86,6 +85,7 @@ class LoopixClient(DatagramProtocol):
     def read_packet(self, packet):
         decoded_packet = petlib.pack.decode(packet)
         flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
+        print "Success"
         return (flag, decrypted_packet)
 
     def send_message(self, message, receiver):
@@ -96,7 +96,7 @@ class LoopixClient(DatagramProtocol):
     def send(self, packet):
         encoded_packet = petlib.pack.encode(packet)
         self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
-        log.msg("[%s] > Packet sent." % self.name)
+        print "[%s] > Packet sent." % self.name
 
     def schedule_next_call(self, param, method):
         interval = sample_from_exponential(param)

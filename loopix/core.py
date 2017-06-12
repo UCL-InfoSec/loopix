@@ -44,13 +44,13 @@ def group_layered_topology(mixes):
 
 class SphinxPacker(object):
     def __init__(self, params):
-        self.params, self.config = params
+        self.sec_params, self.config = params
 
     def make_sphinx_packet(self, receiver, path, message, drop_flag=False, type_flag=None):
         keys_nodes = self.take_nodes_keys(path)
         routing_info = self.take_nodes_routing(path, drop_flag, type_flag)
         dest = (receiver.host, receiver.port, receiver.name)
-        header, body = create_forward_message(self.params, routing_info, keys_nodes, dest, message)
+        header, body = create_forward_message(self.sec_params, routing_info, keys_nodes, dest, message)
         return header, body
 
     def take_nodes_keys(self, nodes):
@@ -72,9 +72,9 @@ class SphinxPacker(object):
 
     def decrypt_sphinx_packet(self, packet, key):
         header, body = packet
-        tag, info, (new_header, new_body) = sphinx_process(self.params, key, header, body)
-        routing = PFdecode(self.params, info)
+        tag, info, (new_header, new_body) = sphinx_process(self.sec_params, key, header, body)
+        routing = PFdecode(self.sec_params, info)
         return tag, routing, new_header, new_body
 
     def handle_received_forward(self, packet):
-        return receive_forward(self.params, packet)
+        return receive_forward(self.sec_params, packet)

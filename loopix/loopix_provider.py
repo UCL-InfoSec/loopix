@@ -23,18 +23,24 @@ class LoopixProvider(LoopixMixNode):
         self.clients[client.name] = client
 
     def read_packet(self, packet):
-        decoded_packet = petlib.pack.decode(packet)
-        flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
-        if flag == "ROUT":
-            delay, new_header, new_body, next_addr, next_name = decrypted_packet
-            if self.is_assigned_client(next_name):
-                self.put_into_storage(next_name, petlib.pack.encode(new_header, new_body))
+        try:
+            if packet.startswith('PING'):
+                self.subscribe_client(packet.split('PING', 1)[1])
             else:
-                self.reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
-        elif flag == "LOOP":
-            print "[%s] > Received loop message" % self.name
-        elif flag == "DROP":
-            print "[%s] > Received drop message" % self.name
+                decoded_packet = petlib.pack.decode(packet)
+                flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
+                if flag == "ROUT":
+                    delay, new_header, new_body, next_addr, next_name = decrypted_packet
+                    if self.is_assigned_client(next_name):
+                        self.put_into_storage(next_name, petlib.pack.encode(new_header, new_body))
+                    else:
+                        self.reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
+                elif flag == "LOOP":
+                    print "[%s] > Received loop message" % self.name
+                elif flag == "DROP":
+                    print "[%s] > Received drop message" % self.name
+        except Exception, e:
+            print "ERROR: ", str(e)
 
     def is_assigned_client(self, client_id):
         return any(c == client_id for c in self.clients)
