@@ -1,6 +1,5 @@
-import core
+import loopix.core
 import sys
-import petlib.pack
 import os.path
 import petlib.pack
 
