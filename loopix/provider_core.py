@@ -1,6 +1,6 @@
-from mix_core import MixCore
+from loopix.mix_core import MixCore
+from loopix.core import SphinxPacker
 from sphinxmix.SphinxClient import Relay_flag, Dest_flag
-from core import SphinxPacker
 
 class ProviderCore(MixCore):
     def __init__(self, params, name, port, host, privk, pubk):
@@ -23,7 +23,7 @@ class ProviderCore(MixCore):
             else:
                 return "ROUT", [delay, new_header, new_body, next_addr, next_name]
         elif routing_flag == Dest_flag:
-            dest, message = self.packer.handle_received_forward(body)
+            dest, message = self.packer.handle_received_forward(new_body)
             if dest == [self.host, self.port, self.name]:
                 if message.startswith('HT'):
                     return "LOOP", [message]

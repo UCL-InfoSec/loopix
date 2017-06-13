@@ -1,18 +1,15 @@
-from client_core import ClientCore
-import random
 from Queue import Queue
-import time
-from processQueue import ProcessQueue
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor, defer, task
-from twisted.python import log
-from twisted.python.logfile import DailyLogFile
-import numpy
-from core import sample_from_exponential, group_layered_topology
+import random
 import petlib.pack
-from databaseConnect import DatabaseManager
-from support_formats import Provider
-from json_reader import JSONReader
+from loopix.processQueue import ProcessQueue
+from loopix.client_core import ClientCore
+from loopix.core import sample_from_exponential, group_layered_topology
+from loopix.database_connect import DatabaseManager
+from loopix.support_formats import Provider
+from loopix.json_reader import JSONReader
+from twisted.internet.protocol import DatagramProtocol
+from twisted.internet import reactor, task
+from twisted.python import log
 
 class LoopixClient(DatagramProtocol):
     jsonReader = JSONReader('config.json')
@@ -21,18 +18,20 @@ class LoopixClient(DatagramProtocol):
     process_queue = ProcessQueue()
     reactor = reactor
 
-    def __init__(self, sec_params, name, port, host, providerId, privk = None, pubk=None):
+    def __init__(self, sec_params, name, port, host, provider_id, privk=None, pubk=None):
         self.name = name
         self.port = port
         self.host = host
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
-        self.crypto_client = ClientCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
-        self.providerId = providerId
+        self.crypto_client = ClientCore((sec_params, self.config), self.name,
+                                        self.port, self.host, self.privk, self.pubk)
+        self.provider = Provider(name=provider_id)
 
     def startProtocol(self):
         log.msg("[%s] > Started" % self.name)
         self.get_network_info()
+        self.get_provider_data()
         self.subscribe_to_provider()
         self.turn_on_packet_processing()
         self.make_loop_stream()
@@ -41,15 +40,20 @@ class LoopixClient(DatagramProtocol):
 
     def get_network_info(self):
         self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
-        self.provider = self.dbManager.select_provider_by_name(self.providerId)
         self.register_mixes(self.dbManager.select_all_mixnodes())
         self.register_providers(self.dbManager.select_all_providers())
         self.register_friends(self.dbManager.select_all_clients())
         log.msg("[%s] > Registered network information" % self.name)
 
+    def get_provider_data(self):
+        def save_ip(ip_addr):
+            self.provider = self.provider._replace(host=ip_addr)
+        self.provider = self.dbManager.select_provider_by_name(self.provider.name)
+        self.reactor.resolve(self.provider.host).addCallback(save_ip)
+
     def subscribe_to_provider(self):
-        ping_packet = 'PING%s'%self.name
-        self.send(ping_packet)
+        subs_packet = ['SUBSCRIBE', self.name, self.host, self.port]
+        self.send(subs_packet)
 
     def register_mixes(self, mixes):
         self.pubs_mixes = group_layered_topology(mixes)
@@ -69,8 +73,8 @@ class LoopixClient(DatagramProtocol):
         lc = task.LoopingCall(self.send, 'PULL' + self.name)
         lc.start(self.config.TIME_PULL, now=True)
 
-    def get_and_addCallback(self, f):
-        self.process_queue.get().addCallback(f)
+    def get_and_addCallback(self, function):
+        self.process_queue.get().addCallback(function)
 
     def datagramReceived(self, data, (host, port)):
         self.process_queue.put((data, (host, port)))
@@ -79,13 +83,12 @@ class LoopixClient(DatagramProtocol):
         self.read_packet(packet)
         try:
             self.reactor.callFromThread(self.get_and_addCallback, self.handle_packet)
-        except Exception, e:
-            log.err("[%s] > Exception during scheduling next get: %s" % (self.name, str(e)))
+        except Exception, exp:
+            log.err("[%s] > Exception during scheduling next get: %s" % (self.name, str(exp)))
 
     def read_packet(self, packet):
         decoded_packet = petlib.pack.decode(packet)
         flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
-        print "Success"
         return (flag, decrypted_packet)
 
     def send_message(self, message, receiver):

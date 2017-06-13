@@ -1,13 +1,10 @@
-import random
-from sphinxmix.SphinxClient import Relay_flag, Dest_flag, Surb_flag
-from core import SphinxPacker, generate_random_string
-from json_reader import JSONReader
+from sphinxmix.SphinxClient import Dest_flag
+from loopix.core import SphinxPacker, generate_random_string
 from twisted.python import log
-from twisted.python.logfile import DailyLogFile
 
 class ClientCore(object):
 
-    def __init__(self, params, name, port, host, privk=None, pubk = None):
+    def __init__(self, params, name, port, host, privk=None, pubk=None):
         self.sec_params, self.config = params
         self.packer = SphinxPacker((self.sec_params, self.config))
         self.name = name
@@ -24,7 +21,8 @@ class ClientCore(object):
 
     def create_drop_message(self, random_reciever, path):
         drop_message = generate_random_string(self.config.NOISE_LENGTH)
-        header, body = self.packer.make_sphinx_packet(self, path, drop_message,drop_flag=True)
+        header, body = self.packer.make_sphinx_packet(
+            random_reciever, path, drop_message, drop_flag=True)
         log.msg("[%s] > Packed drop message." % self.name)
         return (header, body)
 

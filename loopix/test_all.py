@@ -5,7 +5,7 @@ from loopix_provider import LoopixProvider
 from support_formats import Mix, Provider, User
 from collections import namedtuple
 import petlib.pack
-from databaseConnect import DatabaseManager
+from loopix.database_connect import DatabaseManager
 import random
 import sqlite3
 import os
@@ -38,7 +38,7 @@ def loopix_mixes():
         mix.transport = proto_helpers.FakeDatagramTransport()
         mix.config = mix.config._replace(DATABASE_NAME = 'test.db')
         mixes.append(mix)
-        dbManager.insertRowIntoTable('Mixnodes',
+        dbManager.insert_row_into_table('Mixnodes',
                 [None, mix.name, mix.port, mix.host,
                 sqlite3.Binary(petlib.pack.encode(mix.pubk)), mix.group])
     pubs_mixes = [Mix(m.name, m.port, m.host, m.pubk, m.group) for m in mixes]
@@ -56,7 +56,7 @@ def loopix_providers():
         p.transport = proto_helpers.FakeDatagramTransport()
         p.config = p.config._replace(DATABASE_NAME = 'test.db')
         providers.append(p)
-        dbManager.insertRowIntoTable('Providers',
+        dbManager.insert_row_into_table('Providers',
             [None, p.name, p.port, p.host,
             sqlite3.Binary(petlib.pack.encode(p.pubk))])
     pubs_providers = [Provider(p.name, p.port, p.host, p.pubk) for p in providers]
@@ -78,7 +78,7 @@ def loopix_clients(pubs_providers, pubs_mixes):
         c.config = c.config._replace(DATABASE_NAME = 'test.db')
         c.provider = dbManager.select_provider_by_name(provider.name)
         clients.append(c)
-        dbManager.insertRowIntoTable('Users',
+        dbManager.insert_row_into_table('Users',
             [None, c.name, c.port, c.host,
             sqlite3.Binary(petlib.pack.encode(c.pubk)),
             c.provider.name])
@@ -101,7 +101,8 @@ def test_client_startProtocol():
     alice = env.clients[0]
     alice.startProtocol()
     pkt, addr = alice.transport.written[0]
-    assert pkt == petlib.pack.encode('PING' + alice.name)
+    data = ['SUBSCRIBE', alice.name, alice.host, alice.port]
+    assert pkt == petlib.pack.encode(data)
     assert alice.befriended_clients == env.pubs_clients
     assert alice.pubs_providers == env.pubs_providers
     assert alice.pubs_mixes == group_layered_topology(env.pubs_mixes)
@@ -183,7 +184,7 @@ def test_client_subscribe():
     alice.transport.written = []
     alice.subscribe_to_provider()
     packet, addr =  alice.transport.written[-1]
-    assert petlib.pack.decode(packet) == 'PING%s' % alice.name
+    assert petlib.pack.decode(packet) == ['SUBSCRIBE'] + [alice.name, alice.host, alice.port]
     assert addr == (alice.provider.host, alice.provider.port)
 
 def test_client_get_and_addCallback():
@@ -414,14 +415,14 @@ def test_mix_get_and_addCallback():
 def test_provider_subscribe_client():
     provider = env.providers[0]
     client = env.pubs_clients[0]
-    provider.subscribe_client(client)
-    assert provider.clients == {client.name : client}
+    provider.subscribe_client([client.name, client.host, client.port])
+    assert provider.clients == {client.name : (client.host, client.port)}
 
 def test_provider_is_assigned_client():
     provider = env.providers[0]
 
     subs_client = env.clients[0]
-    provider.subscribe_client(subs_client)
+    provider.subscribe_client([subs_client.name, subs_client.host, subs_client.port])
     assert provider.is_assigned_client(subs_client.name)
 
     non_subs_client = env.clients[1]
@@ -524,6 +525,18 @@ def test_provider_mix_sending():
     mixes[0].datagramReceived(packet, addr)
     time, pop_packet = mixes[0].process_queue.queue.pop()
     mixes[0].read_packet(pop_packet)
+
+def test_provider_ping_received():
+    alice = env.clients[1]
+    provider = [p for p in env.providers if p.name == alice.provider.name].pop()
+
+    alice.subscribe_to_provider()
+    pkt, addr = alice.transport.written[-1]
+
+    assert petlib.pack.decode(pkt) == ['SUBSCRIBE'] + [alice.name, alice.host, alice.port]
+    assert addr == (provider.host, provider.port)
+
+    provider.read_packet(pkt)
 
 def test_mix_mix_sending():
     mix = env.mixes[0]

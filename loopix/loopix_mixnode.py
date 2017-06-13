@@ -1,20 +1,19 @@
-from mix_core import MixCore
-from processQueue import ProcessQueue
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor, defer
-from core import sample_from_exponential, group_layered_topology
-from databaseConnect import DatabaseManager
-import petlib.pack
 import random
-from json_reader import JSONReader
-from twisted.python import log
-from twisted.python.logfile import DailyLogFile
+import petlib.pack
+from loopix.mix_core import MixCore
+from loopix.processQueue import ProcessQueue
+from loopix.core import sample_from_exponential, group_layered_topology
+from loopix.database_connect import DatabaseManager
+from loopix.json_reader import JSONReader
+from twisted.internet.protocol import DatagramProtocol
+from twisted.internet import reactor
 
 class LoopixMixNode(DatagramProtocol):
     jsonReader = JSONReader('config.json')
     config = jsonReader.get_mixnode_config_params()
     reactor = reactor
     process_queue = ProcessQueue()
+    resolvedAdrs = {}
 
     def __init__(self, sec_params, name, port, host, group, privk=None, pubk=None):
         self.name = name
@@ -24,7 +23,8 @@ class LoopixMixNode(DatagramProtocol):
 
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
-        self.crypto_node = MixCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
+        self.crypto_node = MixCore((sec_params, self.config),
+                                   self.name, self.port, self.host, self.privk, self.pubk)
 
     def startProtocol(self):
         print "[%s] > Started" % self.name
@@ -36,7 +36,7 @@ class LoopixMixNode(DatagramProtocol):
         self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
         mixes = self.dbManager.select_all_mixnodes()
         providers = self.dbManager.select_all_providers()
-        self.register_mixes([m for m in mixes if not m.name == self.name ])
+        self.register_mixes([m for m in mixes if not m.name == self.name])
         self.register_providers([p for p in providers if not p.name == self.name])
 
     def register_mixes(self, mixes):
@@ -48,8 +48,8 @@ class LoopixMixNode(DatagramProtocol):
     def turn_on_processing(self):
         self.reactor.callLater(20.0, self.get_and_addCallback, self.handle_packet)
 
-    def get_and_addCallback(self, f):
-        self.process_queue.get().addCallback(f)
+    def get_and_addCallback(self, function):
+        self.process_queue.get().addCallback(function)
 
     def make_loop_stream(self):
         self.send_loop_message()
@@ -86,27 +86,34 @@ class LoopixMixNode(DatagramProtocol):
         self.read_packet(packet)
         try:
             self.reactor.callFromThread(self.get_and_addCallback, self.handle_packet)
-        except Exception, e:
-            print "[%s] > Exception during scheduling next get: %s" % (self.name, str(e))
+        except Exception, exp:
+            print "[%s] > Exception during scheduling next get: %s" % (self.name, str(exp))
 
     def read_packet(self, packet):
         try:
             decoded_packet = petlib.pack.decode(packet)
             flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
             if flag == "ROUT":
-                delay, new_header, new_body, next_addr, next_name = decrypted_packet
+                delay, new_header, new_body, next_addr, _ = decrypted_packet
                 reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
             elif flag == "LOOP":
                 print "[%s] > Received loop message" % self.name
-        except Exception, e:
-            print "ERROR: ", str(e)
+        except Exception, exp:
+            print "ERROR: ", str(exp)
 
     def send_or_delay(self, delay, packet, addr):
         self.reactor.callLater(delay, self.send, packet, addr)
 
-    def send(self, packet, addr):
+    def send(self, packet, (host, port)):
         encoded_packet = petlib.pack.encode(packet)
-        self.transport.write(encoded_packet, addr)
+
+        #def send_to_ip(IPAddrs):
+        #self.transport.write(encoded_packet, (IPAddrs, port))
+        self.transport.write(encoded_packet, (host, port))
+        #try:
+        #    self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
+        #except KeyError, e:
+        #    self.reactor.resolve(host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stopped" % self.name

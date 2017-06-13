@@ -1,10 +1,9 @@
-from loopix_mixnode import LoopixMixNode
-from provider_core import ProviderCore
-from processQueue import ProcessQueue
-from core import generate_random_string
 import random
 import petlib.pack
-from json_reader import JSONReader
+from loopix.loopix_mixnode import LoopixMixNode
+from loopix.provider_core import ProviderCore
+from loopix.core import generate_random_string
+from loopix.json_reader import JSONReader
 
 class LoopixProvider(LoopixMixNode):
     jsonReader = JSONReader('config.json')
@@ -17,30 +16,35 @@ class LoopixProvider(LoopixMixNode):
 
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
-        self.crypto_node = ProviderCore((sec_params, self.config), self.name, self.port, self.host, self.privk, self.pubk)
+        self.crypto_node = ProviderCore((sec_params, self.config), self.name,
+                                        self.port, self.host, self.privk, self.pubk)
 
-    def subscribe_client(self, client):
-        self.clients[client.name] = client
+    def subscribe_client(self, client_data):
+        subscribe_key, subscribe_host, subscribe_port = client_data
+        self.clients[subscribe_key] = (subscribe_host, subscribe_port)
 
     def read_packet(self, packet):
         try:
-            if packet.startswith('PING'):
-                self.subscribe_client(packet.split('PING', 1)[1])
+            decoded_packet = petlib.pack.decode(packet)
+            if decoded_packet[0] == 'SUBSCRIBE':
+                self.subscribe_client(decoded_packet[1:])
             else:
-                decoded_packet = petlib.pack.decode(packet)
                 flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
                 if flag == "ROUT":
                     delay, new_header, new_body, next_addr, next_name = decrypted_packet
                     if self.is_assigned_client(next_name):
                         self.put_into_storage(next_name, petlib.pack.encode(new_header, new_body))
                     else:
-                        self.reactor.callFromThread(self.send_or_delay, delay, (new_header, new_body), next_addr)
+                        self.reactor.callFromThread(self.send_or_delay,
+                                                    delay,
+                                                    (new_header, new_body),
+                                                    next_addr)
                 elif flag == "LOOP":
                     print "[%s] > Received loop message" % self.name
                 elif flag == "DROP":
                     print "[%s] > Received drop message" % self.name
-        except Exception, e:
-            print "ERROR: ", str(e)
+        except Exception, exp:
+            print "ERROR: ", str(exp)
 
     def is_assigned_client(self, client_id):
         return any(c == client_id for c in self.clients)
@@ -48,15 +52,16 @@ class LoopixProvider(LoopixMixNode):
     def put_into_storage(self, client_id, packet):
         try:
             self.storage_inbox[client_id].append(packet)
-        except Exception, e:
+        except KeyError, _:
             self.storage_inbox[client_id] = [packet]
 
     def pull_messages(self, client_id):
         dummy_messages = []
-        client_addr = (self.clients[client_id].host, self.clients[client_id].port)
+        client_addr = self.clients[client_id]
         popped_messages = self.get_clients_messages(client_id)
         if len(popped_messages) < self.config.MAX_RETRIEVE:
-            dummy_messages = self.generate_dummy_messages(self.config.MAX_RETRIEVE - len(popped_messages))
+            dummy_messages = self.generate_dummy_messages(
+                self.config.MAX_RETRIEVE - len(popped_messages))
         return popped_messages + dummy_messages
 
     def get_clients_messages(self, client_id):
