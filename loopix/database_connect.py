@@ -2,7 +2,7 @@ import os.path
 import sqlite3
 import petlib.pack
 import pytest
-from loopix.support_formats import Mix, Provider, User
+from support_formats import Mix, Provider, User
 
 class DatabaseManager(object):
     def __init__(self, databaseName):

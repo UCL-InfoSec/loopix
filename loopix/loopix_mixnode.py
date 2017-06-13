@@ -1,15 +1,15 @@
 import random
 import petlib.pack
-from loopix.mix_core import MixCore
-from loopix.processQueue import ProcessQueue
-from loopix.core import sample_from_exponential, group_layered_topology
-from loopix.database_connect import DatabaseManager
-from loopix.json_reader import JSONReader
+from mix_core import MixCore
+from processQueue import ProcessQueue
+from core import sample_from_exponential, group_layered_topology
+from database_connect import DatabaseManager
+from json_reader import JSONReader
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 
 class LoopixMixNode(DatagramProtocol):
-    jsonReader = JSONReader('config.json')
+    jsonReader = JSONReader('./config.json')
     config = jsonReader.get_mixnode_config_params()
     reactor = reactor
     process_queue = ProcessQueue()

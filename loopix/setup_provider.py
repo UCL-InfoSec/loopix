@@ -1,4 +1,4 @@
-import loopix.core
+import core
 import sys
 import petlib.pack
 import os.path

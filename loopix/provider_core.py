@@ -1,5 +1,5 @@
-from loopix.mix_core import MixCore
-from loopix.core import SphinxPacker
+from mix_core import MixCore
+from core import SphinxPacker
 from sphinxmix.SphinxClient import Relay_flag, Dest_flag
 
 class ProviderCore(MixCore):

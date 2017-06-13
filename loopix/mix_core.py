@@ -1,5 +1,5 @@
 from sphinxmix.SphinxClient import Relay_flag, Dest_flag
-from loopix.core import SphinxPacker, generate_random_string
+from core import SphinxPacker, generate_random_string
 
 class MixCore(object):
 

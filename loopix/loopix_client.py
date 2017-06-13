@@ -1,18 +1,18 @@
 from Queue import Queue
 import random
 import petlib.pack
-from loopix.processQueue import ProcessQueue
-from loopix.client_core import ClientCore
-from loopix.core import sample_from_exponential, group_layered_topology
-from loopix.database_connect import DatabaseManager
-from loopix.support_formats import Provider
-from loopix.json_reader import JSONReader
+from processQueue import ProcessQueue
+from client_core import ClientCore
+from core import sample_from_exponential, group_layered_topology
+from database_connect import DatabaseManager
+from support_formats import Provider
+from json_reader import JSONReader
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, task
 from twisted.python import log
 
 class LoopixClient(DatagramProtocol):
-    jsonReader = JSONReader('config.json')
+    jsonReader = JSONReader('./config.json')
     config = jsonReader.get_client_config_params()
     output_buffer = Queue()
     process_queue = ProcessQueue()

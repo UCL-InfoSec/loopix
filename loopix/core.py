@@ -4,7 +4,7 @@ import math
 import numpy
 from sphinxmix.SphinxNode import sphinx_process
 from sphinxmix.SphinxClient import PFdecode, Nenc, create_forward_message, receive_forward
-from loopix.json_reader import JSONReader
+from json_reader import JSONReader
 from petlib.ec import EcGroup
 
 jsonReader = JSONReader('config.json')
