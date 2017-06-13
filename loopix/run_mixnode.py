@@ -18,10 +18,10 @@ name = sys.argv[1]
 if not (os.path.exists("secretMixnode.prv") and os.path.exists("publicMixnode.bin")):
 	raise Exception("Key parameter files not found")
 
-secret = petlib.pack.decode(file("secretMixnode.prv" % name, "rb").read())
+secret = petlib.pack.decode(file("secretMixnode.prv", "rb").read())
 sec_params = SphinxParams(header_len=1024)
 try:
-	data = file("publicMixnode.bin" % name, "rb").read()
+	data = file("publicMixnode.bin", "rb").read()
 	_, name, port, host, group, _ = petlib.pack.decode(data)
 
 	mix = LoopixMixNode(sec_params, name, port, host, group, privk=secret, pubk=None)
