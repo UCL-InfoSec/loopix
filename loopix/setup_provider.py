@@ -15,7 +15,6 @@ if __name__ == "__main__":
 		G, o, g, o_bytes = setup
 
 		secret = o.random()
-		print 'Provider secret: ', secret
 		file("secretProvider.prv", "wb").write(petlib.pack.encode(secret))
 
 		pub = secret * g

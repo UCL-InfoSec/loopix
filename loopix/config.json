@@ -7,14 +7,14 @@
         "EXP_PARAMS_DELAY": "0.001",
         "TIME_PULL": "10.0",
         "EXP_PARAMS_PAYLOAD": "2.0",
-        "DATABASE_NAME":"test.db"
+        "DATABASE_NAME":"example.db"
     },
     "parametersMixnodes": {
         "NOISE_LENGTH": "500",
         "EXP_PARAMS_LOOPS": "2.0",
         "EXP_PARAMS_DELAY": "0.001",
         "MAX_DELAY_TIME": "-432000",
-        "DATABASE_NAME":"test.db"
+        "DATABASE_NAME":"example.db"
     },
     "parametersProviders": {
       "MAX_RETRIEVE": "50",
@@ -22,6 +22,6 @@
       "EXP_PARAMS_LOOPS": "2.0",
       "EXP_PARAMS_DELAY": "0.001",
       "MAX_DELAY_TIME": "-432000",
-      "DATABASE_NAME":"test.db"
+      "DATABASE_NAME":"example.db"
     }
 }
