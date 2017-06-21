@@ -12,9 +12,6 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, task
 from twisted.python import log
 
-from twisted.cred import portal, checkers
-from pop3_server import *
-
 class LoopixClient(DatagramProtocol):
     jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
     config = jsonReader.get_client_config_params()
