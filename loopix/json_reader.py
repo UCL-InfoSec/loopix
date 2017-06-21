@@ -14,6 +14,7 @@ class JSONReader(object):
         database_name = self._PARAMS["parametersClients"]["DATABASE_NAME"]
         time_pull = float(self._PARAMS["parametersClients"]["TIME_PULL"])
         noise_length = int(self._PARAMS["parametersMixnodes"]["NOISE_LENGTH"])
+        data_dir = self._PARAMS["parametersClients"]["DATA_DIR"]
 
         config_params = Params(EXP_PARAMS_LOOPS = exp_params_loops,
                                 EXP_PARAMS_DROP = exp_params_drop,
@@ -21,7 +22,8 @@ class JSONReader(object):
                                 EXP_PARAMS_DELAY = exp_params_delay,
                                 DATABASE_NAME = database_name,
                                 NOISE_LENGTH = noise_length,
-                                TIME_PULL = time_pull)
+                                TIME_PULL = time_pull,
+                                DATA_DIR = data_dir)
         return config_params
 
     def get_mixnode_config_params(self):

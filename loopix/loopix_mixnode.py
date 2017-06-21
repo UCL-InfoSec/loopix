@@ -1,4 +1,5 @@
 import random
+import os
 import petlib.pack
 from mix_core import MixCore
 from processQueue import ProcessQueue
@@ -9,7 +10,7 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 
 class LoopixMixNode(DatagramProtocol):
-    jsonReader = JSONReader('./config.json')
+    jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
     config = jsonReader.get_mixnode_config_params()
     reactor = reactor
     process_queue = ProcessQueue()
@@ -107,13 +108,12 @@ class LoopixMixNode(DatagramProtocol):
     def send(self, packet, (host, port)):
         encoded_packet = petlib.pack.encode(packet)
 
-        #def send_to_ip(IPAddrs):
-        #self.transport.write(encoded_packet, (IPAddrs, port))
-        self.transport.write(encoded_packet, (host, port))
-        #try:
-        #    self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
-        #except KeyError, e:
-        #    self.reactor.resolve(host).addCallback(send_to_ip)
+        def send_to_ip(ip_addr):
+            self.transport.write(encoded_packet, (ip_addr, port))
+        try:
+            self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
+        except KeyError, e:
+            self.reactor.resolve(host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stopped" % self.name

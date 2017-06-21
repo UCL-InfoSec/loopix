@@ -20,7 +20,7 @@ try:
     data = file("publicClient.bin", "rb").read()
     _, name, port, host, _, prvinfo = petlib.pack.decode(data)
 
-    client = LoopixClient(sec_params, name, port, host, providerId = prvinfo, privk = secret)
+    client = LoopixClient(sec_params, name, port, host, provider_id = prvinfo, privk = secret)
     udp_server = internet.UDPServer(port, client)
     application = service.Application("Client")
     udp_server.setServiceParent(application)

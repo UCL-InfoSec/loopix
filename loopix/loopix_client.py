@@ -1,5 +1,6 @@
 from Queue import Queue
 import random
+import os
 import petlib.pack
 from processQueue import ProcessQueue
 from client_core import ClientCore
@@ -11,12 +12,16 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, task
 from twisted.python import log
 
+from twisted.cred import portal, checkers
+from pop3_server import *
+
 class LoopixClient(DatagramProtocol):
-    jsonReader = JSONReader('./config.json')
+    jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
     config = jsonReader.get_client_config_params()
     output_buffer = Queue()
     process_queue = ProcessQueue()
     reactor = reactor
+    resolvedAdrs = {}
 
     def __init__(self, sec_params, name, port, host, provider_id, privk=None, pubk=None):
         self.name = name
@@ -46,10 +51,7 @@ class LoopixClient(DatagramProtocol):
         log.msg("[%s] > Registered network information" % self.name)
 
     def get_provider_data(self):
-        def save_ip(ip_addr):
-            self.provider = self.provider._replace(host=ip_addr)
         self.provider = self.dbManager.select_provider_by_name(self.provider.name)
-        self.reactor.resolve(self.provider.host).addCallback(save_ip)
 
     def subscribe_to_provider(self):
         subs_packet = ['SUBSCRIBE', self.name, self.host, self.port]
@@ -98,8 +100,14 @@ class LoopixClient(DatagramProtocol):
 
     def send(self, packet):
         encoded_packet = petlib.pack.encode(packet)
-        self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
-        print "[%s] > Packet sent." % self.name
+        # self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
+        # print "[%s] > Packet sent." % self.name
+        def send_to_ip(ip_addr):
+            self.transport.write(encoded_packet, (ip_addr, port))
+        try:
+            self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
+        except KeyError, e:
+            self.reactor.resolve(host).addCallback(send_to_ip)
 
     def schedule_next_call(self, param, method):
         interval = sample_from_exponential(param)

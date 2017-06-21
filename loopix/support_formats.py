@@ -14,7 +14,8 @@ Params = namedtuple('Params',
                      'TIME_PULL',
                      'MAX_DELAY_TIME',
                      'NOISE_LENGTH',
-                     'MAX_RETRIEVE'])
+                     'MAX_RETRIEVE',
+                     'DATA_DIR'])
 
 Mix.__new__.__defaults__ = (None,) * len(Mix._fields)
 Provider.__new__.__defaults__ = (None,) * len(Provider._fields)

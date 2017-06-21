@@ -1,13 +1,14 @@
 from operator import attrgetter
 import itertools
 import math
+import os
 import numpy
 from sphinxmix.SphinxNode import sphinx_process
 from sphinxmix.SphinxClient import PFdecode, Nenc, create_forward_message, receive_forward
 from json_reader import JSONReader
 from petlib.ec import EcGroup
 
-jsonReader = JSONReader('config.json')
+jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
 config = jsonReader.get_client_config_params()
 
 def setup():
@@ -57,7 +58,7 @@ class SphinxPacker(object):
     def take_nodes_routing(self, nodes, drop_flag, type_flag):
         nodes_routing = []
         for i, node in enumerate(nodes):
-            delay = self.generate_random_delay(config.EXP_PARAMS_DELAY)
+            delay = self.generate_random_delay(self.config.EXP_PARAMS_DELAY)
             drop = (i == len(nodes) - 1) and drop_flag
             nodes_routing.append(Nenc([(node.host, node.port), drop, type_flag, delay, node.name]))
         return nodes_routing
@@ -66,7 +67,7 @@ class SphinxPacker(object):
         if float(param) == 0.0:
             return 0.0
         else:
-            return sample_from_exponential(config.EXP_PARAMS_DELAY)
+            return sample_from_exponential(self.config.EXP_PARAMS_DELAY)
 
     def decrypt_sphinx_packet(self, packet, key):
         header, body = packet

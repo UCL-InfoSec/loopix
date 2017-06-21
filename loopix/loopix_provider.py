@@ -1,3 +1,4 @@
+import os
 import random
 import petlib.pack
 from loopix_mixnode import LoopixMixNode
@@ -6,7 +7,7 @@ from core import generate_random_string
 from json_reader import JSONReader
 
 class LoopixProvider(LoopixMixNode):
-    jsonReader = JSONReader('./config.json')
+    jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
     config = jsonReader.get_provider_config_params()
     storage_inbox = {}
     clients = {}
