@@ -7,7 +7,7 @@ from core import sample_from_exponential, group_layered_topology
 from database_connect import DatabaseManager
 from json_reader import JSONReader
 from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
+from twisted.internet import reactor, abstract
 
 class LoopixMixNode(DatagramProtocol):
     jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
@@ -107,13 +107,15 @@ class LoopixMixNode(DatagramProtocol):
 
     def send(self, packet, (host, port)):
         encoded_packet = petlib.pack.encode(packet)
-#        self.transport.write(encoded_packet, (host, port))
-        def send_to_ip(ip_addr):
-            self.transport.write(encoded_packet, (ip_addr, port))
-        try:
-            self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
-        except KeyError, e:
-            self.reactor.resolve(host).addCallback(send_to_ip)
+        if abstract.isIPAddress(host):
+            self.transport.write(encoded_packet, (host, port))
+        else:
+            def send_to_ip(ip_addr):
+                self.transport.write(encoded_packet, (ip_addr, port))
+            try:
+                self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
+            except KeyError, e:
+                self.reactor.resolve(host).addCallback(send_to_ip)
 
     def stopProtocol(self):
         print "[%s] > Stopped" % self.name

@@ -9,8 +9,10 @@ from database_connect import DatabaseManager
 from support_formats import Provider
 from json_reader import JSONReader
 from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, abstract
 from twisted.python import log
+
+import twisted.names.client
 
 
 class LoopixClient(DatagramProtocol):
@@ -47,10 +49,16 @@ class LoopixClient(DatagramProtocol):
         self.register_mixes(self.dbManager.select_all_mixnodes())
         self.register_providers(self.dbManager.select_all_providers())
         self.register_friends(self.dbManager.select_all_clients())
+        self.provider = self.dbManager.select_provider_by_name(self.provider.name)
         log.msg("[%s] > Registered network information" % self.name)
 
     def get_provider_data(self):
         self.provider = self.dbManager.select_provider_by_name(self.provider.name)
+        d = twisted.names.client.getHostByName(self.provider.host)
+        d.addCallback(self.resolve_provider_address)
+
+    def resolve_provider_address(self, result):
+        self.provider = self.provider._replace(host = result)
 
     def subscribe_to_provider(self):
         lc = task.LoopingCall(self.send, ['SUBSCRIBE', self.name, self.host, self.port])
@@ -100,13 +108,8 @@ class LoopixClient(DatagramProtocol):
 
     def send(self, packet):
         encoded_packet = petlib.pack.encode(packet)
-        #self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
-        def send_to_ip(ip_addr):
-            self.transport.write(encoded_packet, (ip_addr, self.provider.port))
-        try:
-            self.transport.write(encoded_packet, (self.resolvedAdrs[self.provider.host], self.provider.port))
-        except KeyError, e:
-            self.reactor.resolve(self.provider.host).addCallback(send_to_ip)
+        if abstract.isIPAddress(self.provider.host):
+            self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
 
     def schedule_next_call(self, param, method):
         interval = sample_from_exponential(param)
