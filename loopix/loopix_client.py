@@ -12,9 +12,10 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, task
 from twisted.python import log
 
+
 class LoopixClient(DatagramProtocol):
     jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
-    config = jsonReader.get_client_config_params()
+    config_params = jsonReader.get_client_config_params()
     output_buffer = Queue()
     process_queue = ProcessQueue()
     reactor = reactor
@@ -26,9 +27,10 @@ class LoopixClient(DatagramProtocol):
         self.host = host
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
-        self.crypto_client = ClientCore((sec_params, self.config), self.name,
+        self.crypto_client = ClientCore((sec_params, self.config_params), self.name,
                                         self.port, self.host, self.privk, self.pubk)
         self.provider = Provider(name=provider_id)
+
 
     def startProtocol(self):
         log.msg("[%s] > Started" % self.name)
@@ -41,7 +43,7 @@ class LoopixClient(DatagramProtocol):
         self.make_real_stream()
 
     def get_network_info(self):
-        self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
+        self.dbManager = DatabaseManager(self.config_params.DATABASE_NAME)
         self.register_mixes(self.dbManager.select_all_mixnodes())
         self.register_providers(self.dbManager.select_all_providers())
         self.register_friends(self.dbManager.select_all_clients())
@@ -51,8 +53,8 @@ class LoopixClient(DatagramProtocol):
         self.provider = self.dbManager.select_provider_by_name(self.provider.name)
 
     def subscribe_to_provider(self):
-        subs_packet = ['SUBSCRIBE', self.name, self.host, self.port]
-        self.send(subs_packet)
+        lc = task.LoopingCall(self.send, ['SUBSCRIBE', self.name, self.host, self.port])
+        lc.start(self.config_params.TIME_PULL, now=True)
 
     def register_mixes(self, mixes):
         self.pubs_mixes = group_layered_topology(mixes)
@@ -69,14 +71,14 @@ class LoopixClient(DatagramProtocol):
         log.msg("[%s] > Turned on retrieving and processing of messages" % self.name)
 
     def retrieve_messages(self):
-        lc = task.LoopingCall(self.send, 'PULL' + self.name)
-        lc.start(self.config.TIME_PULL, now=True)
+        lc = task.LoopingCall(self.send, ['PULL', self.name])
+        lc.start(self.config_params.TIME_PULL, now=True)
 
     def get_and_addCallback(self, function):
         self.process_queue.get().addCallback(function)
 
     def datagramReceived(self, data, (host, port)):
-        self.process_queue.put((data, (host, port)))
+        self.process_queue.put(data)
 
     def handle_packet(self, packet):
         self.read_packet(packet)
@@ -87,8 +89,9 @@ class LoopixClient(DatagramProtocol):
 
     def read_packet(self, packet):
         decoded_packet = petlib.pack.decode(packet)
-        flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
-        return (flag, decrypted_packet)
+        if not decoded_packet[0] == 'DUMMY':
+            flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
+            return (flag, decrypted_packet)
 
     def send_message(self, message, receiver):
         path = self.construct_full_path(receiver)
@@ -97,14 +100,13 @@ class LoopixClient(DatagramProtocol):
 
     def send(self, packet):
         encoded_packet = petlib.pack.encode(packet)
-        # self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
-        # print "[%s] > Packet sent." % self.name
+        #self.transport.write(encoded_packet, (self.provider.host, self.provider.port))
         def send_to_ip(ip_addr):
-            self.transport.write(encoded_packet, (ip_addr, port))
+            self.transport.write(encoded_packet, (ip_addr, self.provider.port))
         try:
-            self.transport.write(encoded_packet, (self.resolvedAdrs[host], port))
+            self.transport.write(encoded_packet, (self.resolvedAdrs[self.provider.host], self.provider.port))
         except KeyError, e:
-            self.reactor.resolve(host).addCallback(send_to_ip)
+            self.reactor.resolve(self.provider.host).addCallback(send_to_ip)
 
     def schedule_next_call(self, param, method):
         interval = sample_from_exponential(param)
@@ -113,7 +115,7 @@ class LoopixClient(DatagramProtocol):
     def make_loop_stream(self):
         log.msg("[%s] > Sending loop packet." % self.name)
         self.send_loop_message()
-        self.schedule_next_call(self.config.EXP_PARAMS_LOOPS, self.make_loop_stream)
+        self.schedule_next_call(self.config_params.EXP_PARAMS_LOOPS, self.make_loop_stream)
 
     def send_loop_message(self):
         path = self.construct_full_path(self)
@@ -123,7 +125,7 @@ class LoopixClient(DatagramProtocol):
     def make_drop_stream(self):
         log.msg("[%s] > Sending drop packet." % self.name)
         self.send_drop_message()
-        self.schedule_next_call(self.config.EXP_PARAMS_DROP, self.make_drop_stream)
+        self.schedule_next_call(self.config_params.EXP_PARAMS_DROP, self.make_drop_stream)
 
     def send_drop_message(self):
         random_receiver = random.choice(self.befriended_clients)
@@ -139,7 +141,7 @@ class LoopixClient(DatagramProtocol):
         else:
             log.msg("[%s] > Sending substituting drop message." % self.name)
             self.send_drop_message()
-        self.schedule_next_call(self.config.EXP_PARAMS_PAYLOAD, self.make_real_stream)
+        self.schedule_next_call(self.config_params.EXP_PARAMS_PAYLOAD, self.make_real_stream)
 
     def construct_full_path(self, receiver):
         mix_chain = self.take_random_mix_chain()

@@ -1,5 +1,6 @@
 import os
 import random
+import itertools
 import petlib.pack
 from loopix_mixnode import LoopixMixNode
 from provider_core import ProviderCore
@@ -8,7 +9,7 @@ from json_reader import JSONReader
 
 class LoopixProvider(LoopixMixNode):
     jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
-    config = jsonReader.get_provider_config_params()
+    config_params = jsonReader.get_provider_config_params()
     storage_inbox = {}
     clients = {}
 
@@ -17,24 +18,29 @@ class LoopixProvider(LoopixMixNode):
 
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
-        self.crypto_node = ProviderCore((sec_params, self.config), self.name,
+        self.crypto_node = ProviderCore((sec_params, self.config_params), self.name,
                                         self.port, self.host, self.privk, self.pubk)
 
     def subscribe_client(self, client_data):
         subscribe_key, subscribe_host, subscribe_port = client_data
         self.clients[subscribe_key] = (subscribe_host, subscribe_port)
+        print "[%s] > Subscribed client" % self.name
 
     def read_packet(self, packet):
         try:
             decoded_packet = petlib.pack.decode(packet)
             if decoded_packet[0] == 'SUBSCRIBE':
                 self.subscribe_client(decoded_packet[1:])
+            elif decoded_packet[0] == 'PULL':
+                pulled_messages = self.pull_messages(client_id=decoded_packet[1])
+                map(lambda (packet, addr): self.send(packet, addr),
+                    zip(pulled_messages, itertools.repeat(self.clients[decoded_packet[1]])))
             else:
                 flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
                 if flag == "ROUT":
                     delay, new_header, new_body, next_addr, next_name = decrypted_packet
                     if self.is_assigned_client(next_name):
-                        self.put_into_storage(next_name, petlib.pack.encode(new_header, new_body))
+                        self.put_into_storage(next_name, (new_header, new_body))
                     else:
                         self.reactor.callFromThread(self.send_or_delay,
                                                     delay,
@@ -58,23 +64,23 @@ class LoopixProvider(LoopixMixNode):
 
     def pull_messages(self, client_id):
         dummy_messages = []
-        client_addr = self.clients[client_id]
         popped_messages = self.get_clients_messages(client_id)
-        if len(popped_messages) < self.config.MAX_RETRIEVE:
+        if len(popped_messages) < self.config_params.MAX_RETRIEVE:
             dummy_messages = self.generate_dummy_messages(
-                self.config.MAX_RETRIEVE - len(popped_messages))
+                self.config_params.MAX_RETRIEVE - len(popped_messages))
         return popped_messages + dummy_messages
 
     def get_clients_messages(self, client_id):
         if client_id in self.storage_inbox.keys():
             messages = self.storage_inbox[client_id]
-            popped, rest = messages[:self.config.MAX_RETRIEVE], messages[self.config.MAX_RETRIEVE:]
+            popped, rest = messages[:self.config_params.MAX_RETRIEVE], messages[self.config_params.MAX_RETRIEVE:]
             self.storage_inbox[client_id] = rest
             return popped
         return []
 
     def generate_dummy_messages(self, num):
-        dummy_messages = [generate_random_string(self.config.NOISE_LENGTH) for _ in range(num)]
+        dummy_messages = [('DUMMY', generate_random_string(self.config_params.NOISE_LENGTH),
+                    generate_random_string(self.config_params.NOISE_LENGTH)) for _ in range(num)]
         return dummy_messages
 
     def generate_random_path(self):
