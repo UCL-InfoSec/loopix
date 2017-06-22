@@ -36,7 +36,7 @@ def loopix_mixes():
     for i in range(3):
         mix = LoopixMixNode(sec_params, 'Mix%d'%(i+1), 9999-i, '1.2.3.%d'%i, i)
         mix.transport = proto_helpers.FakeDatagramTransport()
-        mix.config = mix.config._replace(DATABASE_NAME = 'test.db')
+        mix.config_params = mix.config_params._replace(DATABASE_NAME = 'test.db')
         mixes.append(mix)
         dbManager.insert_row_into_table('Mixnodes',
                 [None, mix.name, mix.port, mix.host,
@@ -54,7 +54,7 @@ def loopix_providers():
     for i in range(3):
         p = LoopixProvider(sec_params, 'Provider%d'%(i+1), 9995-i, '1.2.%d.4'%i)
         p.transport = proto_helpers.FakeDatagramTransport()
-        p.config = p.config._replace(DATABASE_NAME = 'test.db')
+        p.config_params = p.config_params._replace(DATABASE_NAME = 'test.db')
         providers.append(p)
         dbManager.insert_row_into_table('Providers',
             [None, p.name, p.port, p.host,
@@ -75,7 +75,7 @@ def loopix_clients(pubs_providers, pubs_mixes):
         c = LoopixClient(sec_params, 'Client%d'%(i+1), 9993 - i, '1.%d.3.4'%i, provider.name)
         c.register_mixes(pubs_mixes)
         c.transport = proto_helpers.FakeDatagramTransport()
-        c.config = c.config._replace(DATABASE_NAME = 'test.db')
+        c.config_params = c.config_params._replace(DATABASE_NAME = 'test.db')
         c.provider = dbManager.select_provider_by_name(provider.name)
         clients.append(c)
         dbManager.insert_row_into_table('Users',
@@ -108,7 +108,7 @@ def test_client_startProtocol():
     assert alice.pubs_mixes == group_layered_topology(env.pubs_mixes)
 
     pkt, addr = alice.transport.written[1]
-    assert pkt == petlib.pack.encode('PULL' + alice.name)
+    assert pkt == petlib.pack.encode(['PULL', alice.name])
 
 def test_client_send_loop_message():
     alice = env.clients[0]
@@ -264,7 +264,7 @@ def test_client_retrieve_messages():
     alice.retrieve_messages()
 
     message, addr = alice.transport.written.pop()
-    assert petlib.pack.decode(message) == 'PULL%s' % alice.name
+    assert petlib.pack.decode(message) == ['PULL', alice.name]
     assert addr == (alice.provider.host, alice.provider.port)
 
 def test_client_datagramReceived():
@@ -272,7 +272,7 @@ def test_client_datagramReceived():
     test_packet = '123456789'
     alice.datagramReceived(test_packet, ('1.2.3.4', 1111))
     insert_time, stored_packet = alice.process_queue.queue.pop()
-    assert (test_packet, ('1.2.3.4', 1111)) == stored_packet
+    assert test_packet == stored_packet
 
 def test_client_handle_packet():
     alice = env.clients[1]
@@ -451,8 +451,37 @@ def test_provider_pull_messages():
     stored_messages = provider.storage_inbox[subs_client.name]
     pulled_messages = provider.pull_messages(subs_client.name)
 
-    assert len(pulled_messages) == provider.config.MAX_RETRIEVE
+    assert len(pulled_messages) == provider.config_params.MAX_RETRIEVE
     assert set(stored_messages) < set(pulled_messages)
+
+def test_client_provider_retrieve():
+    import itertools
+
+    provider = env.providers[0]
+    provider.transport.written = []
+    subs_client = env.clients[0]
+
+    for i in range(100):
+        provider.put_into_storage(subs_client.name, 'Hello world x%d' % i)
+
+    subs_client.retrieve_messages()
+    pkt, addr = subs_client.transport.written[-1]
+    assert pkt == petlib.pack.encode(['PULL', subs_client.name])
+    assert addr == (provider.host, provider.port)
+
+    provider.read_packet(pkt)
+    test_msg = [petlib.pack.encode('Hello world x%d' % i) for i in range(50)]
+    test_packets = zip(test_msg, itertools.repeat((subs_client.host, subs_client.port)))
+    assert provider.transport.written == test_packets
+    packet, addr = provider.transport.written[0]
+
+    provider.storage_inbox[subs_client.name] = []
+    provider.transport.written = []
+    provider.read_packet(petlib.pack.encode(['PULL',subs_client.name]))
+    packets = [i[0] for i in provider.transport.written]
+    assert all(petlib.pack.decode(i)[0] == 'DUMMY' for i in packets)
+    for p in packets:
+        assert subs_client.read_packet(p) == None
 
 
 def test_provider_generate_dummy_messages():
@@ -488,10 +517,10 @@ def test_provider_get_clients_messages():
 
     [provider.put_into_storage(subs_client.name, x) for x in test_set]
     msgs = provider.get_clients_messages(subs_client.name)
-    assert len(msgs) == provider.config.MAX_RETRIEVE
-    assert len(provider.storage_inbox[subs_client.name]) == 120 - provider.config.MAX_RETRIEVE
-    assert msgs == test_set[:provider.config.MAX_RETRIEVE]
-    assert provider.storage_inbox[subs_client.name] == test_set[provider.config.MAX_RETRIEVE:]
+    assert len(msgs) == provider.config_params.MAX_RETRIEVE
+    assert len(provider.storage_inbox[subs_client.name]) == 120 - provider.config_params.MAX_RETRIEVE
+    assert msgs == test_set[:provider.config_params.MAX_RETRIEVE]
+    assert provider.storage_inbox[subs_client.name] == test_set[provider.config_params.MAX_RETRIEVE:]
 
     provider.storage_inbox[subs_client.name] = []
     [provider.put_into_storage(subs_client.name, x) for x in test_set[:10]]
@@ -554,7 +583,7 @@ def test_mix_mix_sending():
 def test_generate_random_delay():
     sec_params = SphinxParams(header_len=1024)
     client = env.clients[0]
-    packer = SphinxPacker((sec_params, client.config))
+    packer = SphinxPacker((sec_params, client.config_params))
     delay = packer.generate_random_delay(0.0)
     assert delay == 0.0
 

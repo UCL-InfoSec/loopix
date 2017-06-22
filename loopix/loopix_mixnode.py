@@ -11,7 +11,7 @@ from twisted.internet import reactor
 
 class LoopixMixNode(DatagramProtocol):
     jsonReader = JSONReader(os.path.join(os.path.dirname(__file__), 'config.json'))
-    config = jsonReader.get_mixnode_config_params()
+    config_params = jsonReader.get_mixnode_config_params()
     reactor = reactor
     process_queue = ProcessQueue()
     resolvedAdrs = {}
@@ -24,7 +24,7 @@ class LoopixMixNode(DatagramProtocol):
 
         self.privk = privk or sec_params.group.G.order().random()
         self.pubk = pubk or (self.privk * sec_params.group.G.generator())
-        self.crypto_node = MixCore((sec_params, self.config),
+        self.crypto_node = MixCore((sec_params, self.config_params),
                                    self.name, self.port, self.host, self.privk, self.pubk)
 
     def startProtocol(self):
@@ -34,7 +34,7 @@ class LoopixMixNode(DatagramProtocol):
         self.make_loop_stream()
 
     def get_network_info(self):
-        self.dbManager = DatabaseManager(self.config.DATABASE_NAME)
+        self.dbManager = DatabaseManager(self.config_params.DATABASE_NAME)
         mixes = self.dbManager.select_all_mixnodes()
         providers = self.dbManager.select_all_providers()
         self.register_mixes([m for m in mixes if not m.name == self.name])
@@ -54,7 +54,7 @@ class LoopixMixNode(DatagramProtocol):
 
     def make_loop_stream(self):
         self.send_loop_message()
-        self.schedule_next_call(self.config.EXP_PARAMS_LOOPS, self.make_loop_stream)
+        self.schedule_next_call(self.config_params.EXP_PARAMS_LOOPS, self.make_loop_stream)
 
     def send_loop_message(self):
         path = self.generate_random_path()
@@ -107,7 +107,7 @@ class LoopixMixNode(DatagramProtocol):
 
     def send(self, packet, (host, port)):
         encoded_packet = petlib.pack.encode(packet)
-
+#        self.transport.write(encoded_packet, (host, port))
         def send_to_ip(ip_addr):
             self.transport.write(encoded_packet, (ip_addr, port))
         try:
