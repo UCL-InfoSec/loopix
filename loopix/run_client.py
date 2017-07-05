@@ -11,6 +11,8 @@ from twisted.internet import reactor
 from twisted.application import service, internet
 from sphinxmix.SphinxParams import SphinxParams
 
+from smtp_server import LoopixSMTPFactory
+
 if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin")):
     raise Exception("Key parameter files not found")
 
@@ -22,9 +24,11 @@ try:
 
     client = LoopixClient(sec_params, name, port, host, provider_id = prvinfo, privk = secret)
     udp_server = internet.UDPServer(port, client)
+    proto = LoopixSMTPFactory("./tmp/mail", client)
+    tcp_server = internet.TCPServer(2500, proto)
     application = service.Application("Client")
     udp_server.setServiceParent(application)
-    # reactor.listenUDP(port, client)
-    # reactor.run()
+    tcp_server.setServiceParent(application)
+
 except Exception, e:
  	print str(e)

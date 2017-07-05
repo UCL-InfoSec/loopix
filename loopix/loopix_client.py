@@ -9,8 +9,9 @@ from database_connect import DatabaseManager
 from support_formats import Provider
 from json_reader import JSONReader
 from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor, task, abstract
+from twisted.internet import reactor, task, abstract, defer
 from twisted.python import log
+from email.parser import Parser
 
 import twisted.names.client
 
@@ -72,6 +73,7 @@ class LoopixClient(DatagramProtocol):
 
     def register_friends(self, clients):
         self.befriended_clients = clients
+        print self.befriended_clients
 
     def turn_on_packet_processing(self):
         self.retrieve_messages()
@@ -160,3 +162,21 @@ class LoopixClient(DatagramProtocol):
 
     def stopProtocol(self):
         log.msg("[%s] > Stopped" % self.name)
+
+    def get_user_by_id(self, addr):
+        receiver_id = addr.rsplit('@', 1)[0]
+        for u in self.befriended_clients:
+            if u.name.upper() == receiver_id.upper():
+                return u
+        return None
+
+    def put_into_buffer(self, message):
+        header = Parser().parsestr(message)
+        receiver = self.get_user_by_id(header['to'])
+        if receiver:
+            path = self.construct_full_path(receiver)
+            header, body = self.crypto_client.pack_real_message(message, receiver, path)
+            self.output_buffer.put((header, body))
+            print '[%s] > New message put into ouput buffer' % self.name
+        else:
+            print'[%s] > Unknown reciever address. Message dropped.' % self.name
